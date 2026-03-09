@@ -228,10 +228,10 @@ Possible future improvements include:
 
 ---
 ## Ongoing Documentation
-[File Structure](https://docs.isaklandin.com/share/fdwgh9qhko/p/file-structure-and-roles-1p7Tp5BxEU)
-[DB Tables](https://docs.isaklandin.com/share/ofnogq5ovo/p/tables-mBux5sqtSl)
+[File Structure](https://docs.isaklandin.com/share/fdwgh9qhko/p/file-structure-and-roles-1p7Tp5BxEU)  
+[DB Tables](https://docs.isaklandin.com/share/ofnogq5ovo/p/tables-mBux5sqtSl)  
 ___
 
 ## License
 
-**GNU GENERAL PUBLIC LICENSE** - *Version 3, 29 June 2007*
+[**GNU GENERAL PUBLIC LICENSE**](https://www.gnu.org/licenses/gpl-3.0.en.html#license-text) - *Version 3, 29 June 2007*
