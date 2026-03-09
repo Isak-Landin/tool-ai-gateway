@@ -23,7 +23,7 @@ services:
     env_file:
       - ./.env
     ports:
-      - "4100:4100"
+      - "${GATEWAY_PORT}:${GATEWAY_PORT}"
     restart: unless-stopped
     networks:
       - web_network
