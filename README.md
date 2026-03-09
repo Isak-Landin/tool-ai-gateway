@@ -62,9 +62,10 @@ ___
 git clone git@github.com:Isak-Landin/tool-ai-gateway.git
 ```
 
-### Automatic setup from project root
+### Automatic setup
 > **Ensure you have docker (with docker compose) installed**
 > ```bash
+> cd ./tool-ai-gateway
 > chmod +x ./run_application.sh
 > bash ./run_application.sh
 > ```
