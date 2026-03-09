@@ -28,6 +28,12 @@ services:
     networks:
       - web_network
 
+  tool-gateway-db:
+    image: postgres:latest
+    environment:
+      
+
+
 networks:
   web_network:
     external: true
