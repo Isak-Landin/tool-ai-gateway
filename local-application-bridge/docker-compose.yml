@@ -7,6 +7,7 @@ services:
     env_file:
       - .env
     environment:
+
       GATEWAY_BASE_URL: ${GATEWAY_BASE_URL}
       BRIDGE_HOST: ${BRIDGE_HOST}
       BRIDGE_PORT: ${BRIDGE_PORT}
@@ -14,6 +15,7 @@ services:
       PROJECT_ROOT_2: ${PROJECT_ROOT_2}
       MAX_FILE_BYTES: ${MAX_FILE_BYTES}
       ALLOW_WRITE: ${ALLOW_WRITE}
+
     volumes:
       - ${PROJECT_ROOT_1}:${PROJECT_ROOT_1}
       - ${PROJECT_ROOT_2}:${PROJECT_ROOT_2}

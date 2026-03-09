@@ -49,6 +49,7 @@ def build_tree(base: Path, current: Path):
         return items
 
     for child in children:
+        print(child)
         rel_path = str(child.relative_to(base))
         node = {
             "name": child.name,
