@@ -31,7 +31,7 @@ services:
   tool-gateway-db:
     image: postgres:latest
     environment:
-      
+
 
 
 networks:

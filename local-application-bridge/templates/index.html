@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Local UI Bridge</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #111;
+            color: #eee;
+        }
+
+        h1, h2, h3 {
+            margin-top: 0;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .muted {
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        .tree ul {
+            list-style: none;
+            padding-left: 18px;
+        }
+
+        .tree li {
+            margin: 4px 0;
+        }
+
+        button {
+            background: #2d6cdf;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #2258b6;
+        }
+
+        button.secondary {
+            background: #444;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 140px;
+            background: #0f0f0f;
+            color: #eee;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+            background: #0d0d0d;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 12px;
+            overflow: auto;
+            max-height: 500px;
+        }
+
+        .file-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .file-row:last-child {
+            border-bottom: none;
+        }
+
+        .small {
+            font-size: 13px;
+        }
+
+        .topbar {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <h1>Local UI Bridge</h1>
+        <div class="muted">Gateway: {{ gateway_base_url }}</div>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h2>Mounted file roots</h2>
+            <div id="tree" class="tree"></div>
+        </div>
+
+        <div class="card">
+            <h2>Selected files</h2>
+            <div id="selected-files"></div>
+
+            <h3 style="margin-top: 20px;">Instruction</h3>
+            <textarea id="instruction" placeholder="Describe what the gateway should do with the selected files..."></textarea>
+
+            <div style="margin-top: 12px;">
+                <button id="send-btn">Send to gateway</button>
+                <button id="refresh-btn" class="secondary" type="button">Refresh tree</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid" style="margin-top: 20px;">
+        <div class="card">
+            <h2>File preview</h2>
+            <div id="preview-meta" class="muted"></div>
+            <pre id="preview-content"></pre>
+        </div>
+
+        <div class="card">
+            <h2>Gateway response</h2>
+            <pre id="gateway-response"></pre>
+        </div>
+    </div>
+
+    <script>
+        const selectedFiles = new Map();
+
+        async function fetchTree() {
+            const res = await fetch("/api/tree");
+            const data = await res.json();
+            renderTree(data.roots || {});
+        }
+
+        function renderTree(roots) {
+            const treeEl = document.getElementById("tree");
+            treeEl.innerHTML = "";
+
+            Object.entries(roots).forEach(([rootName, rootData]) => {
+                const section = document.createElement("div");
+                section.style.marginBottom = "16px";
+
+                const title = document.createElement("h3");
+                title.textContent = rootName;
+                section.appendChild(title);
+
+                const rootPath = document.createElement("div");
+                rootPath.className = "muted small";
+                rootPath.textContent = rootData.root_path || "";
+                section.appendChild(rootPath);
+
+                if (rootData.error) {
+                    const error = document.createElement("div");
+                    error.textContent = rootData.error;
+                    error.style.color = "#ff7b7b";
+                    section.appendChild(error);
+                } else {
+                    section.appendChild(buildTreeList(rootName, rootData.children || []));
+                }
+
+                treeEl.appendChild(section);
+            });
+        }
+
+        function buildTreeList(rootName, nodes) {
+            const ul = document.createElement("ul");
+
+            nodes.forEach((node) => {
+                const li = document.createElement("li");
+
+                if (node.type === "directory") {
+                    const label = document.createElement("strong");
+                    label.textContent = "📁 " + node.name;
+                    li.appendChild(label);
+
+                    if (node.children && node.children.length > 0) {
+                        li.appendChild(buildTreeList(rootName, node.children));
+                    }
+                } else {
+                    const wrap = document.createElement("div");
+                    wrap.style.display = "flex";
+                    wrap.style.gap = "8px";
+                    wrap.style.alignItems = "center";
+
+                    const label = document.createElement("span");
+                    label.textContent = "📄 " + node.name;
+
+                    const previewBtn = document.createElement("button");
+                    previewBtn.className = "secondary";
+                    previewBtn.textContent = "Preview";
+                    previewBtn.onclick = () => previewFile(rootName, node.path);
+
+                    const selectBtn = document.createElement("button");
+                    selectBtn.textContent = "Select";
+                    selectBtn.onclick = () => selectFile(rootName, node.path);
+
+                    wrap.appendChild(label);
+                    wrap.appendChild(previewBtn);
+                    wrap.appendChild(selectBtn);
+                    li.appendChild(wrap);
+                }
+
+                ul.appendChild(li);
+            });
+
+            return ul;
+        }
+
+        async function previewFile(root, path) {
+            const res = await fetch("/api/read", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ root, path })
+            });
+
+            const data = await res.json();
+            document.getElementById("preview-meta").textContent =
+                data.ok ? `${data.root} / ${data.path} (${data.size} bytes)` : (data.error || "error");
+            document.getElementById("preview-content").textContent =
+                data.ok ? data.content : JSON.stringify(data, null, 2);
+        }
+
+        async function selectFile(root, path) {
+            const key = `${root}:${path}`;
+            if (selectedFiles.has(key)) {
+                return;
+            }
+
+            const res = await fetch("/api/read", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ root, path })
+            });
+
+            const data = await res.json();
+            if (!data.ok) {
+                alert(data.error || "Failed to read file");
+                return;
+            }
+
+            selectedFiles.set(key, {
+                root: data.root,
+                path: data.path,
+                content: data.content,
+                size: data.size
+            });
+
+            renderSelectedFiles();
+        }
+
+        function removeSelectedFile(key) {
+            selectedFiles.delete(key);
+            renderSelectedFiles();
+        }
+
+        function renderSelectedFiles() {
+            const container = document.getElementById("selected-files");
+            container.innerHTML = "";
+
+            if (selectedFiles.size === 0) {
+                container.innerHTML = '<div class="muted">No files selected.</div>';
+                return;
+            }
+
+            selectedFiles.forEach((file, key) => {
+                const row = document.createElement("div");
+                row.className = "file-row";
+
+                const left = document.createElement("div");
+                left.innerHTML = `<div>${file.root} / ${file.path}</div><div class="muted small">${file.size} bytes</div>`;
+
+                const right = document.createElement("div");
+
+                const previewBtn = document.createElement("button");
+                previewBtn.className = "secondary";
+                previewBtn.textContent = "Preview";
+                previewBtn.onclick = () => {
+                    document.getElementById("preview-meta").textContent =
+                        `${file.root} / ${file.path} (${file.size} bytes)`;
+                    document.getElementById("preview-content").textContent = file.content;
+                };
+
+                const removeBtn = document.createElement("button");
+                removeBtn.textContent = "Remove";
+                removeBtn.onclick = () => removeSelectedFile(key);
+
+                right.appendChild(previewBtn);
+                right.appendChild(removeBtn);
+
+                row.appendChild(left);
+                row.appendChild(right);
+
+                container.appendChild(row);
+            });
+        }
+
+        async function sendToGateway() {
+            const instruction = document.getElementById("instruction").value;
+            const files = Array.from(selectedFiles.values());
+
+            const res = await fetch("/api/send-to-gateway", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ instruction, files })
+            });
+
+            const data = await res.json();
+            document.getElementById("gateway-response").textContent = JSON.stringify(data, null, 2);
+        }
+
+        document.getElementById("send-btn").addEventListener("click", sendToGateway);
+        document.getElementById("refresh-btn").addEventListener("click", fetchTree);
+
+        renderSelectedFiles();
+        fetchTree();
+    </script>
+</body>
+</html>
