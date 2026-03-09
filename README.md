@@ -56,9 +56,24 @@ This architecture allows a local model to access capabilities such as:
 - code execution
 
 without embedding these capabilities directly inside the model.
+___
+## Setup
+```bash
+git clone git@github.com:Isak-Landin/tool-ai-gateway.git
+```
 
-
----
+### Automatic setup from project root
+> **Ensure you have docker (with docker compose) installed**
+> ```bash
+> chmod +x ./run_application.sh
+> bash ./run_application.sh
+> ```
+  
+### Manual setup from project root
+>```bash
+>cat "TODO"
+>```
+___
 
 ## Architecture
 
@@ -124,36 +139,40 @@ POST `/chat`
 Main interface used to communicate with the system.
 
 Example:
-
+```bash
 curl -X POST http://localhost:4100/chat \
   -H "Content-Type: application/json" \
   -d '{"message":"Hello"}'
-
+```
 
 Example tool-triggering message:
-
+```bash
 curl -X POST http://localhost:4100/chat \
   -H "Content-Type: application/json" \
   -d '{"message":"Search Archon for docmost and summarize it"}'
-
+```
 
 ---
-
+## Archon
+> **Built-in No Manual execution needed - TESTING ONLY**
 ### Archon Search
+
 
 GET `/archon_search`
 
 Searches indexed knowledge sources through Archon.
 
 Example:
-
+```bash
 curl "http://localhost:4100/archon_search?q=docmost"
-
+```
+  
 
 With parameters:
 
+```bash
 curl "http://localhost:4100/archon_search?q=docmost&source=&match_count=5&return_mode=chunks"
-
+```
 
 ---
 
@@ -164,11 +183,11 @@ POST `/archon_rag_query`
 Performs a RAG query against the Archon knowledge index.
 
 Example:
-
+```bash
 curl -X POST http://localhost:4100/archon_rag_query \
   -H "Content-Type: application/json" \
   -d '{"query":"What is Docmost?","source":"","match_count":5,"return_mode":"chunks"}'
-
+```
 
 ---
 
@@ -180,8 +199,9 @@ Performs a simple web search.
 
 Example:
 
+```bash
 curl "http://localhost:4100/web_search?q=ollama"
-
+```
 
 ---
 
