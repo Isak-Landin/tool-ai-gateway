@@ -227,6 +227,10 @@ Possible future improvements include:
 
 
 ---
+## Ongoing Documentation
+[File Structure](https://docs.isaklandin.com/share/fdwgh9qhko/p/file-structure-and-roles-1p7Tp5BxEU)
+[DB Tables](https://docs.isaklandin.com/share/ofnogq5ovo/p/tables-mBux5sqtSl)
+___
 
 ## License
 
