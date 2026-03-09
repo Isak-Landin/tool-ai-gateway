@@ -234,4 +234,4 @@ ___
 
 ## License
 
-License information will be added here.
+**GNU GENERAL PUBLIC LICENSE** - *Version 3, 29 June 2007*
