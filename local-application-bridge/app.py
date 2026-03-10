@@ -5,7 +5,7 @@ import pathspec
 import requests
 from flask import Flask, jsonify, render_template, request
 
-app = Flask(__name__, template_folder="local-application-bridge/templates", static_folder="local-application-bridge/static")
+app = Flask(__name__, template_folder="templates", static_folder="static")
 
 GATEWAY_BASE_URL = os.getenv("GATEWAY_BASE_URL", "http://localhost:4100").rstrip("/")
 BRIDGE_HOST = os.getenv("BRIDGE_HOST", "0.0.0.0")
