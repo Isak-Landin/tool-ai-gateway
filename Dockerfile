@@ -3,6 +3,7 @@ FROM python:3.12-slim
 WORKDIR /app
 
 RUN pip install --no-cache-dir fastapi uvicorn requests duckduckgo-search
+RUN apt -y update && apt -y install curl
 
 COPY tool_gateway.py /app/tool_gateway.py
 COPY ollama /app/ollama
