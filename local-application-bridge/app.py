@@ -253,6 +253,8 @@ def api_send_to_gateway():
         )
     except requests.RequestException as exc:
         print(str(exc))
+        if gateway_response:
+            print(gateway_response)
         return jsonify(
             {
                 "ok": False,
@@ -265,6 +267,8 @@ def api_send_to_gateway():
         response_json = gateway_response.json()
     except ValueError as exc:
         print(str(exc))
+        if gateway_response:
+            print(gateway_response)
         return jsonify(
             {
                 "ok": False,
