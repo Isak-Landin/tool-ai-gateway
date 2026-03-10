@@ -272,7 +272,7 @@ def api_send_to_gateway():
                 "status_code": gateway_response.status_code,
                 "raw_text": gateway_response.text,
             }
-        ), 502
+        ), gateway_response.status_code if gateway_response else 502
 
     return jsonify({"ok": True, "gateway_response": response_json})
 
