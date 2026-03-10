@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import pathspec
 import requests
 from flask import Flask, jsonify, render_template, request
 
@@ -11,12 +12,31 @@ BRIDGE_HOST = os.getenv("BRIDGE_HOST", "0.0.0.0")
 BRIDGE_PORT = int(os.getenv("BRIDGE_PORT", "4110"))
 MAX_FILE_BYTES = int(os.getenv("MAX_FILE_BYTES", "200000"))
 
-PROJECT_ROOT_ENV_KEYS = [key for key in os.environ.keys() if key.startswith("PROJECT_ROOT_")]
-PROJECT_ROOTS = {
-    key: Path(os.environ[key]).resolve()
-    for key in sorted(PROJECT_ROOT_ENV_KEYS)
-    if os.environ.get(key, "").strip()
+CONTAINER_PROJECTS_BASE = Path(os.getenv("CONTAINER_PROJECTS_BASE", "/app")).resolve()
+
+DEFAULT_IGNORE_NAMES = {"venv", ".git", ".idea"}
+EXTRA_IGNORE_NAMES = {
+    item.strip()
+    for item in os.getenv("IGNORE_NAMES", "").split(",")
+    if item.strip()
 }
+FORCED_IGNORE_NAMES = DEFAULT_IGNORE_NAMES | EXTRA_IGNORE_NAMES
+
+PROJECT_CONFIGS = {}
+for key, value in os.environ.items():
+    if not key.startswith("PROJECT_NAME_"):
+        continue
+
+    suffix = key.removeprefix("PROJECT_NAME_")
+    project_name = value.strip()
+    if not project_name:
+        continue
+
+    project_root = (CONTAINER_PROJECTS_BASE / project_name).resolve()
+    PROJECT_CONFIGS[project_name] = {
+        "name": project_name,
+        "root": project_root,
+    }
 
 
 def is_subpath(path: Path, root: Path) -> bool:
@@ -28,7 +48,10 @@ def is_subpath(path: Path, root: Path) -> bool:
 
 
 def get_root_by_name(root_name: str):
-    return PROJECT_ROOTS.get(root_name)
+    config = PROJECT_CONFIGS.get(root_name)
+    if not config:
+        return None
+    return config["root"]
 
 
 def safe_join(root: Path, relative_path: str) -> Path | None:
@@ -38,8 +61,51 @@ def safe_join(root: Path, relative_path: str) -> Path | None:
     return candidate
 
 
-def build_tree(base: Path, current: Path):
+def load_ignore_spec(root: Path):
+    patterns = []
+
+    gitignore_path = root / ".gitignore"
+    if gitignore_path.exists() and gitignore_path.is_file():
+        try:
+            lines = gitignore_path.read_text(encoding="utf-8").splitlines()
+            patterns.extend(lines)
+        except Exception:
+            pass
+
+    for name in sorted(FORCED_IGNORE_NAMES):
+        patterns.append(name)
+        patterns.append(f"{name}/")
+        patterns.append(f"**/{name}")
+        patterns.append(f"**/{name}/")
+
+    # hide .env file by default unless explicitly wanted
+    patterns.extend([
+        ".env",
+        "**/.env",
+    ])
+
+    return pathspec.PathSpec.from_lines("gitwildmatch", patterns)
+
+
+def should_ignore(root: Path, path: Path, ignore_spec) -> bool:
+    try:
+        rel_path = path.relative_to(root).as_posix()
+    except ValueError:
+        return True
+
+    if not rel_path:
+        return False
+
+    if path.name in FORCED_IGNORE_NAMES:
+        return True
+
+    match_path = rel_path + "/" if path.is_dir() else rel_path
+    return ignore_spec.match_file(match_path)
+
+
+def build_tree(base: Path, current: Path, ignore_spec):
     items = []
+
     try:
         children = sorted(
             current.iterdir(),
@@ -49,15 +115,20 @@ def build_tree(base: Path, current: Path):
         return items
 
     for child in children:
-        print(child)
-        rel_path = str(child.relative_to(base))
+        if should_ignore(base, child, ignore_spec):
+            continue
+
+        rel_path = child.relative_to(base).as_posix()
+
         node = {
             "name": child.name,
             "path": rel_path,
             "type": "directory" if child.is_dir() else "file",
         }
+
         if child.is_dir():
-            node["children"] = build_tree(base, child)
+            node["children"] = build_tree(base, child, ignore_spec)
+
         items.append(node)
 
     return items
@@ -68,7 +139,7 @@ def index():
     return render_template(
         "index.html",
         gateway_base_url=GATEWAY_BASE_URL,
-        roots=list(PROJECT_ROOTS.keys()),
+        roots=list(PROJECT_CONFIGS.keys()),
     )
 
 
@@ -78,7 +149,7 @@ def health():
         {
             "ok": True,
             "gateway_base_url": GATEWAY_BASE_URL,
-            "roots": list(PROJECT_ROOTS.keys()),
+            "roots": list(PROJECT_CONFIGS.keys()),
         }
     )
 
@@ -87,11 +158,14 @@ def health():
 def api_tree():
     response = {}
 
-    for root_name, root_path in PROJECT_ROOTS.items():
+    for root_name, config in PROJECT_CONFIGS.items():
+        root_path = config["root"]
+
         if root_path.exists() and root_path.is_dir():
+            ignore_spec = load_ignore_spec(root_path)
             response[root_name] = {
                 "root_path": str(root_path),
-                "children": build_tree(root_path, root_path),
+                "children": build_tree(root_path, root_path, ignore_spec),
             }
         else:
             response[root_name] = {
@@ -117,9 +191,14 @@ def api_read():
     if not root:
         return jsonify({"ok": False, "error": "invalid_root"}), 400
 
+    ignore_spec = load_ignore_spec(root)
+
     file_path = safe_join(root, rel_path)
     if not file_path:
         return jsonify({"ok": False, "error": "invalid_path"}), 400
+
+    if should_ignore(root, file_path, ignore_spec):
+        return jsonify({"ok": False, "error": "path_ignored"}), 403
 
     if not file_path.exists() or not file_path.is_file():
         return jsonify({"ok": False, "error": "file_not_found"}), 404

@@ -17,6 +17,6 @@ services:
       ALLOW_WRITE: ${ALLOW_WRITE}
 
     volumes:
-      - ${PROJECT_ROOT_1}:${PROJECT_ROOT_1}
-      - ${PROJECT_ROOT_2}:${PROJECT_ROOT_2}
+      - ${PROJECT_ROOT_1}:/app/${PROJECT_NAME_1}
+      - ${PROJECT_ROOT_2}:/app/${PROJECT_NAME_2}
     restart: unless-stopped
