@@ -103,6 +103,7 @@ def chat(req: ChatRequest):
                 history=history,
             )
         except requests.RequestException as e:
+            print(f"REQUEST FAILED: {e}")
             raise HTTPException(status_code=500, detail=f"ollama_request_failed: {str(e)}")
 
         parsed = parse_model_output(ollama_data)
@@ -114,7 +115,7 @@ def chat(req: ChatRequest):
             try:
                 tool_result = run_tool(tool_name, arguments)
             except requests.RequestException as e:
-                print(f"REQUEST FAILED: {e}", flush=True)
+                print(f"REQUEST FAILED: {e}")
                 raise HTTPException(status_code=500, detail=f"tool_request_failed: {str(e)}")
             except Exception as e:
                 tool_result = {
