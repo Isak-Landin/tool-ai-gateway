@@ -252,6 +252,7 @@ def api_send_to_gateway():
             timeout=120,
         )
     except requests.RequestException as exc:
+        print(str(exc))
         return jsonify(
             {
                 "ok": False,
