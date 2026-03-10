@@ -244,7 +244,7 @@ def api_send_to_gateway():
         "message": instruction,
         "context_files": files,
     }
-
+    gateway_response = None
     try:
         gateway_response = requests.post(
             f"{GATEWAY_BASE_URL}/chat",
@@ -259,7 +259,7 @@ def api_send_to_gateway():
                 "error": "gateway_request_failed",
                 "details": str(exc),
             }
-        ), 502
+        ), gateway_response.status_code if gateway_response else 502
 
     try:
         response_json = gateway_response.json()
