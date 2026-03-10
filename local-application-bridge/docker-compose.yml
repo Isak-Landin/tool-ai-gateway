@@ -19,5 +19,4 @@ services:
     volumes:
       - ${PROJECT_ROOT_1}:/app/${PROJECT_NAME_1}
       - ${PROJECT_ROOT_2}:/app/${PROJECT_NAME_2}
-      - ./local-application-bridge:
     restart: unless-stopped
