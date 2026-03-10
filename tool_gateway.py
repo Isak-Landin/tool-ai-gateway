@@ -95,6 +95,8 @@ def http_web_search(q: str):
 @app.post("/chat")
 def chat(req: ChatRequest):
     history: list[dict] = []
+    print(str(req.message))
+
 
     for _ in range(MAX_TOOL_LOOPS):
         try:
