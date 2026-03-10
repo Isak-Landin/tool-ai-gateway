@@ -13,13 +13,16 @@ from ollama.ollama_client import call_ollama, parse_model_output
 
 
 MAX_TOOL_LOOPS = int(os.getenv("MAX_TOOL_LOOPS", "5"))
+URL_TARGET_SERVER = os.getenv("GATEWAY_BASE_URL")
+if URL_TARGET_SERVER is None:
+    exit(1)
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://141.0.85.201:41988",
+        URL_TARGET_SERVER,
     ],
     allow_credentials=True,
     allow_methods=["*"],
