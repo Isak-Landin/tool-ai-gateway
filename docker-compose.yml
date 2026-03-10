@@ -20,6 +20,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: ai-tool-gateway
+    environment:
+      - PYTHONUNBUFFERED=1
     env_file:
       - ./.env
     ports:
