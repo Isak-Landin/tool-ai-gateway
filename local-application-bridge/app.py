@@ -251,7 +251,6 @@ def api_send_to_gateway():
             json=payload,
             timeout=120,
         )
-        gateway_response.raise_for_status()
     except requests.RequestException as exc:
         return jsonify(
             {
