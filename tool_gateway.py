@@ -33,6 +33,18 @@ app.add_middleware(
 
 class ChatRequest(BaseModel):
     message: str
+    """
+    Expected syntax for files:
+    req.files
+    {
+        _key1: _content1,
+        _key2: _content2,
+        ...
+    }
+    
+    Therefore, make use of dict.items() to iterate and match keys to value
+    """
+    files: dict[str, str] # contains name and content for each given file, name as key and content as value
 
 
 def run_tool(tool_name: str, arguments: dict):

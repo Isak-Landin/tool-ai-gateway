@@ -4,6 +4,7 @@ from pathlib import Path
 import pathspec
 import requests
 from flask import Flask, jsonify, render_template, request
+from errors import FileProcessingError
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 
@@ -134,6 +135,31 @@ def build_tree(base: Path, current: Path, ignore_spec):
     return items
 
 
+def convert_file_to_name_content(files):
+    _name = None
+    _content = None
+    _files_dict = {}
+    for _file in files:
+        _name = None
+        _content = None
+        try:
+            with open(_file, "r", encoding="utf-8") as f:
+                _content = f.read()
+                _name = f.name
+                _files_dict[_name] = _content
+        except FileExistsError as e:
+            raise FileProcessingError(
+                file_name=_name if _name else _file,
+                message=str(e),
+            )
+        except FileNotFoundError as e:
+            raise FileProcessingError(
+                file_name=_name if _name else _file,
+                message=str(e),
+            )
+
+
+
 @app.route("/")
 def index():
     return render_template(
@@ -235,6 +261,11 @@ def api_send_to_gateway():
     data = request.get_json(silent=True) or {}
 
     files = data.get("files", [])
+    try:
+        if files:
+            content = convert_file_to_name_content(files)
+    except FileProcessingError as e:
+        return jsonify({"ok": False, "error": str(e)}), 422
     instruction = data.get("instruction", "")
 
     if not isinstance(files, list):
