@@ -251,6 +251,7 @@ def api_send_to_gateway():
             json=payload,
             timeout=120,
         )
+        print(gateway_response)
     except requests.RequestException as exc:
         print(str(exc))
         if gateway_response:
