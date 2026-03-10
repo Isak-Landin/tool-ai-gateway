@@ -14,7 +14,7 @@ services:
       PROJECT_ROOT_2: ${PROJECT_ROOT_2}
       MAX_FILE_BYTES: ${MAX_FILE_BYTES}
       ALLOW_WRITE: ${ALLOW_WRITE}
-      PYTHONBUFFERED: "1"
+      PYTHONUNBUFFERED: "1"
 
     volumes:
       - ${PROJECT_ROOT_1}:/app/${PROJECT_NAME_1}
