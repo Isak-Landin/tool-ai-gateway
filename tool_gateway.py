@@ -13,8 +13,9 @@ from ollama.ollama_client import call_ollama, parse_model_output
 
 
 MAX_TOOL_LOOPS = int(os.getenv("MAX_TOOL_LOOPS", "5"))
-URL_TARGET_SERVER = os.getenv("GATEWAY_BASE_URL")
-if URL_TARGET_SERVER is None:
+LOCAL_SERVER_URL = os.getenv("GATEWAY_BASE_URL")
+if LOCAL_SERVER_URL is None:
+    print("COULD NOT FIND LOCAL IP OR URL")
     exit(1)
 
 app = FastAPI()
@@ -22,7 +23,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        URL_TARGET_SERVER,
+        LOCAL_SERVER_URL,
     ],
     allow_credentials=True,
     allow_methods=["*"],
