@@ -6,7 +6,7 @@ from ollama.builder import build_chat_payload
 
 
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "deepseek-r1:14b")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "seamon67/Ministral-3-Reasoning:14b")
 
 
 def call_ollama(user_message: str, history: list[dict] | None = None) -> dict:
