@@ -135,7 +135,7 @@ def build_tree(base: Path, current: Path, ignore_spec):
     return items
 
 
-def convert_file_to_name_content(files):
+def convert_file_to_name_content(files: tuple | list):
     _name = None
     _content = None
     _files_dict = {}
@@ -148,16 +148,17 @@ def convert_file_to_name_content(files):
                 _name = f.name
                 _files_dict[_name] = _content
         except FileExistsError as e:
-            raise FileProcessingError(
-                file_name=_name if _name else _file,
-                message=str(e),
-            )
+            continue
         except FileNotFoundError as e:
-            raise FileProcessingError(
-                file_name=_name if _name else _file,
-                message=str(e),
-            )
+            continue
 
+    if files and not _files_dict:
+        raise FileProcessingError(
+            file_name=str(files),
+            message="File processing failed, since we did recieve files to convert, but the resulting final dict"
+                    "was empty.",
+        )
+    return _files_dict if _files_dict else {}
 
 
 @app.route("/")
