@@ -39,6 +39,8 @@ for key, value in os.environ.items():
         "root": project_root,
     }
 
+FILES_STORED_METHOD=os.getenv("FILES_STORED_METHOD", "local")
+
 
 def is_subpath(path: Path, root: Path) -> bool:
     try:
@@ -135,31 +137,46 @@ def build_tree(base: Path, current: Path, ignore_spec):
     return items
 
 
-def convert_file_to_name_content(files: tuple | list):
-    def
+def convert_file_to_name_content(files: tuple | list, _file_retrieval_method: str):
+    """
+
+    :param files:
+    :param _file_retrieval_method: Loaded from .env - Currently three allowed types, one integrated type.
+    (local, git, remote)
+    :return:
+    """
+    def load_local_files():
+        pass
     _name = None
     _content = None
     _files_dict = {}
-    for _file in files:
-        _name = None
-        _content = None
-        try:
-            with open(_file, "r", encoding="utf-8") as f:
-                _content = f.read()
-                _name = f.name
-                _files_dict[_name] = _content
-        except FileExistsError as e:
-            continue
-        except FileNotFoundError as e:
-            continue
+    if FILES_STORED_METHOD == "local":
+        for _file in files:
+            _name = None
+            _content = None
+            try:
+                with open(_file, "r", encoding="utf-8") as f:
+                    _content = f.read()
+                    _name = f.name
+                    _files_dict[_name] = _content
+            except FileExistsError as e:
+                continue
+            except FileNotFoundError as e:
+                continue
 
-    if files and not _files_dict:
+        if files and not _files_dict:
+            raise FileProcessingError(
+                file_name=str(files),
+                message="File processing failed, since we did recieve files to convert, but the resulting final dict"
+                        "was empty.",
+            )
+        return _files_dict if _files_dict else {}
+    else:
         raise FileProcessingError(
             file_name=str(files),
-            message="File processing failed, since we did recieve files to convert, but the resulting final dict"
-                    "was empty.",
+            message="The only allowed retrieval method for file processing is local. "
+                    "We do not expect local bridge to contain any other methods. "
         )
-    return _files_dict if _files_dict else {}
 
 
 @app.route("/")
