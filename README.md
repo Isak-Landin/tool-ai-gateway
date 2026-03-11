@@ -88,6 +88,8 @@ Ollama runs locally and allows the system to operate without external model prov
 
 
 ### LiteLLM
+> **MOST LIKELY DEPRECATED MODULE**  
+
 Acts as a model abstraction and routing layer.
 
 LiteLLM makes it possible to switch between different model providers or backends while maintaining a consistent API for the gateway.
@@ -213,11 +215,12 @@ This project demonstrates a minimal architecture for building an alternative usi
 
 Benefits include:
 
-- local model execution
-- no dependency on GPT APIs
-- extensible tool system
-- modular architecture
-- simple HTTP integration
+- Controlled model execution
+- No **MUST-HAVE** dependency on GPT/Claude APIs
+- Pre-integrated web search, archon
+- Modular architecture
+- Simple HTTP integration
+- Code focused model
 
 
 ---
@@ -226,11 +229,11 @@ Benefits include:
 
 The design priorities of AI Tool Gateway are:
 
-- simplicity
-- modularity
-- local-first architecture
-- easy integration with external tools
-- minimal orchestration logic
+- Simplicity
+- Modularity
+- Local-first architecture
+- Easy integration with external tools
+- Minimal orchestration logic
 
 
 ---
@@ -251,8 +254,8 @@ Possible future improvements include:
 ## Ongoing Documentation
 [File Structure](https://docs.isaklandin.com/share/fdwgh9qhko/p/file-structure-and-roles-1p7Tp5BxEU)  
 [DB Tables](https://docs.isaklandin.com/share/ofnogq5ovo/p/tables-mBux5sqtSl)  
+[Current Notes](https://docs.isaklandin.com/share/1bn72iiy2i/p/current-todo-notes-SFWp3rW5fS)
 ___
 
 ## License
-
 [**GNU GENERAL PUBLIC LICENSE**](https://www.gnu.org/licenses/gpl-3.0.en.html#license-text) - *Version 3, 29 June 2007*
