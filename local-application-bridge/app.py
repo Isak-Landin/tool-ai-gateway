@@ -136,6 +136,7 @@ def build_tree(base: Path, current: Path, ignore_spec):
 
 
 def convert_file_to_name_content(files: tuple | list):
+    def
     _name = None
     _content = None
     _files_dict = {}
