@@ -5,6 +5,7 @@ import pathspec
 import requests
 from flask import Flask, jsonify, render_template, request
 from errors import FileProcessingError
+from typing import IO, TextIO, Optional
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 
@@ -39,7 +40,7 @@ for key, value in os.environ.items():
         "root": project_root,
     }
 
-FILES_STORED_METHOD=os.getenv("FILES_STORED_METHOD", "local")
+FILES_STORED_METHOD=os.getenv("FILES_STORED_METHOD", "local") # (local or git or remote)
 
 
 def is_subpath(path: Path, root: Path) -> bool:
@@ -137,21 +138,24 @@ def build_tree(base: Path, current: Path, ignore_spec):
     return items
 
 
-def convert_file_to_name_content(files: tuple | list, _file_retrieval_method: str):
+def convert_file_to_name_content(_files_path: tuple[str] | list[str]):
     """
 
-    :param files:
-    :param _file_retrieval_method: Loaded from .env - Currently three allowed types, one integrated type.
-    (local, git, remote)
+    :param _files_path:
     :return:
     """
-    def load_local_files():
-        pass
+    def resolve_local_files(__files: list[str] | tuple[str]) -> list[str]:
+        for __file in __files:
+            pass
+        return [""]
+
+
     _name = None
     _content = None
     _files_dict = {}
     if FILES_STORED_METHOD == "local":
-        for _file in files:
+        _resolved_files = resolve_local_files(_files_path)
+        for _file in _resolved_files:
             _name = None
             _content = None
             try:
@@ -164,16 +168,16 @@ def convert_file_to_name_content(files: tuple | list, _file_retrieval_method: st
             except FileNotFoundError as e:
                 continue
 
-        if files and not _files_dict:
+        if _files_path and not _files_dict:
             raise FileProcessingError(
-                file_name=str(files),
+                file_name=str(_files_path),
                 message="File processing failed, since we did recieve files to convert, but the resulting final dict"
                         "was empty.",
             )
         return _files_dict if _files_dict else {}
     else:
         raise FileProcessingError(
-            file_name=str(files),
+            file_name=str(_files_path),
             message="The only allowed retrieval method for file processing is local. "
                     "We do not expect local bridge to contain any other methods. "
         )
