@@ -1,0 +1,61 @@
+.tree-root,
+.tree-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.tree-group {
+    margin-left: 18px;
+    padding-left: 10px;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tree-nav__item {
+    display: block;
+}
+
+.tree-nav__item > summary {
+    list-style: none;
+}
+
+.tree-nav__item > summary::-webkit-details-marker {
+    display: none;
+}
+
+.tree-nav__item-title,
+.tree-file-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.tree-nav__item-title {
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 8px;
+}
+
+.tree-file-row {
+    padding: 6px 8px;
+    border-radius: 8px;
+}
+
+.tree-nav__item-title:hover,
+.tree-file-row:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.tree-nav__item.is-expandable > summary::before {
+    content: "▶";
+    display: inline-block;
+    margin-right: 8px;
+    font-size: 12px;
+    transition: transform 0.15s ease;
+}
+
+.tree-nav__item[open] > summary::before {
+    transform: rotate(90deg);
+}
