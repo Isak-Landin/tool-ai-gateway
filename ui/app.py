@@ -5,7 +5,6 @@ import pathspec
 import requests
 from flask import Flask, jsonify, render_template, request
 from errors import FileProcessingError
-from typing import IO, TextIO, Optional
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 
@@ -14,15 +13,10 @@ BRIDGE_HOST = os.getenv("BRIDGE_HOST", "0.0.0.0")
 BRIDGE_PORT = int(os.getenv("BRIDGE_PORT", "4110"))
 MAX_FILE_BYTES = int(os.getenv("MAX_FILE_BYTES", "200000"))
 
+# Todo: Need to resolve an alternative solution better fitting git intentions
 CONTAINER_PROJECTS_BASE = Path(os.getenv("CONTAINER_PROJECTS_BASE", "/app")).resolve()
 
-DEFAULT_IGNORE_NAMES = {"venv", ".git", ".idea"}
-EXTRA_IGNORE_NAMES = {
-    item.strip()
-    for item in os.getenv("IGNORE_NAMES", "").split(",")
-    if item.strip()
-}
-FORCED_IGNORE_NAMES = DEFAULT_IGNORE_NAMES | EXTRA_IGNORE_NAMES
+DEFAULT_IGNORE_NAMES = set(os.getenv("DEFAULT_IGNORE_NAMES", ""))
 
 PROJECT_CONFIGS = {}
 for key, value in os.environ.items():
@@ -40,7 +34,7 @@ for key, value in os.environ.items():
         "root": project_root,
     }
 
-FILES_STORED_METHOD=os.getenv("FILES_STORED_METHOD", "local") # (local or git or remote)
+FILES_STORED_METHOD=os.getenv("FILES_STORED_METHOD") # (local or git or remote)
 
 
 def is_subpath(path: Path, root: Path) -> bool:
@@ -76,7 +70,7 @@ def load_ignore_spec(root: Path):
         except Exception:
             pass
 
-    for name in sorted(FORCED_IGNORE_NAMES):
+    for name in sorted(DEFAULT_IGNORE_NAMES):
         patterns.append(name)
         patterns.append(f"{name}/")
         patterns.append(f"**/{name}")
@@ -100,7 +94,7 @@ def should_ignore(root: Path, path: Path, ignore_spec) -> bool:
     if not rel_path:
         return False
 
-    if path.name in FORCED_IGNORE_NAMES:
+    if path.name in DEFAULT_IGNORE_NAMES:
         return True
 
     match_path = rel_path + "/" if path.is_dir() else rel_path
@@ -144,7 +138,7 @@ def convert_file_to_name_content(_files_path: tuple[str] | list[str]):
     :param _files_path:
     :return:
     """
-    def resolve_local_files(__files: list[str] | tuple[str]) -> list[str]:
+    def resolve_git_files(__files: list[str] | tuple[str]) -> list[str]:
         for __file in __files:
             pass
         return [""]
@@ -154,7 +148,12 @@ def convert_file_to_name_content(_files_path: tuple[str] | list[str]):
     _content = None
     _files_dict = {}
     if FILES_STORED_METHOD == "local":
-        _resolved_files = resolve_local_files(_files_path)
+        raise FileProcessingError(
+            file_name=str(_files_path),
+            message="File processing failed, since we no longer allow local retrieval. Git or remote db Allowed"
+        )
+    if FILES_STORED_METHOD == "git":
+        _resolved_files = resolve_git_files(_files_path)
         for _file in _resolved_files:
             _name = None
             _content = None
