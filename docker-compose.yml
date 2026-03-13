@@ -28,7 +28,6 @@ services:
       - ./ui/.env
     environment:
       GATEWAY_BASE_URL: ${GATEWAY_BASE_URL}
-
       PYTHONUNBUFFERED: "1"
 
     restart: unless-stopped
