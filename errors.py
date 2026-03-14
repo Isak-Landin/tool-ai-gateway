@@ -3,7 +3,7 @@ class FileProcessingError(Exception):
         self.file_name = file_name
         self.code = code
         self.message = self.combine_parameters_to_message(message)
-        super().__init__(self)
+        super().__init__(self.message)
 
     def combine_parameters_to_message(self, _passed_message):
         _original_message = self.message
@@ -20,10 +20,10 @@ class GitHubError(Exception):
         self.passed_message = message
         self.code = code
         self.message = self.combine_parameters_to_message()
-        super().__init__(self)
+        super().__init__(self.message)
 
     def combine_parameters_to_message(self):
         _new_message = (
-            f"{self.passed_message}: " + f"{self.code}"
+            f"{self.code}: " + f"{self.passed_message}"
         )
-        return _new_message
+        return str(_new_message)

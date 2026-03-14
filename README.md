@@ -12,7 +12,7 @@ Use at your own discretion.
 ___
 
 
-> A minimal, self-hosted AI gateway for running LLMs and tools locally — without relying on GPT-style SaaS APIs.
+> Self-hosted Ollama, tool, archon, git gateway — without relying on GPT-style SaaS APIs. 
 
 AI Tool Gateway combines **local language models and external tool integrations** behind a simple HTTP interface.  
 Instead of sending prompts to proprietary APIs, requests are routed through a lightweight gateway that can call models, search knowledge bases, execute code, or perform web queries.
@@ -20,11 +20,11 @@ Instead of sending prompts to proprietary APIs, requests are routed through a li
 The system integrates several open components:
 
 - **Ollama** — local LLM runtime
-- **LiteLLM** — model abstraction layer
 - **Archon** — knowledge search and RAG
-- **Open Interpreter** — code execution environment
+- **Open Interpreter** — code execution environment - *Uncertain role in project*
+- **git** - project base
 
-Together these provide a **small but powerful foundation** for building AI-driven systems that remain fully under your control.
+Together these provide a **small powerful foundation** for building AI-driven systems that remain fully under your control.
 
 The design philosophy is straightforward:
 
@@ -48,7 +48,7 @@ The user sends a message to the `/chat` endpoint.
 The model processes the message and may request tool execution.  
 The gateway then calls the appropriate service and returns the results.
 
-This architecture allows a local model to access capabilities such as:
+This architecture allows a model to access capabilities such as:
 
 - knowledge search
 - RAG queries
@@ -84,16 +84,7 @@ The application combines several independent systems:
 Provides the local LLM runtime.
 
 The gateway forwards chat requests to Ollama using its native chat API.  
-Ollama runs locally and allows the system to operate without external model providers.
-
-
-### LiteLLM
-> **MOST LIKELY DEPRECATED MODULE**  
-
-Acts as a model abstraction and routing layer.
-
-LiteLLM makes it possible to switch between different model providers or backends while maintaining a consistent API for the gateway.
-
+Ollama runs locally/remote server and allows the system to operate without external model providers.
 
 ### Archon
 Provides knowledge retrieval functionality.
@@ -231,7 +222,6 @@ The design priorities of AI Tool Gateway are:
 
 - Simplicity
 - Modularity
-- Local-first architecture
 - Easy integration with external tools
 - Minimal orchestration logic
 
