@@ -4,35 +4,31 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: AI-tool-gateway
-    environment:
-      - PYTHONUNBUFFERED=1
     env_file:
       - ./.env
+    environment:
+      PYTHONUNBUFFERED: "1"
     ports:
       - "${GATEWAY_PORT}:${GATEWAY_PORT}"
     restart: unless-stopped
     networks:
       - web_network
 
-  #tool-gateway-db:
-    #image: postgres:latest
-
   tool-gateway-ui:
     build:
       context: ./ui/
       dockerfile: Dockerfile
     container_name: UI-tool-gateway
-    ports:
-      - "${UI_PORT}:${UI_PORT}"
     env_file:
       - ./ui/.env
     environment:
       GATEWAY_BASE_URL: ${GATEWAY_BASE_URL}
       PYTHONUNBUFFERED: "1"
-
+    ports:
+      - "${UI_PORT}:${UI_PORT}"
     restart: unless-stopped
-
-
+    networks:
+      - web_network
 
 networks:
   web_network:

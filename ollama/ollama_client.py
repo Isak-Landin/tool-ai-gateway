@@ -16,6 +16,10 @@ def call_ollama(user_message: str, history: list[dict] | None = None) -> dict:
         history=history,
     )
 
+    # MVP uses non-streaming final-body handling.
+    # Native Ollama streaming requires chunk accumulation for content/thinking/tool_calls.
+    payload.setdefault("stream", False)
+
     r = requests.post(
         f"{OLLAMA_BASE_URL}/api/chat",
         json=payload,
@@ -31,24 +35,14 @@ def call_ollama(user_message: str, history: list[dict] | None = None) -> dict:
 
 
 def parse_model_output(data: dict) -> dict:
-    message = data.get("message", {}) or {}
-
-    tool_calls = message.get("tool_calls") or []
-    if tool_calls:
-        tool_call = tool_calls[0] or {}
-        function_data = tool_call.get("function", {}) or {}
-
-        return {
-            "action": "tool",
-            "tool_name": function_data.get("name", ""),
-            "arguments": function_data.get("arguments", {}) or {},
-            "raw_message": message,
-            "thinking": message.get("thinking", ""),
-        }
+    message = data.get("message") or {}
 
     return {
-        "action": "final",
-        "answer": message.get("content", "") or "",
-        "raw_message": message,
-        "thinking": message.get("thinking", ""),
+        "message": message,
+        "content": message.get("content") or "",
+        "thinking": message.get("thinking") or "",
+        "tool_calls": message.get("tool_calls") or [],
+        "done": data.get("done"),
+        "done_reason": data.get("done_reason"),
+        "raw_response": data,
     }

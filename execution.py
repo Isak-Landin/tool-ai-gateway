@@ -1,5 +1,5 @@
 from project_handle import ProjectHandle
-from ollama.ollama_client import call_ollama, parse_model_output
+from ollama.ollama_client import call_ollama
 from archon.archon import archon_search, archon_rag_query
 
 
@@ -8,9 +8,61 @@ class WorkflowExecutionError(Exception):
 
 
 class WorkflowOrchestrator:
+    def _build_history(self, history_rows: list[dict]) -> list[dict]:
+        history: list[dict] = []
+
+        for row in history_rows:
+            message: dict = {
+                "role": row.get("role"),
+                "content": row.get("content") or "",
+            }
+
+            thinking = row.get("thinking")
+            if thinking:
+                message["thinking"] = thinking
+
+            tool_calls = row.get("tool_calls_json")
+            if tool_calls:
+                message["tool_calls"] = tool_calls
+
+            history.append(message)
+
+        return history
+
+    def _collect_selected_context(self, handle: ProjectHandle, selected_files: list[str]) -> list[str]:
+        if not selected_files:
+            return []
+
+        file_rows = handle.files.list_by_project()
+        selected_names = set(selected_files)
+
+        selected_context: list[str] = []
+        for file_row in file_rows:
+            if file_row.get("name") in selected_names and file_row.get("content"):
+                selected_context.append(file_row["content"])
+
+        return selected_context
+
+    def _execute_tool_call(self, tool_call: dict) -> tuple[str, dict]:
+        function_data = tool_call.get("function") or {}
+        tool_name = function_data.get("name") or ""
+        arguments = function_data.get("arguments") or {}
+
+        if not tool_name:
+            raise WorkflowExecutionError("Ollama returned a tool call without function.name")
+
+        if not isinstance(arguments, dict):
+            raise WorkflowExecutionError("Ollama returned non-dict tool arguments")
+
+        if tool_name == "archon_search":
+            return tool_name, archon_search(**arguments)
+
+        if tool_name == "archon_rag_query":
+            return tool_name, archon_rag_query(**arguments)
+
+        raise WorkflowExecutionError(f"Unknown tool: {tool_name}")
 
     def run_chat(self, handle: ProjectHandle, message: str, selected_files: list[str] | None = None) -> dict:
-
         if handle is None:
             raise WorkflowExecutionError("ProjectHandle is required")
 
@@ -20,96 +72,96 @@ class WorkflowOrchestrator:
         if selected_files is None:
             selected_files = []
 
-        # STEP 1 — load history
         history_rows = handle.messages.list_by_project()
+        history = self._build_history(history_rows)
 
-        history = []
-        for m in history_rows:
-            history.append({
-                "role": m.get("role"),
-                "content": m.get("content"),
-            })
+        selected_context = self._collect_selected_context(handle, selected_files)
 
-        # STEP 2 — load selected files
-        file_rows = handle.files.list_by_project()
-
-        selected_context = []
-        if selected_files:
-            for f in file_rows:
-                if f.get("name") in selected_files:
-                    if f.get("content"):
-                        selected_context.append(f.get("content"))
-
+        effective_message = message
         if selected_context:
-            message = message + "\n\n" + "\n\n".join(selected_context)
+            effective_message = message + "\n\n" + "\n\n".join(selected_context)
 
-        # sequence start
         sequence_no = len(history_rows) + 1
 
-        # STEP 3 — call model
-        response = call_ollama(message, history)
-
-        # STEP 4 — parse response
-        result = parse_model_output(response)
-
-        tool_result = None
-
-        # STEP 5 — tool dispatch
-        if result.get("action") == "tool":
-
-            tool_name = result.get("tool_name")
-            args = result.get("arguments") or {}
-
-            if tool_name == "archon_search":
-                tool_result = archon_search(**args)
-
-            elif tool_name == "archon_rag_query":
-                tool_result = archon_rag_query(**args)
-
-            else:
-                raise WorkflowExecutionError(f"Unknown tool: {tool_name}")
-
-            tool_history = history + [
-                {"role": "user", "content": message},
-                {"role": "tool", "content": str(tool_result)},
-            ]
-
-            response = call_ollama(message, tool_history)
-            result = parse_model_output(response)
-
-        # STEP 6 — persist user message
-        handle.messages.insert_message({
-            "project_id": handle.project_id,
-            "sequence_no": sequence_no,
-            "role": "user",
-            "content": message,
-        })
-
-        sequence_no += 1
-
-        # persist tool message if used
-        if tool_result is not None:
-            handle.messages.insert_message({
+        # Persist user turn first
+        handle.messages.insert_message(
+            {
                 "project_id": handle.project_id,
                 "sequence_no": sequence_no,
-                "role": "tool",
-                "content": str(tool_result),
-            })
+                "role": "user",
+                "content": effective_message,
+                "raw_message_json": {
+                    "role": "user",
+                    "content": effective_message,
+                },
+            }
+        )
+        sequence_no += 1
+
+        response = call_ollama(effective_message, history)
+
+        ollama_message = response.get("message") or {}
+        assistant_content = ollama_message.get("content") or ""
+        assistant_thinking = ollama_message.get("thinking")
+        assistant_tool_calls = ollama_message.get("tool_calls") or []
+
+        if assistant_tool_calls:
+            # Persist the native assistant tool-call turn exactly as returned
+            handle.messages.insert_message(
+                {
+                    "project_id": handle.project_id,
+                    "sequence_no": sequence_no,
+                    "role": "assistant",
+                    "content": assistant_content or None,
+                    "thinking": assistant_thinking,
+                    "tool_calls_json": assistant_tool_calls,
+                    "raw_message_json": ollama_message,
+                    "raw_response_json": response,
+                }
+            )
             sequence_no += 1
 
-        assistant_answer = result.get("answer", "")
+            # Execute each requested tool and persist its result
+            for tool_call in assistant_tool_calls:
+                tool_name, tool_result = self._execute_tool_call(tool_call)
 
-        # persist assistant message
-        handle.messages.insert_message({
-            "project_id": handle.project_id,
-            "sequence_no": sequence_no,
-            "role": "assistant",
-            "content": assistant_answer,
-        })
+                handle.messages.insert_message(
+                    {
+                        "project_id": handle.project_id,
+                        "sequence_no": sequence_no,
+                        "role": "tool",
+                        "content": str(tool_result),
+                        "tool_name": tool_name,
+                        "raw_message_json": {
+                            "role": "tool",
+                            "content": str(tool_result),
+                        },
+                        "raw_response_json": tool_result,
+                    }
+                )
+                sequence_no += 1
+
+            raise WorkflowExecutionError(
+                "Native Ollama tool follow-up requires ollama/ollama_client.py and ollama/builder.py "
+                "to support full message-history requests with tools."
+            )
+
+        # Final non-tool assistant turn
+        handle.messages.insert_message(
+            {
+                "project_id": handle.project_id,
+                "sequence_no": sequence_no,
+                "role": "assistant",
+                "content": assistant_content,
+                "thinking": assistant_thinking,
+                "raw_message_json": ollama_message,
+                "raw_response_json": response,
+            }
+        )
 
         return {
             "ok": True,
             "execution_type": "chat",
             "project_id": handle.project_id,
-            "answer": assistant_answer,
+            "answer": assistant_content,
         }

@@ -5,9 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
-from project_resolution import ProjectResolver
-from runtime_binding import ProjectBinder
-from execution import WorkflowOrchestrator
+from project_resolution import ProjectResolver, ProjectResolutionError, ProjectNotFoundError
+from runtime_binding import ProjectBinder, ProjectBindingError
+from execution import WorkflowOrchestrator, WorkflowExecutionError
 
 
 LOCAL_SERVER_URL = os.getenv("LOCAL_SERVER_URL")
@@ -40,26 +40,24 @@ class ChatResponse(BaseModel):
     next_layer: str
 
 
-def chat_workflow_entry(req: ChatRequest):
-
+def chat_workflow_entry(req: ChatRequest) -> ChatResponse:
     resolver = ProjectResolver()
     binder = ProjectBinder()
     orchestrator = WorkflowOrchestrator()
 
     project_row = resolver.resolve_by_id(req.project_id)
-
     handle = binder.bind(project_row)
 
     result = orchestrator.run_chat(
-        handle,
-        req.message,
-        req.selected_files,
+        handle=handle,
+        message=req.message,
+        selected_files=req.selected_files,
     )
 
     return ChatResponse(
         ok=result.get("ok", False),
         project_id=req.project_id,
-        message=result.get("answer", ""),
+        message=result.get("answer", result.get("message", "")),
         selected_files=req.selected_files,
         next_layer="execution_completed",
     )
@@ -92,14 +90,10 @@ def chat(req: ChatRequest):
 
     try:
         return chat_workflow_entry(req)
-    except NotImplementedError as e:
-        return ChatResponse(
-            ok=False,
-            project_id=req.project_id,
-            message=req.message,
-            selected_files=req.selected_files,
-            next_layer=str(e),
-        )
+    except ProjectNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except (ProjectResolutionError, ProjectBindingError, WorkflowExecutionError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.get("/debug")

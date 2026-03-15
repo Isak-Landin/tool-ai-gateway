@@ -2,10 +2,27 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir fastapi uvicorn requests duckduckgo-search
-RUN apt -y update && apt -y install curl
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir \
+    fastapi \
+    uvicorn \
+    requests \
+    duckduckgo-search \
+    sqlalchemy \
+    psycopg[binary]
 
 COPY tool_gateway.py /app/tool_gateway.py
+COPY project_resolution.py /app/project_resolution.py
+COPY runtime_binding.py /app/runtime_binding.py
+COPY project_handle.py /app/project_handle.py
+COPY execution.py /app/execution.py
+COPY persistence.py /app/persistence.py
+COPY errors.py /app/errors.py
+COPY db /app/db
+COPY git /app/git
 COPY ollama /app/ollama
 COPY archon /app/archon
 COPY web_search /app/web_search
@@ -13,4 +30,4 @@ COPY index.html /app/index.html
 
 ENV PYTHONUNBUFFERED=1
 
-CMD ["uvicorn", "tool_gateway:app", "--host", "0.0.0.0", "--port", "4100"]
+CMD ["sh", "-c", "uvicorn tool_gateway:app --host 0.0.0.0 --port ${GATEWAY_PORT}"]
