@@ -1,18 +1,15 @@
-import json
 import os
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
-import requests
+from pydantic import BaseModel, Field
 
-from archon.archon import archon_search, archon_rag_query
-from web_search.web_search import web_search
-from ollama.ollama_client import call_ollama, parse_model_output
+from project_resolution import ProjectResolver
+from runtime_binding import ProjectBinder
+from execution import WorkflowOrchestrator
 
 
-MAX_TOOL_LOOPS = int(os.getenv("MAX_TOOL_LOOPS", "5"))
 LOCAL_SERVER_URL = os.getenv("LOCAL_SERVER_URL")
 if LOCAL_SERVER_URL is None:
     print("COULD NOT FIND LOCAL IP OR URL")
@@ -22,9 +19,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        LOCAL_SERVER_URL,
-    ],
+    allow_origins=[LOCAL_SERVER_URL],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -32,46 +27,42 @@ app.add_middleware(
 
 
 class ChatRequest(BaseModel):
+    project_id: int
     message: str
-    """
-    Expected syntax for files:
-    req.files
-    {
-        _key1: _content1,
-        _key2: _content2,
-        ...
-    }
-    
-    Therefore, make use of dict.items() to iterate and match keys to value
-    """
-    files: dict[str, str] # contains name and content for each given file, name as key and content as value
+    selected_files: list[str] = Field(default_factory=list)
 
 
-def run_tool(tool_name: str, arguments: dict):
-    if tool_name == "archon_search":
-        return archon_search(
-            query=arguments.get("query", ""),
-            source=arguments.get("source", ""),
-            match_count=arguments.get("match_count", 5),
-            return_mode=arguments.get("return_mode", "chunks"),
-        )
+class ChatResponse(BaseModel):
+    ok: bool
+    project_id: int
+    message: str
+    selected_files: list[str]
+    next_layer: str
 
-    if tool_name == "archon_rag_query":
-        return archon_rag_query(
-            query=arguments.get("query", ""),
-            source=arguments.get("source", ""),
-            match_count=arguments.get("match_count", 5),
-            return_mode=arguments.get("return_mode", "chunks"),
-        )
 
-    if tool_name == "web_search":
-        return web_search(arguments.get("query", ""))
+def chat_workflow_entry(req: ChatRequest):
 
-    return {
-        "error": "unknown_tool",
-        "tool_name": tool_name,
-        "arguments": arguments,
-    }
+    resolver = ProjectResolver()
+    binder = ProjectBinder()
+    orchestrator = WorkflowOrchestrator()
+
+    project_row = resolver.resolve_by_id(req.project_id)
+
+    handle = binder.bind(project_row)
+
+    result = orchestrator.run_chat(
+        handle,
+        req.message,
+        req.selected_files,
+    )
+
+    return ChatResponse(
+        ok=result.get("ok", False),
+        project_id=req.project_id,
+        message=result.get("answer", ""),
+        selected_files=req.selected_files,
+        next_layer="execution_completed",
+    )
 
 
 @app.get("/archon_search")
@@ -81,87 +72,34 @@ def http_archon_search(
     match_count: int = 5,
     return_mode: str = "chunks",
 ):
-    return archon_search(
-        query=q,
-        source=source,
-        match_count=match_count,
-        return_mode=return_mode,
-    )
+    raise HTTPException(status_code=501, detail="archon_search route not wired yet")
 
 
 @app.post("/archon_rag_query")
 def http_archon_rag_query(data: dict):
-    return archon_rag_query(
-        query=data.get("query", ""),
-        source=data.get("source", ""),
-        match_count=data.get("match_count", 5),
-        return_mode=data.get("return_mode", "chunks"),
-    )
+    raise HTTPException(status_code=501, detail="archon_rag_query route not wired yet")
 
 
 @app.get("/web_search")
 def http_web_search(q: str):
-    return web_search(q)
+    raise HTTPException(status_code=501, detail="web_search route not wired yet")
 
 
-@app.post("/chat")
+@app.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
-    history: list[dict] = []
-    print(str(req.message))
+    if not str(req.message).strip():
+        raise HTTPException(status_code=400, detail="message is required")
 
-
-    for _ in range(MAX_TOOL_LOOPS):
-        try:
-            ollama_data = call_ollama(
-                user_message=req.message,
-                history=history,
-            )
-        except requests.RequestException as e:
-            print(f"REQUEST FAILED: {e}")
-            raise HTTPException(status_code=500, detail=f"ollama_request_failed: {str(e)}")
-
-        parsed = parse_model_output(ollama_data)
-
-        if parsed.get("action") == "tool":
-            tool_name = parsed.get("tool_name", "")
-            arguments = parsed.get("arguments", {})
-
-            try:
-                tool_result = run_tool(tool_name, arguments)
-            except requests.RequestException as e:
-                print(f"REQUEST FAILED: {e}")
-                raise HTTPException(status_code=500, detail=f"tool_request_failed: {str(e)}")
-            except Exception as e:
-                tool_result = {
-                    "error": "tool_runtime_failed",
-                    "tool_name": tool_name,
-                    "message": str(e),
-                }
-
-            assistant_message = ollama_data.get("message", {}) or {}
-            history.append(assistant_message)
-            history.append(
-                {
-                    "role": "tool",
-                    "tool_name": tool_name,
-                    "content": json.dumps(tool_result, ensure_ascii=False),
-                }
-            )
-            continue
-
-        return {
-            "ok": True,
-            "answer": parsed.get("answer", ""),
-            "thinking": parsed.get("thinking", ""),
-            "messages": history,
-            "ollama_response": ollama_data,
-        }
-
-    return {
-        "ok": False,
-        "error": "max_tool_loops_reached",
-        "message": f"Model exceeded {MAX_TOOL_LOOPS} tool iterations",
-    }
+    try:
+        return chat_workflow_entry(req)
+    except NotImplementedError as e:
+        return ChatResponse(
+            ok=False,
+            project_id=req.project_id,
+            message=req.message,
+            selected_files=req.selected_files,
+            next_layer=str(e),
+        )
 
 
 @app.get("/debug")
