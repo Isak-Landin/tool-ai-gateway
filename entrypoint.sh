@@ -8,4 +8,4 @@ done
 
 python -m db.init_db
 
-exec uvicorn tool_gateway:app --host 0.0.0.0 --port "${GATEWAY_PORT}"
+exec uvicorn api:app --host 0.0.0.0 --port "${GATEWAY_PORT}"

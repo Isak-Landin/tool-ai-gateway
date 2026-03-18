@@ -15,7 +15,7 @@ RUN pip install --no-cache-dir \
     sqlalchemy \
     psycopg[binary]
 
-COPY tool_gateway.py /app/tool_gateway.py
+COPY api.py /app/api.py
 COPY project_resolution.py /app/project_resolution.py
 COPY runtime_binding.py /app/runtime_binding.py
 COPY project_handle.py /app/project_handle.py
