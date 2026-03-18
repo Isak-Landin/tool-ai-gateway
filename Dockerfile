@@ -22,7 +22,7 @@ COPY project_handle.py /app/project_handle.py
 COPY execution.py /app/execution.py
 COPY persistence.py /app/persistence.py
 COPY errors.py /app/errors.py
-COPY db /app/db
+COPY db/* /app/db/
 COPY git /app/git
 COPY ollama /app/ollama
 COPY archon /app/archon
