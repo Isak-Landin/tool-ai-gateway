@@ -6,6 +6,6 @@ until pg_isready -h gateway-db -p 5432 -U "${POSTGRES_USER}" -d "${POSTGRES_DB}"
   sleep 2
 done
 
-# python /app/db/init_db.py
+python -m db.init_db
 
 exec uvicorn tool_gateway:app --host 0.0.0.0 --port "${GATEWAY_PORT}"
