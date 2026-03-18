@@ -17,7 +17,7 @@ OLLAMA_CONTAINER_NAME="ollama"
 OLLAMA_IMAGE="ollama/ollama:latest"
 OLLAMA_VOLUME="ollama"
 OLLAMA_PORT="11434"
-OLLAMA_MODEL="seamon67/Ministral-3-Reasoning:14b"
+OLLAMA_MODEL="qwen3:8b"
 
 retry() {
   local attempts="$1"

@@ -11,24 +11,44 @@ services:
     ports:
       - "${GATEWAY_PORT}:${GATEWAY_PORT}"
     restart: unless-stopped
+    depends_on:
+      - gateway-db
     networks:
       - web_network
 
-  #tool-gateway-ui:
-    #build:
-      #context: ./ui/
-      #dockerfile: Dockerfile
-    #container_name: UI-tool-gateway
-    #env_file:
-      #- ./ui/.env
-    #environment:
-      #GATEWAY_BASE_URL: ${GATEWAY_BASE_URL}
-      #PYTHONUNBUFFERED: "1"
-    #ports:
-      #- "${UI_PORT}:${UI_PORT}"
-    #restart: unless-stopped
-    #networks:
-      #- web_network
+  tool-gateway-ui:
+    build:
+      context: ./ui/
+      dockerfile: Dockerfile
+    container_name: UI-tool-gateway
+    env_file:
+      - ./ui/.env
+    environment:
+      GATEWAY_BASE_URL: ${GATEWAY_BASE_URL}
+      PYTHONUNBUFFERED: "1"
+    ports:
+      - "${UI_PORT}:${UI_PORT}"
+    restart: unless-stopped
+    networks:
+      - web_network
+
+  gateway-db:
+    image: postgres:17
+    container_name: AI-tool-gateway-db
+    env_file:
+      - ./.env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - tool_gateway_db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - web_network
+
+volumes:
+  tool_gateway_db_data:
 
 networks:
   web_network:
