@@ -27,7 +27,10 @@ COPY ollama /app/ollama
 COPY archon /app/archon
 COPY web_search /app/web_search
 COPY index.html /app/index.html
+COPY entrypoint.sh /app/entrypoint.sh
+
+RUN chmod +x /app/entrypoint.sh
 
 ENV PYTHONUNBUFFERED=1
 
-CMD ["sh", "-c", "uvicorn tool_gateway:app --host 0.0.0.0 --port ${GATEWAY_PORT}"]
+CMD ["/app/entrypoint.sh"]
