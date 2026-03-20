@@ -6,8 +6,8 @@ app = Flask(__name__, template_folder="templates", static_folder="static")
 
 # Load environment variables
 GATEWAY_BASE_URL = os.getenv("GATEWAY_BASE_URL", "http://localhost:8000").rstrip("/")
-BRIDGE_HOST = os.getenv("BRIDGE_HOST", "0.0.0.0")
-BRIDGE_PORT = int(os.getenv("BRIDGE_PORT", "4110"))
+UI_HOST = os.getenv("UI_HOST", "0.0.0.0")
+UI_PORT = int(os.getenv("UI_PORT", "4000"))
 
 # Session/auth (for MVP, using simple session storage)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key-change-in-prod")
@@ -126,7 +126,7 @@ def health():
 
 if __name__ == "__main__":
     app.run(
-        host=BRIDGE_HOST,
-        port=BRIDGE_PORT,
+        host=UI_HOST,
+        port=UI_PORT,
         debug=os.getenv("FLASK_DEBUG", "false").lower() == "true"
     )
