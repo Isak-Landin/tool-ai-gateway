@@ -1,3 +1,4 @@
+import datetime
 import os
 
 from fastapi import FastAPI, HTTPException
@@ -62,7 +63,7 @@ class ProjectDetailResponse(BaseModel):
     name: str
     ai_model_name: str
     orchestrator_name: str
-    created_at: str
+    created_at: datetime.datetime
 
 class ProjectsListResponse(BaseModel):
     """For GET /projects"""
