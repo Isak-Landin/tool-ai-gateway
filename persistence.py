@@ -80,7 +80,32 @@ class ProjectsRepository:
         - Handle SQLAlchemyError
         - Finally: close session if needed
         """
-        # Query all projects (no WHERE clause)
+        session = self.db_connection or SessionLocal()
+        try:
+            # Query all projects (no WHERE clause)
+            all_projects_query = select(Project.id, Project.name, Project.updated_at).order_by(Project.updated_at.desc())
+            all_projects_result = session.execute(all_projects_query).fetchall()
+            projects_list = []
+            if all_projects_result.count() > 0:
+                for project in all_projects_result:
+                    project_dict = {
+                        "id": project.id,
+                        "name": project.name,
+                        "updated_at": project.updated_at,
+                        "model_name": project.model_name,
+                        "remote_repo_url": project.remote_repo_url,
+                    }
+                    projects_list.append(project_dict)
+                return projects_list
+            elif all_projects_result.count() == 0:
+                return [{}]
+        except SQLAlchemyError as e:
+            raise PersistenceError(str(e))
+        finally:
+            if self.db_connection is None and session:
+                session.close()
+        raise PersistenceError("Reached end of listings without finding projects")
+
         # Return list of dicts with: id, name, model_name, orchestrator_name, created_at, etc.
         # Same exception handling as other methods
 

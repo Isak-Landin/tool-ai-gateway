@@ -127,19 +127,6 @@ end of TOOLS ROUTES
 
 @app.post("/projects/create")
 def create_project(req: ProjectCreateRequest) -> ProjectCreateResponse:
-    """
-    class ProjectCreateRequest(BaseModel):
-        name: str
-        remote_repo_url: str
-        ssh_key: str
-
-    class ProjectCreateResponse(BaseModel):
-        ok: bool
-        project_id: int
-        name: str
-        remote_repo_url: str
-        ssh_key: str
-    """
     response = HTTPException(status_code=500, detail="Create Project reached a separate return end to intended")
     try:
         name = req.name
@@ -181,7 +168,7 @@ def list_projects():
     try:
         project_repository = ProjectsRepository()
         all_projects = project_repository.list_all_projects()
-        return
+        return ProjectsListResponse(ok=True, projects=all_projects)
     except ProjectNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except (ProjectResolutionError, ProjectBindingError, WorkflowExecutionError) as e:
@@ -202,6 +189,15 @@ def get_project(project_id: int):
        - DO NOT call WorkflowOrchestrator here
        - Just return project metadata
     """
+    try:
+        project_resolver = ProjectResolver()
+        project = project_resolver.resolve_by_id(project_id)
+        return ProjectDetailResponse(ok=True, project=project)
+    except ProjectNotFoundError as e:
+        return HTTPException(status_code=404, detail=str(e))
+    except ProjectResolutionError as e:
+        return HTTPException(status_code=400, detail=str(e))
+
 
 
 @app.patch("/projects/{project_id}")
