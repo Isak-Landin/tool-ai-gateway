@@ -62,23 +62,23 @@ def create_project():
         result = response.json()
 
         if result.get("ok"):
-            # Redirect to project detail page
-            project_id = result.get("project_id")
-            return redirect(url_for("project_detail", project_id=project_id))
+            # Return JSON with project_id (not redirect)
+            return jsonify({
+                "ok": True,
+                "project_id": result.get("project_id")
+            })
         else:
             error = result.get("error", "Unknown error")
-            return render_template(
-                "create_project.html",
-                gateway_base_url=GATEWAY_BASE_URL,
-                error_msg=f"Creation failed: {error}"
-            ), 400
+            return jsonify({
+                "ok": False,
+                "error": error
+            }), 400
 
     except requests.RequestException as e:
-        return render_template(
-            "create_project.html",
-            gateway_base_url=GATEWAY_BASE_URL,
-            error_msg=f"Gateway connection failed: {str(e)}"
-        ), 502
+        return jsonify({
+            "ok": False,
+            "error": f"Gateway connection failed: {str(e)}"
+        }), 502
 
 
 @app.route("/projects/<int:project_id>")
