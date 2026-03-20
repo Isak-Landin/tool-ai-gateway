@@ -31,7 +31,7 @@ class ProjectsRepository:
             return {
                 "id": result.id,
                 "name": result.name,
-                "model_name": result.model_name,
+                "ai_model_name": result.ai_model_name,
                 "orchestrator_name": result.orchestrator_name,
                 "system_prompt_version": result.system_prompt_version,
                 "system_prompt_hash": result.system_prompt_hash,
@@ -90,7 +90,7 @@ class ProjectsRepository:
                 {
                     "id": r.id,
                     "name": r.name,
-                    "model_name": r.model_name,
+                    "ai_model_name": r.ai_model_name,
                     "orchestrator_name": r.orchestrator_name,
                     # Add any other fields needed
                 }
@@ -101,10 +101,6 @@ class ProjectsRepository:
         finally:
             if self.db_connection is None and session:
                 session.close()
-        raise PersistenceError("Reached end of listings without finding projects")
-
-        # Return list of dicts with: id, name, model_name, orchestrator_name, created_at, etc.
-        # Same exception handling as other methods
 
 
 

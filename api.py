@@ -58,7 +58,7 @@ class ProjectDetailResponse(BaseModel):
     ok: bool
     id: int
     name: str
-    model_name: str
+    ai_model_name: str
     orchestrator_name: str
 
 class ProjectsListResponse(BaseModel):
