@@ -22,7 +22,7 @@ services:
       dockerfile: Dockerfile
     container_name: UI-tool-gateway
     env_file:
-      - ./ui/.env
+      - ./.env
     environment:
       GATEWAY_BASE_URL: ${GATEWAY_BASE_URL}
       PYTHONUNBUFFERED: "1"
