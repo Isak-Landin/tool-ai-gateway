@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Create Project - AI Tool Gateway{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <h1>Create New Project</h1>
+        
+        <form id="createProjectForm" method="POST" action="{{ url_for('create_project') }}">
+            <div class="form-group">
+                <label for="name">Project Name *</label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    name="name" 
+                    required 
+                    placeholder="e.g., my-ai-project"
+                    class="form-input"
+                >
+                <small class="form-hint">A unique name for your project</small>
+            </div>
+
+            <div class="form-group">
+                <label for="remote_repo_url">Remote Repository URL *</label>
+                <input 
+                    type="url" 
+                    id="remote_repo_url" 
+                    name="remote_repo_url" 
+                    required 
+                    placeholder="e.g., git@github.com:user/repo.git"
+                    class="form-input"
+                >
+                <small class="form-hint">Git repository URL (SSH or HTTPS)</small>
+            </div>
+
+            <div class="form-group">
+                <label for="ssh_key">SSH Key *</label>
+                <textarea 
+                    id="ssh_key" 
+                    name="ssh_key" 
+                    required 
+                    placeholder="Paste your SSH private key here"
+                    rows="6"
+                    class="form-textarea"
+                ></textarea>
+                <small class="form-hint">SSH private key for repository access</small>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Create Project</button>
+                <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Handle form submission
+    document.getElementById('createProjectForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating...';
+        
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: document.getElementById('name').value,
+                    remote_repo_url: document.getElementById('remote_repo_url').value,
+                    ssh_key: document.getElementById('ssh_key').value,
+                })
+            });
+            
+            const data = await response.json();
+            if (data.ok) {
+                window.location.href = `/projects/${data.project_id}`;
+            } else {
+                alert(`Error: ${data.error || 'Failed to create project'}`);
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Project';
+            }
+        } catch (error) {
+            alert(`Error: ${error.message}`);
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Project';
+        }
+    });
+</script>
+{% endblock %}

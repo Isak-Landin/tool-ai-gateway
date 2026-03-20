@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }} - AI Tool Gateway{% endblock %}
+
+{% block content %}
+<div class="project-detail-container">
+    <div class="project-detail-header">
+        <h1>{{ project.name }}</h1>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">← Back to Projects</a>
+    </div>
+
+    <div class="project-detail-card">
+        <div class="detail-section">
+            <h3>Project Information</h3>
+            <div class="detail-row">
+                <span class="detail-label">Project ID:</span>
+                <span class="detail-value">{{ project_id }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Model:</span>
+                <span class="detail-value">{{ project.model_name }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Orchestrator:</span>
+                <span class="detail-value">{{ project.orchestrator_name }}</span>
+            </div>
+            {% if project.remote_repo_url %}
+                <div class="detail-row">
+                    <span class="detail-label">Repository:</span>
+                    <span class="detail-value">{{ project.remote_repo_url }}</span>
+                </div>
+            {% endif %}
+            {% if project.branch %}
+                <div class="detail-row">
+                    <span class="detail-label">Branch:</span>
+                    <span class="detail-value">{{ project.branch }}</span>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="detail-section">
+            <h3>Chat Interface</h3>
+            <div class="chat-placeholder">
+                <p>🚧 Chat interface coming soon...</p>
+                <p class="text-muted">The chat interface for this project will be implemented in the next iteration.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

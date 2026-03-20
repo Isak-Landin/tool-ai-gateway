@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Projects - AI Tool Gateway{% endblock %}
+
+{% block content %}
+<div class="projects-container">
+    <div class="projects-header">
+        <h1>Projects</h1>
+        <a href="{{ url_for('create_project') }}" class="btn btn-primary">
+            + New Project
+        </a>
+    </div>
+
+    {% if projects %}
+        <div class="projects-grid">
+            {% for project in projects %}
+                <a href="{{ url_for('project_detail', project_id=project.id) }}" class="project-card">
+                    <div class="project-card-header">
+                        <h3>{{ project.name }}</h3>
+                        <span class="project-id">ID: {{ project.id }}</span>
+                    </div>
+                    <div class="project-card-body">
+                        <p class="project-meta">
+                            <strong>Model:</strong> {{ project.model_name }}
+                        </p>
+                        <p class="project-meta">
+                            <strong>Orchestrator:</strong> {{ project.orchestrator_name }}
+                        </p>
+                        {% if project.remote_repo_url %}
+                            <p class="project-meta">
+                                <strong>Repo:</strong> 
+                                <code class="repo-url">{{ project.remote_repo_url }}</code>
+                            </p>
+                        {% endif %}
+                    </div>
+                    <div class="project-card-footer">
+                        <small>Created: {{ project.created_at[:10] if project.created_at else 'N/A' }}</small>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <h2>No Projects Yet</h2>
+            <p>Create your first project to get started with the AI Tool Gateway.</p>
+            <a href="{{ url_for('create_project') }}" class="btn btn-primary btn-lg">
+                Create First Project
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

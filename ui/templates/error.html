@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Error - AI Tool Gateway{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-card">
+        <div class="error-icon">❌</div>
+        <h1>{{ message or 'An Error Occurred' }}</h1>
+        <a href="{{ url_for('index') }}" class="btn btn-primary">Back to Projects</a>
+    </div>
+</div>
+{% endblock %}
