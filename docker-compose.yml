@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: AI-tool-gateway
+    container_name: ai-tool-gateway
     env_file:
       - ./.env
     environment:
@@ -20,7 +20,7 @@ services:
     build:
       context: ./ui/
       dockerfile: Dockerfile
-    container_name: UI-tool-gateway
+    container_name: ui-tool-gateway
     env_file:
       - ./.env
     environment:
@@ -36,7 +36,7 @@ services:
 
   gateway-db:
     image: postgres:17
-    container_name: AI-tool-gateway-db
+    container_name: ai-tool-gateway-db
     env_file:
       - ./.env
     environment:
