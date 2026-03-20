@@ -32,7 +32,7 @@ class Project(Base):
     repo_path: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     remote_repo_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     branch: Mapped[str] = mapped_column(String(255), nullable=False, server_default="main")
-    key_path: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    ssh_key: Mapped[str | None] = mapped_column(String(1024), nullable=True)
 
     system_prompt_version: Mapped[str | None] = mapped_column(String(255), nullable=True)
     system_prompt_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)

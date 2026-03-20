@@ -1,5 +1,5 @@
 from sqlalchemy import select
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from db.session import SessionLocal
 from db.models import Project, Message, File
@@ -7,6 +7,12 @@ from db.models import Project, Message, File
 
 class PersistenceError(Exception):
     pass
+
+class DuplicationError(Exception):
+    pass
+
+
+
 
 
 class ProjectsRepository:
@@ -33,8 +39,41 @@ class ProjectsRepository:
         except SQLAlchemyError as e:
             raise PersistenceError(str(e))
         finally:
-            if self.db_connection is None:
+            if self.db_connection is None and session:
                 session.close()
+
+    def create_project(self, name, remote_repo_url, ssh_key):
+        session = self.db_connection or SessionLocal()
+        try:
+            remote_repo_query = select(Project).where(Project.remote_repo_url == remote_repo_url)
+            remote_repo_result = session.execute(remote_repo_query).scalar_one_or_none()
+
+            ssh_key_query = select(Project).where(Project.ssh_key == ssh_key)
+            ssh_key_result = session.execute(ssh_key_query).scalar_one_or_none()
+            if remote_repo_result or ssh_key_result:
+                raise PersistenceError("Duplicate of Remote Repo or SSH Key")
+
+            new_project = Project(name=name, remote_repo_url=remote_repo_url, ssh_key=ssh_key)
+            session.add(new_project)
+            session.commit()
+
+            return {
+                "id": new_project.id,
+                "name": new_project.name,
+                "remote_repo_url": new_project.remote_repo_url,
+                "ssh_key": new_project.ssh_key,
+            }
+        except SQLAlchemyError as e:
+            raise PersistenceError(str(e))
+        except IntegrityError as e:
+            raise PersistenceError(str(e))
+        finally:
+            if self.db_connection is None and session:
+                session.close()
+
+
+
+
 
 
 class MessagesRepository:

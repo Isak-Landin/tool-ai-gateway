@@ -6,7 +6,6 @@ from archon.archon import archon_search, archon_rag_query
 class WorkflowExecutionError(Exception):
     pass
 
-
 class WorkflowOrchestrator:
     def _build_history(self, history_rows: list[dict]) -> list[dict]:
         history: list[dict] = []
