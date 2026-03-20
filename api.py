@@ -174,7 +174,9 @@ def list_projects():
     try:
         project_repository = ProjectsRepository()
         all_projects = project_repository.list_all_projects()
-        return ProjectsListResponse(ok=True, projects=all_projects)
+        # Wrap each project dict to add 'ok' field
+        projects_with_ok = [{'ok': True, **project} for project in all_projects]
+        return ProjectsListResponse(ok=True, projects=projects_with_ok)
     except ProjectNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except (ProjectResolutionError, ProjectBindingError, WorkflowExecutionError) as e:
