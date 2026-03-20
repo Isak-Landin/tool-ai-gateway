@@ -7,13 +7,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir \
-    fastapi \
-    uvicorn \
-    requests \
-    duckduckgo-search \
-    sqlalchemy \
-    psycopg[binary]
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY api.py /app/api.py
 COPY project_resolution.py /app/project_resolution.py
