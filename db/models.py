@@ -18,7 +18,9 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.base import Base
+import os
 
+default_model = os.getenv("OLLAMA_MODEL", "qwen3:8b")
 
 class Project(Base):
     __tablename__ = "projects"
@@ -26,8 +28,8 @@ class Project(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
 
-    model_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    orchestrator_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    model_name: Mapped[str] = mapped_column(String(255), nullable=False, server_default=default_model)
+    orchestrator_name: Mapped[str] = mapped_column(String(255), nullable=False, server_default="default")
 
     repo_path: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     remote_repo_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)

@@ -19,6 +19,13 @@ OLLAMA_VOLUME="ollama"
 OLLAMA_PORT="11434"
 OLLAMA_MODEL="qwen3:8b"
 
+GITHUB_REPO_SSH_URL="git@github.com:Isak-Landin/tool-ai-gateway.git"
+GITHUB_CLONE_DIR="/opt/tool-ai-gateway"
+SSH_DIR="/root/.ssh"
+SSH_PRIVATE_KEY="${SSH_DIR}/id_ed25519"
+SSH_PUBLIC_KEY="${SSH_DIR}/id_ed25519.pub"
+SSH_KNOWN_HOSTS="${SSH_DIR}/known_hosts"
+
 retry() {
   local attempts="$1"
   local sleep_seconds="$2"
@@ -56,10 +63,11 @@ install_base_packages() {
   retry 5 5 apt-get install -y \
     ca-certificates \
     curl \
-    gnupg \
-    lsb-release \
     git \
+    gnupg \
     jq \
+    lsb-release \
+    openssh-client \
     pciutils \
     software-properties-common
 }
@@ -220,6 +228,47 @@ maybe_recover_docker_runtime() {
   sleep 3
 }
 
+setup_github_ssh() {
+  log "Setting up GitHub SSH key"
+  install -d -m 700 "$SSH_DIR"
+
+  if [ ! -f "$SSH_PRIVATE_KEY" ]; then
+    ssh-keygen -t ed25519 -f "$SSH_PRIVATE_KEY" -N "" -C "host-bootstrap@$(hostname)"
+  else
+    log "SSH key already exists at ${SSH_PRIVATE_KEY}"
+  fi
+
+  touch "$SSH_KNOWN_HOSTS"
+  chmod 600 "$SSH_KNOWN_HOSTS"
+  ssh-keyscan -H github.com >> "$SSH_KNOWN_HOSTS" 2>/dev/null || true
+
+  eval "$(ssh-agent -s)" >/dev/null
+  ssh-add "$SSH_PRIVATE_KEY" >/dev/null
+}
+
+clone_tool_ai_gateway_repo() {
+  if [ -d "${GITHUB_CLONE_DIR}/.git" ]; then
+    log "Repository already exists at ${GITHUB_CLONE_DIR}"
+    return 0
+  fi
+
+  mkdir -p "$(dirname "$GITHUB_CLONE_DIR")"
+  log "Attempting to clone ${GITHUB_REPO_SSH_URL} into ${GITHUB_CLONE_DIR}"
+
+  if GIT_SSH_COMMAND="ssh -o BatchMode=yes" git ls-remote "$GITHUB_REPO_SSH_URL" >/dev/null 2>&1; then
+    retry 3 5 git clone "$GITHUB_REPO_SSH_URL" "$GITHUB_CLONE_DIR"
+    log "Repository cloned to ${GITHUB_CLONE_DIR}"
+  else
+    log "GitHub SSH authentication is not ready yet. Repository clone skipped for now; add the printed public key to GitHub and re-run the script."
+  fi
+}
+
+print_github_public_key_last() {
+  echo
+  echo "GitHub public key:"
+  cat "$SSH_PUBLIC_KEY"
+}
+
 main() {
   require_root
   mkdir -p "$(dirname "$LOG_FILE")"
@@ -255,10 +304,15 @@ main() {
     pull_model_in_ollama_container
   }
 
+  setup_github_ssh
+  clone_tool_ai_gateway_repo
+
   log "Bootstrap complete"
   log "Portainer: https://$(hostname -I | awk '{print $1}'):${PORTAINER_HTTPS_PORT}"
   log "Ollama API: http://$(hostname -I | awk '{print $1}'):${OLLAMA_PORT}"
   log "Model installed: ${OLLAMA_MODEL}"
+
+  print_github_public_key_last
 }
 
 main "$@"
