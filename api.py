@@ -10,6 +10,8 @@ from runtime_binding import ProjectBinder, ProjectBindingError
 from execution import WorkflowOrchestrator, WorkflowExecutionError
 from persistence import ProjectsRepository, DuplicationError, PersistenceError
 
+from typing import Any
+
 LOCAL_SERVER_URL = os.getenv("LOCAL_SERVER_URL")
 if LOCAL_SERVER_URL is None:
     print("COULD NOT FIND LOCAL IP OR URL")
@@ -126,8 +128,8 @@ end of TOOLS ROUTES
 # =========================================================
 
 @app.post("/projects/create")
-def create_project(req: ProjectCreateRequest) -> ProjectCreateResponse:
-    response = HTTPException(status_code=500, detail="Create Project reached a separate return end to intended")
+def create_project(req: ProjectCreateRequest) -> (ProjectCreateResponse | Any):
+    new_project = None
     try:
         name = req.name
         remote_repo_url = req.remote_repo_url
@@ -141,19 +143,23 @@ def create_project(req: ProjectCreateRequest) -> ProjectCreateResponse:
             ssh_key=ssh_key,
         )
         if new_project:
-            response = ProjectCreateResponse(
-                ok=True,
-                project_id=new_project.project_id,
-                name=new_project.name,
-                remote_repo_url=new_project.remote_repo_url,
-                ssh_key=new_project.ssh_key,
-            )
+            return ProjectCreateResponse(ok=True, **new_project)
     except KeyError as e:
-        response = HTTPException(status_code=400, detail=str(e))
+        return HTTPException(status_code=400, detail=str(e))
     except DuplicationError as e:
-        response = HTTPException(status_code=400, detail=str(e))
-    finally:
-        return response
+        return HTTPException(status_code=400, detail=str(e))
+
+    if new_project:
+        return HTTPException(
+            status_code=500,
+            detail="Reached end of post.projects new_project exists, but reached end without returning it or raising other error"
+        )
+    else:
+        return HTTPException(
+            status_code=500,
+            detail="Reached end of post.projects without existing new_project and without having returned error earlier"
+        )
+
 
 
 @app.get("/projects")
