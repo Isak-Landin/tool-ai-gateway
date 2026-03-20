@@ -8,8 +8,7 @@ from pydantic import BaseModel, Field
 from project_resolution import ProjectResolver, ProjectResolutionError, ProjectNotFoundError
 from runtime_binding import ProjectBinder, ProjectBindingError
 from execution import WorkflowOrchestrator, WorkflowExecutionError
-from persistence import ProjectsRepository, DuplicationError
-
+from persistence import ProjectsRepository, DuplicationError, PersistenceError
 
 LOCAL_SERVER_URL = os.getenv("LOCAL_SERVER_URL")
 if LOCAL_SERVER_URL is None:
@@ -53,6 +52,19 @@ class ProjectCreateResponse(BaseModel):
     name: str
     remote_repo_url: str
     ssh_key: str
+
+class ProjectDetailResponse(BaseModel):
+    """For GET /projects/{project_id}"""
+    ok: bool
+    id: int
+    name: str
+    model_name: str
+    orchestrator_name: str
+
+class ProjectsListResponse(BaseModel):
+    """For GET /projects"""
+    ok: bool
+    projects: list[ProjectDetailResponse]
 
 
 # =========================================================
@@ -159,12 +171,37 @@ def create_project(req: ProjectCreateRequest) -> ProjectCreateResponse:
 
 @app.get("/projects")
 def list_projects():
-    raise HTTPException(status_code=501, detail="list_projects route not wired yet")
+    """
+    1. Instantiate ProjectsRepository()
+    2. Call list_all_projects() → returns list[dict]
+    3. Try/except for PersistenceError → 500
+    4. Return ProjectsListResponse(ok=True, projects=[...])
+       - NO ProjectResolver needed here (just listing, not validating a specific project)
+    """
+    try:
+        project_repository = ProjectsRepository()
+        all_projects = project_repository.list_all_projects()
+        return
+    except ProjectNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except (ProjectResolutionError, ProjectBindingError, WorkflowExecutionError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except PersistenceError as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/projects/{project_id}")
 def get_project(project_id: int):
-    raise HTTPException(status_code=501, detail="get_project route not wired yet")
+    """
+    1. Instantiate ProjectResolver()
+    2. Call resolve_by_id(project_id)
+       - If ProjectNotFoundError → 404
+       - If ProjectResolutionError → 400
+    3. Return ProjectDetailResponse(ok=True, ...)
+       - DO NOT call ProjectBinder here (not executing workflow)
+       - DO NOT call WorkflowOrchestrator here
+       - Just return project metadata
+    """
 
 
 @app.patch("/projects/{project_id}")

@@ -71,6 +71,19 @@ class ProjectsRepository:
             if self.db_connection is None and session:
                 session.close()
 
+    def list_all_projects(self) -> list[dict]:
+        """
+        Pattern: Similar to get_project_by_id and create_project
+        - Get session
+        - Try: execute SELECT query without WHERE clause
+        - Return list of dicts with project info
+        - Handle SQLAlchemyError
+        - Finally: close session if needed
+        """
+        # Query all projects (no WHERE clause)
+        # Return list of dicts with: id, name, model_name, orchestrator_name, created_at, etc.
+        # Same exception handling as other methods
+
 
 
 
