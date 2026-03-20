@@ -101,6 +101,7 @@ class ProjectsRepository:
                     "name": r.name,
                     "ai_model_name": r.ai_model_name,
                     "orchestrator_name": r.orchestrator_name,
+                    "created_at": r.created_at
                     # Add any other fields needed
                 }
                 for r in results

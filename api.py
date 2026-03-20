@@ -62,6 +62,7 @@ class ProjectDetailResponse(BaseModel):
     name: str
     ai_model_name: str
     orchestrator_name: str
+    created_at: str
 
 class ProjectsListResponse(BaseModel):
     """For GET /projects"""
