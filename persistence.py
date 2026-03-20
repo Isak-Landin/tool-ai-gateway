@@ -57,8 +57,17 @@ class ProjectsRepository:
             session.add(new_project)
             session.commit()
 
+            """
+            class ProjectCreateResponse(BaseModel):
+            ok: bool
+            project_id: int
+            name: str
+            remote_repo_url: str
+            ssh_key: str
+            """
+
             return {
-                "id": new_project.id,
+                "project_id": new_project.id,
                 "name": new_project.name,
                 "remote_repo_url": new_project.remote_repo_url,
                 "ssh_key": new_project.ssh_key,

@@ -142,6 +142,15 @@ def create_project(req: ProjectCreateRequest) -> (ProjectCreateResponse | Any):
             remote_repo_url=remote_repo_url,
             ssh_key=ssh_key,
         )
+        """
+        class ProjectCreateResponse(BaseModel):
+        ok: bool
+        project_id: int
+        name: str
+        remote_repo_url: str
+        ssh_key: str
+        """
+
         if new_project:
             return ProjectCreateResponse(ok=True, **new_project)
     except KeyError as e:
