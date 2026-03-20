@@ -192,7 +192,7 @@ def get_project(project_id: int):
     try:
         project_resolver = ProjectResolver()
         project = project_resolver.resolve_by_id(project_id)
-        return ProjectDetailResponse(ok=True, project=project)
+        return ProjectDetailResponse(ok=True, **project)
     except ProjectNotFoundError as e:
         return HTTPException(status_code=404, detail=str(e))
     except ProjectResolutionError as e:
