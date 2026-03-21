@@ -1,6 +1,18 @@
+function clearFieldErrors() {
+    ['name', 'remote_repo_url', 'ssh_key'].forEach(fieldName => {
+        const errorEl = document.getElementById(`${fieldName}-error`);
+        if (errorEl) {
+            errorEl.style.display = 'none';
+            errorEl.textContent = '';
+        }
+    });
+}
+
 // Handle form submission
 document.getElementById('createProjectForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    clearFieldErrors();
+
     const form = e.target;
     const submitBtn = form.querySelector('button[type="submit"]');
 
@@ -24,7 +36,15 @@ document.getElementById('createProjectForm').addEventListener('submit', async (e
         if (data.ok) {
             window.location.href = `/projects/${data.project_id}`;
         } else {
-            alert(`Error: ${data.error || 'Failed to create project'}`);
+            if (data.field) {
+                const errorEl = document.getElementById(`${data.field}-error`);
+                if (errorEl) {
+                    errorEl.textContent = data.message;
+                    errorEl.style.display = 'block';
+                }
+            } else {
+                alert(`Error: ${data.message || 'Failed to create project'}`);
+            }
             submitBtn.disabled = false;
             submitBtn.textContent = 'Create Project';
         }

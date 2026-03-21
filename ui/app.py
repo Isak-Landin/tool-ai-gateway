@@ -74,11 +74,11 @@ def create_project():
                 "project_id": result.get("project_id")
             })
         else:
-            error = result.get("error", "Unknown error")
             return jsonify({
                 "ok": False,
-                "error": error
-            }), 400
+                "field": result.get("field"),
+                "message": result.get("message", "Unknown error")
+            }), 409
 
     except requests.RequestException as e:
         return jsonify({
