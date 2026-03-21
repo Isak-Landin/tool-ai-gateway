@@ -160,8 +160,15 @@ end of TOOLS ROUTES
 # /projects
 # =========================================================
 
-@app.post("/projects", response_model=ProjectCreateResponse)
-def create_project(req: ProjectCreateRequest) -> ProjectCreateResponse:
+class ProjectCreateErrorResponse(BaseModel):
+    """Error response for project creation"""
+    ok: bool = False
+    error_code: str
+    field: str | None = None
+    message: str
+
+@app.post("/projects", response_model=Union[ProjectCreateResponse, ProjectCreateErrorResponse])
+def create_project(req: ProjectCreateRequest) -> Union[ProjectCreateResponse, ProjectCreateErrorResponse]:
     try:
         project_repository = ProjectsRepository()
         new_project = project_repository.create_project(
@@ -177,14 +184,14 @@ def create_project(req: ProjectCreateRequest) -> ProjectCreateResponse:
                 detail="Failed to create project"
             )
     except PersistenceError as e:
+        # Return error response with explicit status code
         raise HTTPException(
             status_code=409,
-            detail={
-                "ok": False,
-                "error_code": "DUPLICATE_FIELD" if e.field else "PERSISTENCE_ERROR",
-                "field": e.field,
-                "message": e.message
-            }
+            detail=ProjectCreateErrorResponse(
+                error_code="DUPLICATE_FIELD" if e.field else "PERSISTENCE_ERROR",
+                field=e.field,
+                message=e.message
+            ).model_dump()
         )
 
 

@@ -1,3 +1,9 @@
+const API_ERRORS = {
+    DUPLICATE_FIELD: 'This field value is already registered',
+    PERSISTENCE_ERROR: 'Database error occurred',
+    UNKNOWN: 'An unexpected error occurred'
+};
+
 function clearFieldErrors() {
     ['name', 'remote_repo_url', 'ssh_key'].forEach(fieldName => {
         const errorEl = document.getElementById(`${fieldName}-error`);
@@ -8,6 +14,16 @@ function clearFieldErrors() {
     });
 }
 
+function showFieldError(fieldName, message) {
+    const errorEl = document.getElementById(`${fieldName}-error`);
+    if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.style.display = 'block';
+        // Scroll to error for visibility
+        errorEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+
 // Handle form submission
 document.getElementById('createProjectForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -15,6 +31,7 @@ document.getElementById('createProjectForm').addEventListener('submit', async (e
 
     const form = e.target;
     const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.textContent;
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Creating...';
@@ -34,37 +51,40 @@ document.getElementById('createProjectForm').addEventListener('submit', async (e
 
         const data = await response.json();
 
-        // Check for success (status 200-299 AND ok=true)
+        // Success: status 200-299 AND ok=true
         if (response.ok && data.ok === true) {
+            // Project created successfully
             window.location.href = `/projects/${data.project_id}`;
+            return; // Prevent button re-enable
         }
-        // Check for validation errors with field information
-        else if (!data.ok && data.field) {
-            const errorEl = document.getElementById(`${data.field}-error`);
-            if (errorEl) {
-                errorEl.textContent = data.message || `Error in ${data.field}`;
-                errorEl.style.display = 'block';
-            } else {
-                alert(`Error in ${data.field}: ${data.message}`);
-            }
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Create Project';
+
+        // Validation error with specific field
+        if (!data.ok && data.field) {
+            const errorMsg = data.message ||
+                           API_ERRORS[data.error_code] ||
+                           API_ERRORS.UNKNOWN;
+            showFieldError(data.field, errorMsg);
         }
-        // Generic error (no specific field)
+        // Generic error without field
         else if (!data.ok) {
-            alert(`Error: ${data.message || data.error_code || 'Failed to create project'}`);
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Create Project';
+            const errorMsg = data.message ||
+                           API_ERRORS[data.error_code] ||
+                           'Failed to create project';
+            alert(`Error: ${errorMsg}`);
         }
-        // Unexpected success response structure
+        // Unexpected response
         else {
             alert('Unexpected response from server');
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Create Project';
         }
+
     } catch (error) {
+        // Network error, JSON parse error, etc.
         alert(`Network error: ${error.message}`);
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Create Project';
+    } finally {
+        // Always restore button state if not redirecting
+        if (submitBtn.disabled) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText;
+        }
     }
 });

@@ -71,43 +71,49 @@ def create_project():
             timeout=10
         )
 
-        # Parse response BEFORE checking status
-        result = response.json()
+        # Parse response BEFORE checking status (critical)
+        try:
+            result = response.json()
+        except requests.exceptions.JSONDecodeError:
+            return jsonify({
+                "ok": False,
+                "message": "Gateway returned invalid response format"
+            }), 502
 
-        # Check if request succeeded (2xx status)
-        if response.status_code == 200 and result.get("ok"):
-            # Success: redirect to project detail
+        # Success path: 2xx status code AND ok field is true
+        if response.ok and result.get("ok") is True:
+            # Redirect to newly created project
             project_id = result.get("project_id")
             return redirect(url_for('project_detail', project_id=project_id))
 
-        # API returned error response (4xx, 5xx) with details
+        # Validation error: API returned error details
         elif not result.get("ok"):
+            # Preserve the field and error information for frontend
             return jsonify({
                 "ok": False,
                 "field": result.get("field"),
                 "error_code": result.get("error_code"),
-                "message": result.get("message", "Unknown error")
-            }), result.get("status_code", 400)  # Preserve API status code
+                "message": result.get("message", "Project creation failed")
+            }), response.status_code  # Use actual API status code (409, 400, etc.)
 
-        # Success response but ok=false (shouldn't happen, but handle it)
+        # Unexpected: status is success but ok=false (shouldn't happen)
         else:
             return jsonify({
                 "ok": False,
-                "message": "Unexpected response from gateway"
+                "message": "Gateway returned unexpected response"
             }), 500
 
-    except requests.exceptions.JSONDecodeError:
-        # Response is not valid JSON
+    except requests.exceptions.Timeout:
         return jsonify({
             "ok": False,
-            "message": "Gateway returned invalid response"
-        }), 502
+            "message": "Gateway request timed out"
+        }), 504
 
     except requests.RequestException as e:
-        # Network error, timeout, connection refused, etc.
+        # Connection error, DNS failure, etc.
         return jsonify({
             "ok": False,
-            "message": f"Gateway connection failed: {str(e)}"
+            "message": f"Gateway unavailable: {str(e)}"
         }), 502
 
 
