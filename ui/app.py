@@ -134,5 +134,5 @@ if __name__ == "__main__":
     app.run(
         host=UI_HOST,
         port=UI_PORT,
-        debug=os.getenv("FLASK_DEBUG", "false").lower() == "true"
+        debug=os.getenv("FLASK_DEBUG", "true").lower() == "true"
     )
