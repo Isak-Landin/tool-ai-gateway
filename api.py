@@ -130,7 +130,7 @@ end of TOOLS ROUTES
 # /projects
 # =========================================================
 
-@app.post("/projects/create")
+@app.post("/projects")
 def create_project(req: ProjectCreateRequest) -> (ProjectCreateResponse | Any):
     new_project = None
     try:
@@ -204,14 +204,13 @@ def list_projects():
 @app.get("/projects/{project_id}")
 def get_project(project_id: int):
     """
-    1. Instantiate ProjectResolver()
-    2. Call resolve_by_id(project_id)
-       - If ProjectNotFoundError → 404
-       - If ProjectResolutionError → 400
-    3. Return ProjectDetailResponse(ok=True, ...)
-       - DO NOT call ProjectBinder here (not executing workflow)
-       - DO NOT call WorkflowOrchestrator here
-       - Just return project metadata
+    class ProjectDetailResponse(BaseModel):
+        ok: bool
+        id: int
+        name: str
+        ai_model_name: str
+        orchestrator_name: str
+        created_at: datetime.datetime
     """
     try:
         project_resolver = ProjectResolver()

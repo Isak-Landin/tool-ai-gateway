@@ -55,7 +55,7 @@ def create_project():
 
     try:
         response = requests.post(
-            f"{GATEWAY_BASE_URL}/projects/create",
+            f"{GATEWAY_BASE_URL}/projects",
             json={
                 "name": data.get("name"),
                 "remote_repo_url": data.get("remote_repo_url"),

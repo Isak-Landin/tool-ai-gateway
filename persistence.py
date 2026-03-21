@@ -27,8 +27,7 @@ class ProjectsRepository:
                 "name": result.name,
                 "ai_model_name": result.ai_model_name,
                 "orchestrator_name": result.orchestrator_name,
-                "system_prompt_version": result.system_prompt_version,
-                "system_prompt_hash": result.system_prompt_hash,
+                "created_at": result.created_at,
             }
         except SQLAlchemyError as e:
             raise PersistenceError(str(e))
