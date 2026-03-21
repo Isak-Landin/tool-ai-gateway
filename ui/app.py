@@ -12,6 +12,12 @@ UI_PORT = int(os.getenv("UI_PORT", "4000"))
 # Session/auth (for MVP, using simple session storage)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key-change-in-prod")
 
+def return_json_on_error(error=None, **kwargs):
+    message = error
+    if message is None:
+
+
+
 
 @app.route("/")
 def index():

@@ -73,7 +73,9 @@ class ProjectsRepository:
                 "ssh_key": new_project.ssh_key,
             }
         except SQLAlchemyError as e:
-            raise PersistenceError(str(e))
+            # raise PersistenceError(str(e))
+            print("reached commented sqlalchemy error")
+            pass
         except IntegrityError as e:
             raise PersistenceError(str(e))
         finally:
