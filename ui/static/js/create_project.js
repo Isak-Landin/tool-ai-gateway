@@ -33,7 +33,7 @@ document.getElementById('createProjectForm').addEventListener('submit', async (e
         });
 
         const data = await response.json();
-        if (data.ok) {
+        if (data.ok === true or data.ok === "true") {
             window.location.href = `/projects/${data.project_id}`;
         } else {
             if (data.field) {
