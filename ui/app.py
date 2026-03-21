@@ -1,6 +1,6 @@
 import os
 import requests
-from flask import Flask, jsonify, render_template, request, redirect, url_for
+from flask import Flask, jsonify, render_template, request, redirect, url_for, message_flashed
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 
@@ -12,10 +12,9 @@ UI_PORT = int(os.getenv("UI_PORT", "4000"))
 # Session/auth (for MVP, using simple session storage)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key-change-in-prod")
 
-def return_json_on_error(error=None, **kwargs):
-    message = error
-    if message is None:
-
+class ErrorManagement(Exception):
+    def __init__(self, error):
+        super.__init__(error)
 
 
 
@@ -66,6 +65,7 @@ def create_project():
         )
         response.raise_for_status()
         result = response.json()
+        print("Result that was processed: ", result)
 
         if result.get("ok"):
             # Return JSON with project_id (not redirect)
