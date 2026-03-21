@@ -160,8 +160,8 @@ end of TOOLS ROUTES
 # /projects
 # =========================================================
 
-@app.post("/projects", response_model=Union[ProjectCreateResponse, dict])
-def create_project(req: ProjectCreateRequest) -> Union[ProjectCreateResponse, dict]:
+@app.post("/projects", response_model=ProjectCreateResponse)
+def create_project(req: ProjectCreateRequest) -> ProjectCreateResponse:
     try:
         project_repository = ProjectsRepository()
         new_project = project_repository.create_project(

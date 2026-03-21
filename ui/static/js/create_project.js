@@ -33,23 +33,37 @@ document.getElementById('createProjectForm').addEventListener('submit', async (e
         });
 
         const data = await response.json();
-        if (data.ok === true or data.ok === "true") {
+
+        // Check for success (status 200-299 AND ok=true)
+        if (response.ok && data.ok === true) {
             window.location.href = `/projects/${data.project_id}`;
-        } else {
-            if (data.field) {
-                const errorEl = document.getElementById(`${data.field}-error`);
-                if (errorEl) {
-                    errorEl.textContent = data.message;
-                    errorEl.style.display = 'block';
-                }
+        }
+        // Check for validation errors with field information
+        else if (!data.ok && data.field) {
+            const errorEl = document.getElementById(`${data.field}-error`);
+            if (errorEl) {
+                errorEl.textContent = data.message || `Error in ${data.field}`;
+                errorEl.style.display = 'block';
             } else {
-                alert(`Error: ${data.message || 'Failed to create project'}`);
+                alert(`Error in ${data.field}: ${data.message}`);
             }
             submitBtn.disabled = false;
             submitBtn.textContent = 'Create Project';
         }
+        // Generic error (no specific field)
+        else if (!data.ok) {
+            alert(`Error: ${data.message || data.error_code || 'Failed to create project'}`);
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Project';
+        }
+        // Unexpected success response structure
+        else {
+            alert('Unexpected response from server');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Project';
+        }
     } catch (error) {
-        alert(`Error: ${error.message}`);
+        alert(`Network error: ${error.message}`);
         submitBtn.disabled = false;
         submitBtn.textContent = 'Create Project';
     }

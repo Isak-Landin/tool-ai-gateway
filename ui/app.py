@@ -70,24 +70,44 @@ def create_project():
             },
             timeout=10
         )
-        response.raise_for_status()
+
+        # Parse response BEFORE checking status
         result = response.json()
 
-        if result.get("ok"):
-            # Redirect directly to project detail page
+        # Check if request succeeded (2xx status)
+        if response.status_code == 200 and result.get("ok"):
+            # Success: redirect to project detail
             project_id = result.get("project_id")
             return redirect(url_for('project_detail', project_id=project_id))
-        else:
+
+        # API returned error response (4xx, 5xx) with details
+        elif not result.get("ok"):
             return jsonify({
                 "ok": False,
                 "field": result.get("field"),
+                "error_code": result.get("error_code"),
                 "message": result.get("message", "Unknown error")
-            }), 409
+            }), result.get("status_code", 400)  # Preserve API status code
 
-    except requests.RequestException as e:
+        # Success response but ok=false (shouldn't happen, but handle it)
+        else:
+            return jsonify({
+                "ok": False,
+                "message": "Unexpected response from gateway"
+            }), 500
+
+    except requests.exceptions.JSONDecodeError:
+        # Response is not valid JSON
         return jsonify({
             "ok": False,
-            "error": f"Gateway connection failed: {str(e)}"
+            "message": "Gateway returned invalid response"
+        }), 502
+
+    except requests.RequestException as e:
+        # Network error, timeout, connection refused, etc.
+        return jsonify({
+            "ok": False,
+            "message": f"Gateway connection failed: {str(e)}"
         }), 502
 
 
