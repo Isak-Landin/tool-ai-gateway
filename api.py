@@ -170,6 +170,11 @@ def create_project(req: ProjectCreateRequest) -> Union[ProjectCreateResponse, di
         )
         if new_project:
             return ProjectCreateResponse(ok=True, **new_project)
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to create project"
+            )
     except PersistenceError as e:
         return {
             "ok": False,
