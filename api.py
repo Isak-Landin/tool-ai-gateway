@@ -176,12 +176,15 @@ def create_project(req: ProjectCreateRequest) -> Union[ProjectCreateResponse, di
                 detail="Failed to create project"
             )
     except PersistenceError as e:
-        return {
-            "ok": False,
-            "error_code": "DUPLICATE_FIELD" if e.field else "PERSISTENCE_ERROR",
-            "field": e.field,
-            "message": e.message
-        }
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "ok": False,
+                "error_code": "DUPLICATE_FIELD" if e.field else "PERSISTENCE_ERROR",
+                "field": e.field,
+                "message": e.message
+            }
+        )
 
 
 
