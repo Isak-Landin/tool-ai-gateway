@@ -21,7 +21,7 @@ if LOCAL_SERVER_URL is None:
     exit(1)
 
 app = FastAPI()
-
+"""
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
 
@@ -34,6 +34,7 @@ async def log_requests(request: Request, call_next):
     print(f"[REQ OUT] {request.method} {request.url.path} -> {response.status_code}")
 
     return response
+"""
 
 app.add_middleware(
     CORSMiddleware,
