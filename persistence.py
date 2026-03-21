@@ -3,13 +3,7 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from db.session import SessionLocal
 from db.models import Project, Message, File
-
-
-class PersistenceError(Exception):
-    pass
-
-class DuplicationError(Exception):
-    pass
+from errors import PersistenceError
 
 
 
@@ -45,26 +39,24 @@ class ProjectsRepository:
     def create_project(self, name, remote_repo_url, ssh_key):
         session = self.db_connection or SessionLocal()
         try:
-            remote_repo_query = select(Project).where(Project.remote_repo_url == remote_repo_url)
-            remote_repo_result = session.execute(remote_repo_query).scalar_one_or_none()
+            # Check for duplicate remote_repo_url
+            remote_repo_result = session.execute(
+                select(Project).where(Project.remote_repo_url == remote_repo_url)
+            ).scalar_one_or_none()
+            if remote_repo_result:
+                raise PersistenceError("Remote repository URL already exists", field="remote_repo_url")
 
-            ssh_key_query = select(Project).where(Project.ssh_key == ssh_key)
-            ssh_key_result = session.execute(ssh_key_query).scalar_one_or_none()
-            if remote_repo_result or ssh_key_result:
-                raise PersistenceError("Duplicate of Remote Repo or SSH Key")
+            # Check for duplicate ssh_key
+            ssh_key_result = session.execute(
+                select(Project).where(Project.ssh_key == ssh_key)
+            ).scalar_one_or_none()
+            if ssh_key_result:
+                raise PersistenceError("SSH key already registered", field="ssh_key")
 
+            # Create project
             new_project = Project(name=name, remote_repo_url=remote_repo_url, ssh_key=ssh_key)
             session.add(new_project)
             session.commit()
-
-            """
-            class ProjectCreateResponse(BaseModel):
-            ok: bool
-            project_id: int
-            name: str
-            remote_repo_url: str
-            ssh_key: str
-            """
 
             return {
                 "project_id": new_project.id,
@@ -72,11 +64,11 @@ class ProjectsRepository:
                 "remote_repo_url": new_project.remote_repo_url,
                 "ssh_key": new_project.ssh_key,
             }
+        except PersistenceError:
+            session.rollback()
+            raise
         except SQLAlchemyError as e:
-            # raise PersistenceError(str(e))
-            print("reached commented sqlalchemy error")
-            pass
-        except IntegrityError as e:
+            session.rollback()
             raise PersistenceError(str(e))
         finally:
             if self.db_connection is None and session:

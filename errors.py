@@ -1,29 +1,14 @@
+class PersistenceError(Exception):
+    """Database operation error"""
+    def __init__(self, message: str, field: str = None):
+        self.message = message
+        self.field = field  # Which field caused the error (e.g., "ssh_key")
+        super().__init__(message)
+
 class FileProcessingError(Exception):
-    def __init__(self, file_name=None, message=" FAILED during processing of file", code="FileProcessingError:"):
-        self.file_name = file_name
-        self.code = code
-        self.message = self.combine_parameters_to_message(message)
-        super().__init__(self.message)
-
-    def combine_parameters_to_message(self, _passed_message):
-        _original_message = self.message
-        _new_message = (
-                f"{_original_message}: " +
-                f"{self.file_name}\n: " if self.file_name else " " +
-                f"{self.code}"
-        )
-        return _new_message
-
+    """File processing error"""
+    pass
 
 class GitHubError(Exception):
-    def __init__(self, message=" FAILED during processing of file", code="GitHubError:"):
-        self.passed_message = message
-        self.code = code
-        self.message = self.combine_parameters_to_message()
-        super().__init__(self.message)
-
-    def combine_parameters_to_message(self):
-        _new_message = (
-            f"{self.code}: " + f"{self.passed_message}"
-        )
-        return str(_new_message)
+    """Git operation error"""
+    pass

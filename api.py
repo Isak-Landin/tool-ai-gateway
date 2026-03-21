@@ -9,7 +9,8 @@ from pydantic import BaseModel, Field
 from project_resolution import ProjectResolver, ProjectResolutionError, ProjectNotFoundError
 from runtime_binding import ProjectBinder, ProjectBindingError
 from execution import WorkflowOrchestrator, WorkflowExecutionError
-from persistence import ProjectsRepository, DuplicationError, PersistenceError
+from persistence import ProjectsRepository
+from errors import PersistenceError
 
 from typing import Any
 
@@ -155,10 +156,14 @@ def create_project(req: ProjectCreateRequest) -> (ProjectCreateResponse | Any):
 
         if new_project:
             return ProjectCreateResponse(ok=True, **new_project)
-    except KeyError as e:
-        return HTTPException(status_code=400, detail=str(e))
-    except DuplicationError as e:
-        return HTTPException(status_code=400, detail=str(e))
+    except PersistenceError as e:
+        error_dict = {
+            "ok": False,
+            "error_code": "DUPLICATE_FIELD" if e.field else "PERSISTENCE_ERROR",
+            "field": e.field,
+            "message": e.message
+        }
+        raise HTTPException(status_code=409, detail=error_dict)
 
     if new_project:
         return HTTPException(
