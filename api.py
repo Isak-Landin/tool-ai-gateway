@@ -18,7 +18,6 @@ from typing import Any
 
 LOCAL_SERVER_URL = os.getenv("LOCAL_SERVER_URL")
 if LOCAL_SERVER_URL is None:
-    print("COULD NOT FIND LOCAL IP OR URL")
     exit(1)
 
 app = FastAPI()

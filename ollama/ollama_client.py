@@ -27,8 +27,7 @@ def call_ollama(user_message: str, history: list[dict] | None = None) -> dict:
     )
 
     if not r.ok:
-        print("OLLAMA STATUS:", r.status_code, flush=True)
-        print("OLLAMA BODY:", r.text, flush=True)
+
         r.raise_for_status()
 
     return r.json()

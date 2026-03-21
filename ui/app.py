@@ -38,7 +38,6 @@ def index():
         data = response.json()
         projects = data.get("projects", []) if data.get("ok") else []
     except requests.RequestException as e:
-        print(f"Error fetching projects: {e}")
         projects = []
         error_msg = "Failed to connect to gateway"
     else:
@@ -73,7 +72,6 @@ def create_project():
         )
         response.raise_for_status()
         result = response.json()
-        print("Result that was processed: ", result)
 
         if result.get("ok"):
             # Redirect directly to project detail page
@@ -105,7 +103,6 @@ def project_detail(project_id):
         data = response.json()
         project = data if data.get("ok") else None
     except requests.RequestException as e:
-        print(f"Error fetching project {project_id}: {e}")
         project = None
         error_msg = "Failed to load project"
     else:
