@@ -1,8 +1,8 @@
 import datetime
 import os
 
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
@@ -22,18 +22,32 @@ if LOCAL_SERVER_URL is None:
 
 app = FastAPI()
 
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.types import ASGIApp
 
-    body = await request.body()
 
-    print(f"[REQ IN] {request.method} {request.url.path} body={body.decode('utf-8', 'ignore')}")
+class RequestLoggingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next: ASGIApp):
+        body = await request.body()
+        body_str = body.decode('utf-8', 'ignore') if body else ""
+        print(f"[REQ IN] {request.method} {request.url.path} body={body_str}")
 
-    response = await call_next(request)
+        async def receive():
+            return {
+                "type": "http.request",
+                "body": body,
+                "more_body": False,
+            }
 
-    print(f"[REQ OUT] {request.method} {request.url.path} -> {response.status_code}")
+        request._receive = receive
+        response = await call_next(request)
+        print(f"[REQ OUT] {request.method} {request.url.path} -> {response.status_code}")
+        return response
 
-    return response
+
+app.add_middleware(RequestLoggingMiddleware)
+
 
 
 app.add_middleware(
