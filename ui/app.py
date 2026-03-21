@@ -16,6 +16,14 @@ class ErrorManagement(Exception):
     def __init__(self, error):
         super.__init__(error)
 
+@app.before_request
+def before():
+    print(f"[REQ IN] {request.method} {request.path}")
+
+@app.after_request
+def after(response):
+    print(f"[REQ OUT] {request.method} {request.path} -> {response.status})")
+    return response
 
 
 @app.route("/")

@@ -1,7 +1,7 @@
 import datetime
 import os
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
@@ -14,12 +14,27 @@ from errors import PersistenceError
 
 from typing import Any
 
+
+
 LOCAL_SERVER_URL = os.getenv("LOCAL_SERVER_URL")
 if LOCAL_SERVER_URL is None:
     print("COULD NOT FIND LOCAL IP OR URL")
     exit(1)
 
 app = FastAPI()
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+
+    body = await request.body()
+
+    print(f"[REQ IN] {request.method} {request.url.path} body={body.decode('utf-8', 'ignore')}")
+
+    response = await call_next(request)
+
+    print(f"[REQ OUT] {request.method} {request.url.path} -> {response.status_code}")
+
+    return response
 
 app.add_middleware(
     CORSMiddleware,
