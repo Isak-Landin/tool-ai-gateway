@@ -42,7 +42,8 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
         request._receive = receive
         response = await call_next(request)
-        print(f"[REQ OUT] {request.method} {request.url.path} -> {response}")
+        print(f"[REQ OUT] {request.method} {request.url.path}")
+        print(r for r in response)
         return response
 
 
