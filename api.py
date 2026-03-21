@@ -12,7 +12,7 @@ from execution import WorkflowOrchestrator, WorkflowExecutionError
 from persistence import ProjectsRepository
 from errors import PersistenceError
 
-from typing import Any
+from typing import Union
 
 
 
@@ -159,51 +159,24 @@ end of TOOLS ROUTES
 # /projects
 # =========================================================
 
-@app.post("/projects")
-def create_project(req: ProjectCreateRequest) -> (ProjectCreateResponse | Any):
-    new_project = None
+@app.post("/projects", response_model=Union[ProjectCreateResponse, dict])
+def create_project(req: ProjectCreateRequest) -> Union[ProjectCreateResponse, dict]:
     try:
-        name = req.name
-        remote_repo_url = req.remote_repo_url
-        ssh_key = req.ssh_key
         project_repository = ProjectsRepository()
-
-
         new_project = project_repository.create_project(
-            name=name,
-            remote_repo_url=remote_repo_url,
-            ssh_key=ssh_key,
+            name=req.name,
+            remote_repo_url=req.remote_repo_url,
+            ssh_key=req.ssh_key,
         )
-        """
-        class ProjectCreateResponse(BaseModel):
-        ok: bool
-        project_id: int
-        name: str
-        remote_repo_url: str
-        ssh_key: str
-        """
-
         if new_project:
             return ProjectCreateResponse(ok=True, **new_project)
     except PersistenceError as e:
-        error_dict = {
+        return {
             "ok": False,
             "error_code": "DUPLICATE_FIELD" if e.field else "PERSISTENCE_ERROR",
             "field": e.field,
             "message": e.message
         }
-        return error_dict
-
-    if new_project:
-        return HTTPException(
-            status_code=500,
-            detail="Reached end of post.projects new_project exists, but reached end without returning it or raising other error"
-        )
-    else:
-        return HTTPException(
-            status_code=500,
-            detail="Reached end of post.projects without existing new_project and without having returned error earlier"
-        )
 
 
 
