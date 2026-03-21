@@ -163,7 +163,7 @@ def create_project(req: ProjectCreateRequest) -> (ProjectCreateResponse | Any):
             "field": e.field,
             "message": e.message
         }
-        raise HTTPException(status_code=409, detail=error_dict)
+        return error_dict
 
     if new_project:
         return HTTPException(
