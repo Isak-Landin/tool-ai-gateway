@@ -68,11 +68,9 @@ def create_project():
         print("Result that was processed: ", result)
 
         if result.get("ok"):
-            # Return JSON with project_id (not redirect)
-            return jsonify({
-                "ok": True,
-                "project_id": result.get("project_id")
-            })
+            # Redirect directly to project detail page
+            project_id = result.get("project_id")
+            return redirect(url_for('project_detail', project_id=project_id))
         else:
             return jsonify({
                 "ok": False,
