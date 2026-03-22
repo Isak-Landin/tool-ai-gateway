@@ -19,7 +19,6 @@ function showFieldError(fieldName, message) {
     if (errorEl) {
         errorEl.textContent = message;
         errorEl.style.display = 'block';
-        // Scroll to error for visibility
         errorEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 }
@@ -51,40 +50,42 @@ document.getElementById('createProjectForm').addEventListener('submit', async (e
 
         const data = await response.json();
 
-        // Success: status 200-299 AND ok=true
+        // Success: status 200-299 AND ok=true (redirect to project)
         if (response.ok && data.ok === true) {
-            // Project created successfully
             window.location.href = `/projects/${data.project_id}`;
-            return; // Prevent button re-enable
+            return;
         }
 
-        // Validation error with specific field
+        // Error with field information (show inline)
         if (!data.ok && data.field) {
             const errorMsg = data.message ||
                            API_ERRORS[data.error_code] ||
                            API_ERRORS.UNKNOWN;
             showFieldError(data.field, errorMsg);
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText;
+            return;  // IMPORTANT: return to prevent further execution
         }
-        // Generic error without field
-        else if (!data.ok === true || !data.ok === "true") {
+
+        // Generic error without field (show alert)
+        if (!data.ok) {
             const errorMsg = data.message ||
                            API_ERRORS[data.error_code] ||
                            'Failed to create project';
             alert(`Error: ${errorMsg}`);
-        }
-        // Unexpected response
-        else {
-            alert('Unexpected response from server');
-        }
-
-    } catch (error) {
-        // Network error, JSON parse error, etc.
-        alert(`Network error: ${error.message}`);
-    } finally {
-        // Always restore button state if not redirecting
-        if (submitBtn.disabled) {
             submitBtn.disabled = false;
             submitBtn.textContent = originalBtnText;
+            return;
         }
+
+        // Unexpected response structure
+        alert('Unexpected response from server');
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalBtnText;
+
+    } catch (error) {
+        alert(`Network error: ${error.message}`);
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalBtnText;
     }
 });
