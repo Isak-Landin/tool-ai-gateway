@@ -8,6 +8,21 @@ services:
       - ./.env
     environment:
       PYTHONUNBUFFERED: "1"
+      DEBUG: ${DEBUG:-false}
+    volumes:
+      - ./api.py:/app/api.py
+      - ./project_resolution.py:/app/project_resolution.py
+      - ./runtime_binding.py:/app/runtime_binding.py
+      - ./project_handle.py:/app/project_handle.py
+      - ./execution.py:/app/execution.py
+      - ./persistence.py:/app/persistence.py
+      - ./errors.py:/app/errors.py
+      - ./db:/app/db
+      - ./git:/app/git
+      - ./ollama:/app/ollama
+      - ./archon:/app/archon
+      - ./web_search:/app/web_search
+      - ./index.html:/app/index.html
     ports:
       - "${GATEWAY_PORT}:${GATEWAY_PORT}"
     restart: unless-stopped
@@ -28,6 +43,11 @@ services:
       UI_HOST: ${UI_HOST}
       UI_PORT: ${UI_PORT}
       PYTHONUNBUFFERED: "1"
+      FLASK_DEBUG: ${DEBUG:-false}
+    volumes:
+      - ./ui/app.py:/app/app.py
+      - ./ui/templates:/app/templates
+      - ./ui/static:/app/static
     ports:
       - "${UI_PORT}:${UI_PORT}"
     restart: unless-stopped
