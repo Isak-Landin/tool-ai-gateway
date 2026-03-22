@@ -1,22 +1,15 @@
 import datetime
 import os
-
-from fastapi import FastAPI, HTTPException
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
-from fastapi.responses import JSONResponse
 
 from project_resolution import ProjectResolver, ProjectResolutionError, ProjectNotFoundError
 from runtime_binding import ProjectBinder, ProjectBindingError
 from execution import WorkflowOrchestrator, WorkflowExecutionError
 from persistence import ProjectsRepository
 from errors import PersistenceError
-
-from typing import Union
-
-
 
 LOCAL_SERVER_URL = os.getenv("LOCAL_SERVER_URL")
 if LOCAL_SERVER_URL is None:
@@ -31,6 +24,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # =========================================================
 # SCHEMAS
@@ -48,10 +42,12 @@ class ChatResponse(BaseModel):
     selected_files: list[str]
     next_layer: str
 
+
 class ProjectCreateRequest(BaseModel):
     name: str
     remote_repo_url: str
     ssh_key: str
+
 
 class ProjectCreateResponse(BaseModel):
     ok: bool
@@ -60,8 +56,8 @@ class ProjectCreateResponse(BaseModel):
     remote_repo_url: str
     ssh_key: str
 
+
 class ProjectDetailResponse(BaseModel):
-    """For GET /projects/{project_id}"""
     ok: bool
     id: int
     name: str
@@ -69,8 +65,8 @@ class ProjectDetailResponse(BaseModel):
     orchestrator_name: str
     created_at: datetime.datetime
 
+
 class ProjectsListResponse(BaseModel):
-    """For GET /projects"""
     ok: bool
     projects: list[ProjectDetailResponse]
 
@@ -101,17 +97,13 @@ def chat_workflow_entry(project_id, req: ChatRequest) -> ChatResponse:
         next_layer="execution_completed",
     )
 
+
 # =========================================================
 # TOOLS ROUTES
-# /tools
 # =========================================================
+
 @app.get("/tools/archon/search")
-def http_archon_search(
-    q: str,
-    source: str = "",
-    match_count: int = 5,
-    return_mode: str = "chunks",
-):
+def http_archon_search(q: str, source: str = "", match_count: int = 5, return_mode: str = "chunks"):
     raise HTTPException(status_code=501, detail="archon_search route not wired yet")
 
 
@@ -124,24 +116,14 @@ def http_archon_rag_query(data: dict):
 def http_web_search(q: str):
     raise HTTPException(status_code=501, detail="web_search route not wired yet")
 
-"""
-end of TOOLS ROUTES
-"""
 
 # =========================================================
 # PROJECT ROUTES
-# /projects
 # =========================================================
 
-class ProjectCreateErrorResponse(BaseModel):
-    """Error response for project creation"""
-    ok: bool = False
-    error_code: str
-    field: str | None = None
-    message: str
-
-@app.post("/projects")
-def create_project(req: ProjectCreateRequest) -> Union[ProjectCreateResponse, JSONResponse]:
+@app.post("/projects", status_code=status.HTTP_201_CREATED)
+def create_project(req: ProjectCreateRequest) -> ProjectCreateResponse:
+    """Create a new project. Returns 201 on success."""
     try:
         project_repository = ProjectsRepository()
         new_project = project_repository.create_project(
@@ -152,48 +134,44 @@ def create_project(req: ProjectCreateRequest) -> Union[ProjectCreateResponse, JS
         if new_project:
             return ProjectCreateResponse(ok=True, **new_project)
         else:
-            raise HTTPException(
-                status_code=500,
-                detail="Failed to create project"
-            )
+            raise HTTPException(status_code=500, detail="Failed to create project")
     except PersistenceError as e:
-        # Use JSONResponse to control exact response structure
+        # Map error_type to HTTP status code
+        if e.error_type == "duplicate":
+            status_code = 409  # Conflict
+        else:
+            status_code = 500  # Internal Server Error
+
         return JSONResponse(
-            status_code=409,
+            status_code=status_code,
             content={
                 "ok": False,
-                "error_code": "DUPLICATE_FIELD" if e.field else "PERSISTENCE_ERROR",
+                "error_code": "DUPLICATE_FIELD" if e.error_type == "duplicate" else "PERSISTENCE_ERROR",
                 "field": e.field,
                 "message": e.message
             }
         )
 
 
-
 @app.get("/projects")
 def list_projects():
-    """
-    1. Instantiate ProjectsRepository()
-    2. Call list_all_projects() → returns list[dict]
-    3. Try/except for PersistenceError → 500
-    4. Return ProjectsListResponse(ok=True, projects=[...])
-       - NO ProjectResolver needed here (just listing, not validating a specific project)
-    """
     try:
         project_repository = ProjectsRepository()
         all_projects = project_repository.list_all_projects()
-        # Wrap each project dict to add 'ok' field
         projects_with_ok = [
             ProjectDetailResponse(ok=True, **project)
             for project in all_projects
         ]
         return ProjectsListResponse(ok=True, projects=projects_with_ok)
-    except ProjectNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except (ProjectResolutionError, ProjectBindingError, WorkflowExecutionError) as e:
-        raise HTTPException(status_code=400, detail=str(e))
     except PersistenceError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return JSONResponse(
+            status_code=500,
+            content={
+                "ok": False,
+                "error_code": "PERSISTENCE_ERROR",
+                "message": e.message
+            }
+        )
 
 
 @app.get("/projects/{project_id}")
@@ -208,7 +186,6 @@ def get_project(project_id: int):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-
 @app.patch("/projects/{project_id}")
 def update_project(project_id: int):
     raise HTTPException(status_code=501, detail="update_project route not wired yet")
@@ -219,7 +196,7 @@ def delete_project(project_id: int):
     raise HTTPException(status_code=501, detail="delete_project route not wired yet")
 
 
-@app.post("/projects/{project_id}/run",response_model=ChatResponse)
+@app.post("/projects/{project_id}/run", response_model=ChatResponse)
 def run(project_id: int, req: ChatRequest):
     if not str(req.message).strip():
         raise HTTPException(status_code=400, detail="message is required")
@@ -230,18 +207,6 @@ def run(project_id: int, req: ChatRequest):
         raise HTTPException(status_code=404, detail=str(e))
     except (ProjectResolutionError, ProjectBindingError, WorkflowExecutionError) as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-"""
-end of PROJECT ROUTES
-"""
-
-# =========================================================
-# FILES ROUTES
-# /files
-# =========================================================
-"""
-end of FILE ROUTES
-"""
 
 
 @app.get("/debug")

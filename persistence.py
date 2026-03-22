@@ -43,14 +43,14 @@ class ProjectsRepository:
                 select(Project).where(Project.remote_repo_url == remote_repo_url)
             ).scalar_one_or_none()
             if remote_repo_result:
-                raise PersistenceError("Remote repository URL already exists", field="remote_repo_url")
+                raise PersistenceError("Remote repository URL already exists", field="remote_repo_url", error_type="duplicate")
 
             # Check for duplicate ssh_key
             ssh_key_result = session.execute(
                 select(Project).where(Project.ssh_key == ssh_key)
             ).scalar_one_or_none()
             if ssh_key_result:
-                raise PersistenceError("SSH key already registered", field="ssh_key")
+                raise PersistenceError("SSH key already registered", field="ssh_key", error_type="duplicate")
 
             # Create project
             new_project = Project(name=name, remote_repo_url=remote_repo_url, ssh_key=ssh_key)
