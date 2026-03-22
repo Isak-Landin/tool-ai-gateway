@@ -1,50 +1,63 @@
 {% extends "base.html" %}
 
-{% block title %}{{ project.name }} - AI Tool Gateway{% endblock %}
+{% block title %}Create Project - AI Tool Gateway{% endblock %}
 
 {% block content %}
-<div class="project-detail-container">
-    <div class="project-detail-header">
-        <h1>{{ project.name }}</h1>
-        <a href="{{ url_for('index') }}" class="btn btn-secondary">← Back to Projects</a>
-    </div>
+<div class="form-container">
+    <div class="form-card">
+        <h1>Create New Project</h1>
 
-    <div class="project-detail-card">
-        <div class="detail-section">
-            <h3>Project Information</h3>
-            <div class="detail-row">
-                <span class="detail-label">Project ID:</span>
-                <span class="detail-value">{{ project_id }}</span>
+        <form id="createProjectForm" method="POST" action="{{ url_for('create_project') }}">
+            <div class="form-group">
+                <label for="name">Project Name *</label>
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    required
+                    placeholder="e.g., my-ai-project"
+                    class="form-input"
+                >
+                <small class="form-hint">A unique name for your project</small>
+                <p class="field-error" id="name-error" style="display: none;"></p>
             </div>
-            <div class="detail-row">
-                <span class="detail-label">Model:</span>
-                <span class="detail-value">{{ project.ai_model_name }}</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Orchestrator:</span>
-                <span class="detail-value">{{ project.orchestrator_name }}</span>
-            </div>
-            {% if project.remote_repo_url %}
-                <div class="detail-row">
-                    <span class="detail-label">Repository:</span>
-                    <span class="detail-value">{{ project.remote_repo_url }}</span>
-                </div>
-            {% endif %}
-            {% if project.branch %}
-                <div class="detail-row">
-                    <span class="detail-label">Branch:</span>
-                    <span class="detail-value">{{ project.branch }}</span>
-                </div>
-            {% endif %}
-        </div>
 
-        <div class="detail-section">
-            <h3>Chat Interface</h3>
-            <div class="chat-placeholder">
-                <p>🚧 Chat interface coming soon...</p>
-                <p class="text-muted">The chat interface for this project will be implemented in the next iteration.</p>
+            <div class="form-group">
+                <label for="remote_repo_url">Remote Repository URL *</label>
+                <input
+                    type="text"
+                    id="remote_repo_url"
+                    name="remote_repo_url"
+                    required
+                    placeholder="e.g., git@github.com:user/repo.git"
+                    class="form-input"
+                >
+                <small class="form-hint">Git repository URL (SSH or HTTPS)</small>
+                <p class="field-error" id="remote_repo_url-error" style="display: none;"></p>
             </div>
-        </div>
+
+            <div class="form-group">
+                <label for="ssh_key">SSH Key *</label>
+                <textarea
+                    id="ssh_key"
+                    name="ssh_key"
+                    required
+                    placeholder="Paste your SSH private key here"
+                    rows="6"
+                    class="form-textarea"
+                ></textarea>
+                <small class="form-hint">SSH private key for repository access</small>
+                <p class="field-error" id="ssh_key-error" style="display: none;"></p>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Create Project</button>
+                <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
     </div>
 </div>
+
+<!-- Load JavaScript after form is in DOM -->
+<script src="{{ url_for('static', filename='js/create_project.js') }}"></script>
 {% endblock %}
