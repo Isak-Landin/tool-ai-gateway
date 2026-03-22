@@ -25,7 +25,7 @@ default_model = os.getenv("OLLAMA_MODEL", "qwen3:8b")
 class Project(Base):
     __tablename__ = "projects"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    project_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
 
     ai_model_name: Mapped[str] = mapped_column(String(255), nullable=False, server_default=default_model)

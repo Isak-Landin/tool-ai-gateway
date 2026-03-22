@@ -16,7 +16,7 @@ class ProjectsRepository:
     def get_project_by_id(self, project_id: int) -> dict | None:
         session = self.db_connection or SessionLocal()
         try:
-            stmt = select(Project).where(Project.id == project_id)
+            stmt = select(Project).where(Project.project.idid == project_id)
             result = session.execute(stmt).scalar_one_or_none()
 
             if result is None:
@@ -58,7 +58,7 @@ class ProjectsRepository:
             session.commit()
 
             return {
-                "project_id": new_project.id,
+                "project_id": new_project.project_id,
                 "name": new_project.name,
                 "remote_repo_url": new_project.remote_repo_url,
                 "ssh_key": new_project.ssh_key,
