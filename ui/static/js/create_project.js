@@ -66,7 +66,7 @@ document.getElementById('createProjectForm').addEventListener('submit', async (e
             showFieldError(data.field, errorMsg);
         }
         // Generic error without field
-        else if (!data.ok) {
+        else if (!data.ok === true || !data.ok === "true") {
             const errorMsg = data.message ||
                            API_ERRORS[data.error_code] ||
                            'Failed to create project';
