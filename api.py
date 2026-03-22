@@ -140,8 +140,8 @@ class ProjectCreateErrorResponse(BaseModel):
     field: str | None = None
     message: str
 
-@app.post("/projects", response_model=ProjectCreateResponse)
-def create_project(req: ProjectCreateRequest) -> ProjectCreateResponse:
+@app.post("/projects")
+def create_project(req: ProjectCreateRequest) -> Union[ProjectCreateResponse, JSONResponse]:
     try:
         project_repository = ProjectsRepository()
         new_project = project_repository.create_project(
@@ -183,7 +183,10 @@ def list_projects():
         project_repository = ProjectsRepository()
         all_projects = project_repository.list_all_projects()
         # Wrap each project dict to add 'ok' field
-        projects_with_ok = [{'ok': True, **project} for project in all_projects]
+        projects_with_ok = [
+            ProjectDetailResponse(ok=True, **project)
+            for project in all_projects
+        ]
         return ProjectsListResponse(ok=True, projects=projects_with_ok)
     except ProjectNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -195,23 +198,14 @@ def list_projects():
 
 @app.get("/projects/{project_id}")
 def get_project(project_id: int):
-    """
-    class ProjectDetailResponse(BaseModel):
-        ok: bool
-        id: int
-        name: str
-        ai_model_name: str
-        orchestrator_name: str
-        created_at: datetime.datetime
-    """
     try:
         project_resolver = ProjectResolver()
         project = project_resolver.resolve_by_id(project_id)
         return ProjectDetailResponse(ok=True, **project)
     except ProjectNotFoundError as e:
-        return HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e))
     except ProjectResolutionError as e:
-        return HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 

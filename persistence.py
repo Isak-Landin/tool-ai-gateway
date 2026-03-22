@@ -23,7 +23,7 @@ class ProjectsRepository:
                 return None
 
             return {
-                "id": result.id,
+                "project_id": result.id,
                 "name": result.name,
                 "ai_model_name": result.ai_model_name,
                 "orchestrator_name": result.orchestrator_name,
