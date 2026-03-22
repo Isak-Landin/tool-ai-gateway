@@ -8,4 +8,9 @@ done
 
 python -m db.init_db
 
-exec uvicorn api:app --host 0.0.0.0 --port "${GATEWAY_PORT}"
+if [ "${DEBUG}" = "true" ]; then
+  echo "[DEBUG] Starting uvicorn with --reload for live code reloading"
+  exec uvicorn api:app --host 0.0.0.0 --port "${GATEWAY_PORT}" --reload
+else
+  exec uvicorn api:app --host 0.0.0.0 --port "${GATEWAY_PORT}"
+fi
