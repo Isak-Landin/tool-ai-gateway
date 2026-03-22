@@ -50,8 +50,8 @@ document.getElementById('createProjectForm').addEventListener('submit', async (e
 
         const data = await response.json();
 
-        // Success: status 200-299 AND ok=true (redirect to project)
-        if (response.ok && data.ok === true) {
+        // Success: status 200-299, ok=true, and a valid project id
+        if (response.ok && data.ok === true && Number.isInteger(data.project_id)) {
             window.location.href = `/projects/${data.project_id}`;
             return;
         }

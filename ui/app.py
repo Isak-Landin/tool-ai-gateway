@@ -78,10 +78,24 @@ def create_project():
                 "message": "Gateway returned invalid response format"
             }), 502
 
+        if not isinstance(result, dict):
+            return jsonify({
+                "ok": False,
+                "message": "Gateway returned invalid response format"
+            }), 502
+
         if response.ok and result.get("ok") is True:
-            # Redirect to newly created project
             project_id = result.get("project_id")
-            return redirect(url_for('project_detail', project_id=project_id))
+            if not isinstance(project_id, int):
+                return jsonify({
+                    "ok": False,
+                    "message": "Gateway returned invalid response format"
+                }), 502
+
+            return jsonify({
+                "ok": True,
+                "project_id": project_id
+            }), 201
 
         elif not result.get("ok"):
             return jsonify({
