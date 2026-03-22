@@ -1,19 +1,25 @@
-import os
-
 import requests
 
 from ollama.builder import build_chat_payload
+from ollama.config import get_ollama_base_url, get_ollama_default_model
 
 
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "seamon67/Ministral-3-Reasoning:14b")
-
-
-def call_ollama(user_message: str, history: list[dict] | None = None) -> dict:
+def call_ollama(
+    user_message: str | None = None,
+    history: list[dict] | None = None,
+    *,
+    messages: list[dict] | None = None,
+    model: str | None = None,
+    system_prompt: str | None = None,
+    tool_name: str | None = None,
+) -> dict:
     payload = build_chat_payload(
-        model=OLLAMA_MODEL,
+        model=model or get_ollama_default_model(),
         user_message=user_message,
         history=history,
+        messages=messages,
+        system_prompt=system_prompt,
+        tool_name=tool_name,
     )
 
     # MVP uses non-streaming final-body handling.
@@ -21,7 +27,7 @@ def call_ollama(user_message: str, history: list[dict] | None = None) -> dict:
     payload.setdefault("stream", False)
 
     r = requests.post(
-        f"{OLLAMA_BASE_URL}/api/chat",
+        f"{get_ollama_base_url()}/api/chat",
         json=payload,
         timeout=300,
     )
@@ -37,11 +43,19 @@ def parse_model_output(data: dict) -> dict:
     message = data.get("message") or {}
 
     return {
+        "model": data.get("model"),
+        "created_at": data.get("created_at"),
         "message": message,
-        "content": message.get("content") or "",
-        "thinking": message.get("thinking") or "",
+        "content": message.get("content"),
+        "thinking": message.get("thinking"),
         "tool_calls": message.get("tool_calls") or [],
         "done": data.get("done"),
         "done_reason": data.get("done_reason"),
+        "total_duration": data.get("total_duration"),
+        "load_duration": data.get("load_duration"),
+        "prompt_eval_count": data.get("prompt_eval_count"),
+        "prompt_eval_duration": data.get("prompt_eval_duration"),
+        "eval_count": data.get("eval_count"),
+        "eval_duration": data.get("eval_duration"),
         "raw_response": data,
     }

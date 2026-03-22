@@ -15,4 +15,6 @@ class FileProcessingError(Exception):
 
 class GitHubError(Exception):
     """Git operation error"""
-    pass
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(message)
