@@ -5,6 +5,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
+from fastapi.responses import JSONResponse
 
 from project_resolution import ProjectResolver, ProjectResolutionError, ProjectNotFoundError
 from runtime_binding import ProjectBinder, ProjectBindingError
@@ -138,8 +139,8 @@ class ProjectCreateErrorResponse(BaseModel):
     field: str | None = None
     message: str
 
-@app.post("/projects", response_model=Union[ProjectCreateResponse, ProjectCreateErrorResponse])
-def create_project(req: ProjectCreateRequest) -> Union[ProjectCreateResponse, ProjectCreateErrorResponse]:
+@app.post("/projects", response_model=ProjectCreateResponse)
+def create_project(req: ProjectCreateRequest) -> ProjectCreateResponse:
     try:
         project_repository = ProjectsRepository()
         new_project = project_repository.create_project(
@@ -155,14 +156,15 @@ def create_project(req: ProjectCreateRequest) -> Union[ProjectCreateResponse, Pr
                 detail="Failed to create project"
             )
     except PersistenceError as e:
-        # Return error response with explicit status code
-        raise HTTPException(
+        # Use JSONResponse to control exact response structure
+        return JSONResponse(
             status_code=409,
-            detail=ProjectCreateErrorResponse(
-                error_code="DUPLICATE_FIELD" if e.field else "PERSISTENCE_ERROR",
-                field=e.field,
-                message=e.message
-            ).model_dump()
+            content={
+                "ok": False,
+                "error_code": "DUPLICATE_FIELD" if e.field else "PERSISTENCE_ERROR",
+                "field": e.field,
+                "message": e.message
+            }
         )
 
 
