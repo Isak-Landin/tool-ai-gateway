@@ -1,84 +1,78 @@
 # AI Tool Gateway
 
-⚠️ **Project Status: Under Construction**
+> Self-hosted model + tools + project context gateway with a web UI.
 
-This project is currently under active development.
+⚠️ **Status:** under active development. The project is not complete and parts of the architecture are still being stabilized.
 
-The architecture, endpoints, and integrations may change frequently while the system is being built and stabilized. Documentation may not always reflect the latest internal changes.
+## What it is
 
-Until the first stable release is published, the repository should be considered **experimental** and **not production ready**.
+AI Tool Gateway is intended to connect:
 
-Use at your own discretion.
+- a web UI
+- a gateway API
+- PostgreSQL persistence
+- Ollama, self-hosted or remote
+- project-scoped tools such as `git` and `web_search`
 
-___
+The goal is to let the application coordinate model requests and tool usage without giving the model direct system access.
 
+## Current stack
 
-> Self-hosted Ollama + tool + Archon + git gateway — without relying on GPT-style SaaS APIs.
+- **Gateway API** — Python backend container
+- **UI** — separate Python UI container
+- **PostgreSQL** — persistent state in `db/`
+- **Ollama** — local or remote model endpoint
+- **Tools** — currently includes project git access and web search, with room for more
 
-AI Tool Gateway exposes a **minimal HTTP backend** that connects:
+## Project setup
 
-- a **UI**
-- a **local language model**
-- **tool execution services**
-- **project repositories**
-- **persistent conversation state**
+The easiest project setup is:
 
-The gateway allows a language model to interact with tools without giving the model direct access to system resources.
-
-Instead of embedding capabilities directly into the model, the gateway controls all execution through a deterministic backend layer.
-
-The system currently integrates:
-
-- **Ollama** — local LLM runtime
-- **Archon** — knowledge search / RAG
-- **git** — project repository access
-- **PostgreSQL** — persistent state
-
-Open Interpreter previously appeared in early design notes but **is not part of the current MVP architecture**.
-
-The design philosophy remains intentionally simple:
-
-- keep architecture minimal
-- avoid vendor lock-in
-- expose clean HTTP interfaces
-- isolate model from system execution
-- maintain deterministic backend control
-
----
-
-# Overview
-
-The gateway acts as a controller between:
-
-- a **user interface**
-- a **language model**
-- **backend tool services**
-
-A request to the system flows through several layers:
-
-1. UI sends request to `/chat`
-2. Gateway resolves the project context
-3. Gateway binds a runtime handle
-4. Conversation history and file context are loaded
-5. The model is invoked through Ollama
-6. The model may request a tool
-7. Gateway validates and executes the tool
-8. Tool results are returned to the model
-9. Model produces a final response
-10. Gateway returns the response to the UI
-
-Important rule:
-
-The **model never executes tools directly**.
-
-The model can only **request tool calls**.  
-The backend decides whether the request is honored.
-
----
-
-# Setup
-
-Clone the repository:
+1. Copy `env.example` to `.env`
+2. Adjust values if needed
+3. Start the stack with Docker Compose
 
 ```bash
-git clone git@github.com:Isak-Landin/tool-ai-gateway.git
+cp env.example .env
+docker compose up --build
+```
+
+This is the intended local/project-level startup path.
+
+The compose setup includes:
+
+- gateway container
+- UI container
+- PostgreSQL container
+
+It expects the external Docker network `web_network` to exist.
+
+## System setup
+
+If you are preparing a server with most of the required supporting services, use:
+
+`setup_ollama_litellm_system.sh`
+
+That script is intended to be copied to the target server and run there. It handles most of the host/system preparation work, including Docker-related setup and Ollama container provisioning.
+
+## Environment
+
+The main configuration file is:
+
+`env.example`
+
+Typical values include:
+
+- PostgreSQL connection settings
+- gateway and UI ports
+- gateway base URLs
+- Ollama base URL and model
+- Archon base URL
+- web search configuration
+
+## Notes
+
+- `Dockerfile` builds the gateway container
+- `ui/Dockerfile` builds the UI container
+- `docker-compose.yml` defines the intended project runtime stack
+- the repository is still evolving, so setup details may change as lower-level modules are refined
