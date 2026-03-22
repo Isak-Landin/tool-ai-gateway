@@ -52,7 +52,7 @@ document.getElementById('createProjectForm').addEventListener('submit', async (e
 
         // Success: status 200-299 AND ok=true (redirect to project)
         if (response.ok && data.ok === true) {
-            //window.location.href = `/projects/${data.project_id}`;
+            window.location.href = `/projects/${data.project_id}`;
             return;
         }
 
@@ -84,6 +84,7 @@ document.getElementById('createProjectForm').addEventListener('submit', async (e
         submitBtn.textContent = originalBtnText;
 
     } catch (error) {
+        console.log("Reached outside try clause");
         alert(`Network error: ${error.message}`);
         submitBtn.disabled = false;
         submitBtn.textContent = originalBtnText;
