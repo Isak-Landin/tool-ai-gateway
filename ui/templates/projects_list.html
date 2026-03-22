@@ -14,7 +14,7 @@
     {% if projects %}
         <div class="projects-grid">
             {% for project in projects %}
-                <a href="{{ url_for('project_detail', project_id=project.id) }}" class="project-card">
+                <a href="{{ url_for('project_detail', project_id=project.project_id) }}" class="project-card">
                     <div class="project-card-header">
                         <h3>{{ project.name }}</h3>
                         <span class="project-id">ID: {{ project.id }}</span>
