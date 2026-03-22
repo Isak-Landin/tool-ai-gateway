@@ -90,7 +90,7 @@ class ProjectsRepository:
             results = session.execute(stmt).scalars().all()  # Use .scalars().all()
             return [
                 {
-                    "id": r.id,
+                    "project_id": r.id,
                     "name": r.name,
                     "ai_model_name": r.ai_model_name,
                     "orchestrator_name": r.orchestrator_name,

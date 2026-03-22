@@ -151,6 +151,15 @@ def create_project(req: ProjectCreateRequest) -> ProjectCreateResponse:
                 "message": e.message
             }
         )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "ok": False,
+                "error_code": "PERSISTENCE_ERROR",
+                "message": str(e)
+            }
+        )
 
 
 @app.get("/projects")
@@ -184,6 +193,8 @@ def get_project(project_id: int):
         raise HTTPException(status_code=404, detail=str(e))
     except ProjectResolutionError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.patch("/projects/{project_id}")
@@ -207,6 +218,8 @@ def run(project_id: int, req: ChatRequest):
         raise HTTPException(status_code=404, detail=str(e))
     except (ProjectResolutionError, ProjectBindingError, WorkflowExecutionError) as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/debug")
