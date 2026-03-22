@@ -59,7 +59,7 @@ class ProjectCreateResponse(BaseModel):
 
 class ProjectDetailResponse(BaseModel):
     ok: bool
-    id: int
+    project_id: int
     name: str
     ai_model_name: str
     orchestrator_name: str
