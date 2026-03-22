@@ -38,6 +38,7 @@ def index():
         data = response.json()
         projects = data.get("projects", []) if data.get("ok") else []
     except requests.RequestException as e:
+        print(f"[UI ERROR] GET / failed to load projects: {e!r}")
         projects = []
         error_msg = "Failed to connect to gateway"
     else:
@@ -73,12 +74,14 @@ def create_project():
         try:
             result = response.json()
         except requests.exceptions.JSONDecodeError:
+            print("[UI ERROR] POST /projects/new gateway returned non-JSON response")
             return jsonify({
                 "ok": False,
                 "message": "Gateway returned invalid response format"
             }), 502
 
         if not isinstance(result, dict):
+            print(f"[UI ERROR] POST /projects/new gateway returned non-object JSON: {result!r}")
             return jsonify({
                 "ok": False,
                 "message": "Gateway returned invalid response format"
@@ -87,6 +90,7 @@ def create_project():
         if response.ok and result.get("ok") is True:
             project_id = result.get("project_id")
             if not isinstance(project_id, int):
+                print(f"[UI ERROR] POST /projects/new missing valid project_id in success response: {result!r}")
                 return jsonify({
                     "ok": False,
                     "message": "Gateway returned invalid response format"
@@ -111,11 +115,13 @@ def create_project():
             }), 500
 
     except requests.exceptions.Timeout:
+        print("[UI ERROR] POST /projects/new gateway request timed out")
         return jsonify({
             "ok": False,
             "message": "Gateway request timed out"
         }), 504
     except requests.RequestException as e:
+        print(f"[UI ERROR] POST /projects/new gateway request failed: {e!r}")
         return jsonify({
             "ok": False,
             "message": f"Gateway unavailable: {str(e)}"
@@ -134,6 +140,7 @@ def project_detail(project_id):
         data = response.json()
         project = data if data.get("ok") else None
     except requests.RequestException as e:
+        print(f"[UI ERROR] GET /projects/{project_id} failed: {e!r}")
         project = None
         error_msg = "Failed to load project"
     else:

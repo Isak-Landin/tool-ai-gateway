@@ -136,6 +136,7 @@ def create_project(req: ProjectCreateRequest) -> ProjectCreateResponse:
         else:
             raise HTTPException(status_code=500, detail="Failed to create project")
     except PersistenceError as e:
+        print(f"[API ERROR] POST /projects persistence failure: {e!r}")
         # Map error_type to HTTP status code
         if e.error_type == "duplicate":
             status_code = 409  # Conflict
@@ -152,6 +153,7 @@ def create_project(req: ProjectCreateRequest) -> ProjectCreateResponse:
             }
         )
     except Exception as e:
+        print(f"[API ERROR] POST /projects unexpected failure: {e!r}")
         return JSONResponse(
             status_code=500,
             content={
@@ -173,6 +175,7 @@ def list_projects():
         ]
         return ProjectsListResponse(ok=True, projects=projects_with_ok)
     except PersistenceError as e:
+        print(f"[API ERROR] GET /projects persistence failure: {e!r}")
         return JSONResponse(
             status_code=500,
             content={
@@ -190,10 +193,13 @@ def get_project(project_id: int):
         project = project_resolver.resolve_by_id(project_id)
         return ProjectDetailResponse(ok=True, **project)
     except ProjectNotFoundError as e:
+        print(f"[API ERROR] GET /projects/{project_id} not found: {e!r}")
         raise HTTPException(status_code=404, detail=str(e))
     except ProjectResolutionError as e:
+        print(f"[API ERROR] GET /projects/{project_id} resolution failure: {e!r}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        print(f"[API ERROR] GET /projects/{project_id} unexpected failure: {e!r}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -215,10 +221,13 @@ def run(project_id: int, req: ChatRequest):
     try:
         return chat_workflow_entry(project_id, req)
     except ProjectNotFoundError as e:
+        print(f"[API ERROR] POST /projects/{project_id}/run not found: {e!r}")
         raise HTTPException(status_code=404, detail=str(e))
     except (ProjectResolutionError, ProjectBindingError, WorkflowExecutionError) as e:
+        print(f"[API ERROR] POST /projects/{project_id}/run workflow failure: {e!r}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        print(f"[API ERROR] POST /projects/{project_id}/run unexpected failure: {e!r}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
