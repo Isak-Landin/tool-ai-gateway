@@ -67,7 +67,7 @@ class Message(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     project_id: Mapped[int] = mapped_column(
         BigInteger,
-        ForeignKey("projects.id", ondelete="CASCADE"),
+        ForeignKey("projects.project_id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
@@ -116,7 +116,7 @@ class File(Base):
 
     project_id: Mapped[int | None] = mapped_column(
         BigInteger,
-        ForeignKey("projects.id", ondelete="CASCADE"),
+        ForeignKey("projects.project_id", ondelete="CASCADE"),
         nullable=True,
         index=True,
     )
