@@ -52,7 +52,7 @@ document.getElementById('createProjectForm').addEventListener('submit', async (e
 
         // Success: status 200-299 AND ok=true (redirect to project)
         if (response.ok && data.ok === true) {
-            window.location.href = `/projects/${data.project_id}`;
+            //window.location.href = `/projects/${data.project_id}`;
             return;
         }
 
