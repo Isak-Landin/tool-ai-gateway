@@ -22,35 +22,6 @@ if LOCAL_SERVER_URL is None:
 
 app = FastAPI()
 
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
-from starlette.types import ASGIApp
-
-
-class RequestLoggingMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next: ASGIApp):
-        body = await request.body()
-        body_str = body.decode('utf-8', 'ignore') if body else ""
-        print(f"[REQ IN] {request.method} {request.url.path} body={body_str}")
-
-        async def receive():
-            return {
-                "type": "http.request",
-                "body": body,
-                "more_body": False,
-            }
-
-        request._receive = receive
-        response = await call_next(request)
-        print(f"[REQ OUT] {request.method} {request.url.path}")
-        print(str(response))
-        return response
-
-
-app.add_middleware(RequestLoggingMiddleware)
-
-
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[LOCAL_SERVER_URL],

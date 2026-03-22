@@ -57,7 +57,6 @@ def create_project():
     if request.method == "GET":
         return render_template("create_project.html", gateway_base_url=GATEWAY_BASE_URL)
 
-    # Handle POST request
     data = request.get_json() if request.is_json else request.form.to_dict()
 
     try:
@@ -71,7 +70,6 @@ def create_project():
             timeout=10
         )
 
-        # Parse response BEFORE checking status (critical)
         try:
             result = response.json()
         except requests.exceptions.JSONDecodeError:
@@ -80,23 +78,18 @@ def create_project():
                 "message": "Gateway returned invalid response format"
             }), 502
 
-        # Success path: 2xx status code AND ok field is true
         if response.ok and result.get("ok") is True:
             # Redirect to newly created project
             project_id = result.get("project_id")
             return redirect(url_for('project_detail', project_id=project_id))
 
-        # Validation error: API returned error details
         elif not result.get("ok"):
-            # Preserve the field and error information for frontend
             return jsonify({
                 "ok": False,
                 "field": result.get("field"),
                 "error_code": result.get("error_code"),
                 "message": result.get("message", "Project creation failed")
-            }), response.status_code  # Use actual API status code (409, 400, etc.)
-
-        # Unexpected: status is success but ok=false (shouldn't happen)
+            }), response.status_code
         else:
             return jsonify({
                 "ok": False,
@@ -108,9 +101,7 @@ def create_project():
             "ok": False,
             "message": "Gateway request timed out"
         }), 504
-
     except requests.RequestException as e:
-        # Connection error, DNS failure, etc.
         return jsonify({
             "ok": False,
             "message": f"Gateway unavailable: {str(e)}"
