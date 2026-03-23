@@ -17,7 +17,12 @@ class ProjectBinder:
 
         project_id = project_row.get("project_id")
 
-        handle.bind_execution_persistence(ExecutionPersistence(project_id=project_id))
+        handle.bind_execution_persistence(
+            ExecutionPersistence(
+                project_id=project_id,
+                repo_path=project_row.get("repo_path"),
+            )
+        )
 
         # bind git executor
         handle.bind_git(
