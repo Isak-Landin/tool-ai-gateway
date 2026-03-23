@@ -20,20 +20,33 @@ class GitHubError(Exception):
         super().__init__(message)
 
 
+# EXECUTION LAYER ERROR REPRESENTATION
 class RoutePersistenceError(PersistenceError):
     """Route-facing persistence error"""
+    def __init__(self, message: str, field: str = None, error_type: str = None, file_id: str = None):
+        super().__init__(message=message, field=field, error_type=error_type)
+        self.file_id = file_id
 
 
 class ResolutionPersistenceError(PersistenceError):
     """Project resolution persistence error"""
+    def __init__(self, message: str, field: str = None, error_type: str = None, file_id: str = None):
+        super().__init__(message=message, field=field, error_type=error_type)
+        self.file_id = file_id
 
 
 class RuntimeBindingPersistenceError(PersistenceError):
     """Runtime binding persistence error"""
+    def __init__(self, message: str, field: str = None, error_type: str = None, file_id: str = None):
+        super().__init__(message=message, field=field, error_type=error_type)
+        self.file_id = file_id
 
 
 class ProjectHandlePersistenceError(PersistenceError):
     """Project handle persistence error"""
+    def __init__(self, message: str, field: str = None, error_type: str = None, file_id: str = None):
+        super().__init__(message=message, field=field, error_type=error_type)
+        self.file_id = file_id
 
 
 class ExecutionPersistenceError(PersistenceError):
@@ -45,7 +58,13 @@ class ExecutionPersistenceError(PersistenceError):
 
 class MessageHistoryPersistenceError(PersistenceError):
     """Message history persistence error"""
+    def __init__(self, message: str, field: str = None, error_type: str = None, file_id: str = None):
+        super().__init__(message=message, field=field, error_type=error_type)
+        self.file_id = file_id
 
 
 class RepositoryFilePersistenceError(PersistenceError):
     """Repository file persistence error"""
+    def __init__(self, message: str, field: str = None, error_type: str = None, file_id: str = None):
+        super().__init__(message=message, field=field, error_type=error_type)
+        self.file_id = file_id
