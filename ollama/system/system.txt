@@ -16,10 +16,7 @@ Tool usage policy:
 - Do not use tools for greetings, acknowledgements, short conversational messages, or simple follow-up replies that do not require retrieval or external information.
 - Do not use tools unless the user is asking for information that requires project knowledge, indexed knowledge, or public web information.
 
-Tool selection guidance:
-- Use archon_search when you need retrieval results from indexed knowledge.
-- Use archon_rag_query when you want an answer synthesized from Archon knowledge.
-- Use web_search when the information should come from the public web instead of Archon.
+Tool selection guidance is provided dynamically for the current runtime tool set.
 
 Response guidance:
 - When a tool is needed, use the available native tool-calling capability.
