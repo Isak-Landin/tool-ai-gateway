@@ -1,3 +1,4 @@
+from errors import ResolutionPersistenceError
 
 
 class ProjectResolutionPersistence:

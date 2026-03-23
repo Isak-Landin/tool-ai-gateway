@@ -7,7 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from db.session import SessionLocal
 from db.models import Project, File
-from errors import PersistenceError
+from errors import RepositoryFilePersistenceError
 
 
 
@@ -29,19 +29,19 @@ class FilesRepository:
                 stmt = select(Project.repo_path).where(Project.project_id == self.project_id)
                 repo_path = session.execute(stmt).scalar_one_or_none()
             except SQLAlchemyError as e:
-                raise PersistenceError(str(e))
+                raise RepositoryFilePersistenceError(str(e))
             finally:
                 if self.db_connection is None:
                     session.close()
 
         if not repo_path:
-            raise PersistenceError("repo_path is required for repository file access")
+            raise RepositoryFilePersistenceError("repo_path is required for repository file access")
 
         repo_root = Path(repo_path).expanduser().resolve()
         if not repo_root.exists():
-            raise PersistenceError(f"Repository path does not exist: {repo_root}")
+            raise RepositoryFilePersistenceError(f"Repository path does not exist: {repo_root}")
         if not repo_root.is_dir():
-            raise PersistenceError(f"Repository path is not a directory: {repo_root}")
+            raise RepositoryFilePersistenceError(f"Repository path is not a directory: {repo_root}")
 
         return repo_root
 
@@ -57,11 +57,11 @@ class FilesRepository:
         try:
             target_path.relative_to(repo_root)
         except ValueError as e:
-            raise PersistenceError(f"Path escapes repository root: {relative_repo_path}") from e
+            raise RepositoryFilePersistenceError(f"Path escapes repository root: {relative_repo_path}") from e
 
         if not target_path.exists():
             scoped_path = relative_repo_path or "/"
-            raise PersistenceError(f"Path does not exist in repository: {scoped_path}")
+            raise RepositoryFilePersistenceError(f"Path does not exist in repository: {scoped_path}")
 
         return repo_root, target_path
 
@@ -97,7 +97,7 @@ class FilesRepository:
             ]
 
         except SQLAlchemyError as e:
-            raise PersistenceError(str(e))
+            raise RepositoryFilePersistenceError(str(e))
         finally:
             if self.db_connection is None:
                 session.close()
@@ -106,7 +106,7 @@ class FilesRepository:
         repo_root, target_path = self._resolve_repo_path(relative_repo_path)
 
         if not target_path.is_dir():
-            raise PersistenceError(
+            raise RepositoryFilePersistenceError(
                 f"Path is not a directory in repository: {self._relative_repo_string(repo_root, target_path)}"
             )
 
@@ -121,7 +121,7 @@ class FilesRepository:
         repo_root, target_path = self._resolve_repo_path(relative_repo_path)
 
         if not target_path.is_dir():
-            raise PersistenceError(
+            raise RepositoryFilePersistenceError(
                 f"Path is not a directory in repository: {self._relative_repo_string(repo_root, target_path)}"
             )
 
@@ -144,27 +144,27 @@ class FilesRepository:
         end_line: int | None = None,
     ) -> dict:
         if number_of_lines is not None and end_line is not None:
-            raise PersistenceError("Use either number_of_lines or end_line, not both")
+            raise RepositoryFilePersistenceError("Use either number_of_lines or end_line, not both")
 
         repo_root, target_path = self._resolve_repo_path(relative_repo_path)
         if not target_path.is_file():
-            raise PersistenceError(
+            raise RepositoryFilePersistenceError(
                 f"Path is not a file in repository: {self._relative_repo_string(repo_root, target_path)}"
             )
 
         if start_line is None:
             start_line = 1
         if start_line < 1:
-            raise PersistenceError("start_line must be >= 1")
+            raise RepositoryFilePersistenceError("start_line must be >= 1")
         if number_of_lines is not None and number_of_lines < 1:
-            raise PersistenceError("number_of_lines must be >= 1")
+            raise RepositoryFilePersistenceError("number_of_lines must be >= 1")
         if end_line is not None and end_line < start_line:
-            raise PersistenceError("end_line must be >= start_line")
+            raise RepositoryFilePersistenceError("end_line must be >= start_line")
 
         try:
             all_lines = target_path.read_text(encoding="utf-8").splitlines()
         except OSError as e:
-            raise PersistenceError(str(e)) from e
+            raise RepositoryFilePersistenceError(str(e)) from e
 
         total_lines = len(all_lines)
         if number_of_lines is not None:
@@ -195,9 +195,9 @@ class FilesRepository:
         max_results: int = 100,
     ) -> list[dict]:
         if not str(query).strip():
-            raise PersistenceError("query is required")
+            raise RepositoryFilePersistenceError("query is required")
         if max_results < 1:
-            raise PersistenceError("max_results must be >= 1")
+            raise RepositoryFilePersistenceError("max_results must be >= 1")
 
         repo_root, target_path = self._resolve_repo_path(relative_repo_path)
 
@@ -212,7 +212,7 @@ class FilesRepository:
 
         rg_path = shutil.which("rg")
         if rg_path is None:
-            raise PersistenceError("ripgrep (rg) is required for search_in_files")
+            raise RepositoryFilePersistenceError("ripgrep (rg) is required for search_in_files")
 
         command = [
             rg_path,
@@ -235,7 +235,7 @@ class FilesRepository:
         )
 
         if completed.returncode not in {0, 1}:
-            raise PersistenceError(completed.stderr.strip() or completed.stdout.strip() or "ripgrep failed")
+            raise RepositoryFilePersistenceError(completed.stderr.strip() or completed.stdout.strip() or "ripgrep failed")
 
         results: list[dict] = []
         for line in completed.stdout.splitlines():

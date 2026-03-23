@@ -3,7 +3,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from db.session import SessionLocal
 from db.models import Project
-from errors import PersistenceError
+from errors import RoutePersistenceError
 
 
 
@@ -32,7 +32,7 @@ class ProjectRoutePersistence:
                 "created_at": result.created_at,
             }
         except SQLAlchemyError as e:
-            raise PersistenceError(str(e))
+            raise RoutePersistenceError(str(e))
         finally:
             if self.db_connection is None and session:
                 session.close()
@@ -45,14 +45,14 @@ class ProjectRoutePersistence:
                 select(Project).where(Project.remote_repo_url == remote_repo_url)
             ).scalar_one_or_none()
             if remote_repo_result:
-                raise PersistenceError("Remote repository URL already exists", field="remote_repo_url", error_type="duplicate")
+                raise RoutePersistenceError("Remote repository URL already exists", field="remote_repo_url", error_type="duplicate")
 
             # Check for duplicate ssh_key
             ssh_key_result = session.execute(
                 select(Project).where(Project.ssh_key == ssh_key)
             ).scalar_one_or_none()
             if ssh_key_result:
-                raise PersistenceError("SSH key already registered", field="ssh_key", error_type="duplicate")
+                raise RoutePersistenceError("SSH key already registered", field="ssh_key", error_type="duplicate")
 
             # Create project
             new_project = Project(name=name, remote_repo_url=remote_repo_url, ssh_key=ssh_key)
@@ -65,12 +65,12 @@ class ProjectRoutePersistence:
                 "remote_repo_url": new_project.remote_repo_url,
                 "ssh_key": new_project.ssh_key,
             }
-        except PersistenceError:
+        except RoutePersistenceError:
             session.rollback()
             raise
         except SQLAlchemyError as e:
             session.rollback()
-            raise PersistenceError(str(e))
+            raise RoutePersistenceError(str(e))
         finally:
             if self.db_connection is None and session:
                 session.close()
@@ -102,7 +102,7 @@ class ProjectRoutePersistence:
                 for r in results
             ]
         except SQLAlchemyError as e:
-            raise PersistenceError(str(e))
+            raise RoutePersistenceError(str(e))
         finally:
             if self.db_connection is None and session:
                 session.close()

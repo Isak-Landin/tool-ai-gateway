@@ -3,7 +3,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from db.session import SessionLocal
 from db.models import Message
-from errors import PersistenceError
+from errors import MessageHistoryPersistenceError
 
 
 
@@ -41,7 +41,7 @@ class MessagesRepository:
             ]
 
         except SQLAlchemyError as e:
-            raise PersistenceError(str(e))
+            raise MessageHistoryPersistenceError(str(e))
         finally:
             if self.db_connection is None:
                 session.close()
@@ -65,7 +65,7 @@ class MessagesRepository:
 
         except SQLAlchemyError as e:
             session.rollback()
-            raise PersistenceError(str(e))
+            raise MessageHistoryPersistenceError(str(e))
         finally:
             if self.db_connection is None:
                 session.close()
