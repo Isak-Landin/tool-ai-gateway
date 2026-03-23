@@ -1,30 +1,23 @@
 import requests
 
-from ollama.builder import build_chat_payload
-from ollama.config import get_ollama_base_url, get_ollama_default_model
+from ollama.config import (
+    get_default_chat_request_fields,
+    get_ollama_base_url,
+)
 
 
-def call_ollama(
-    user_message: str | None = None,
-    history: list[dict] | None = None,
-    *,
-    messages: list[dict] | None = None,
-    model: str | None = None,
-    system_prompt: str | None = None,
-    tool_name: str | None = None,
-) -> dict:
-    payload = build_chat_payload(
-        model=model or get_ollama_default_model(),
-        user_message=user_message,
-        history=history,
-        messages=messages,
-        system_prompt=system_prompt,
-        tool_name=tool_name,
-    )
+def send_chat_envelope(chat_envelope: dict) -> dict:
+    payload = dict(chat_envelope)
+    default_fields = get_default_chat_request_fields()
 
-    # MVP uses non-streaming final-body handling.
-    # Native Ollama streaming requires chunk accumulation for content/thinking/tool_calls.
-    payload.setdefault("stream", False)
+    payload.setdefault("stream", default_fields.get("stream"))
+
+    default_options = default_fields.get("options") or {}
+    payload_options = dict(payload.get("options") or {})
+    for option_name, option_value in default_options.items():
+        payload_options.setdefault(option_name, option_value)
+    if payload_options:
+        payload["options"] = payload_options
 
     r = requests.post(
         f"{get_ollama_base_url()}/api/chat",
@@ -33,11 +26,9 @@ def call_ollama(
     )
 
     if not r.ok:
-
         r.raise_for_status()
 
     return r.json()
-
 
 def parse_model_output(data: dict) -> dict:
     message = data.get("message") or {}
@@ -46,9 +37,12 @@ def parse_model_output(data: dict) -> dict:
         "model": data.get("model"),
         "created_at": data.get("created_at"),
         "message": message,
+        "role": message.get("role"),
         "content": message.get("content"),
         "thinking": message.get("thinking"),
         "tool_calls": message.get("tool_calls") or [],
+        "tool_name": message.get("tool_name"),
+        "images": message.get("images"),
         "done": data.get("done"),
         "done_reason": data.get("done_reason"),
         "total_duration": data.get("total_duration"),

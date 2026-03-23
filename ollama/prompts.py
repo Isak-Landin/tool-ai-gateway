@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from pathlib import Path
 
 
@@ -25,16 +26,23 @@ def build_system_message(system_prompt: str | None = None) -> dict:
 
 def merge_system_prompt_fragments(
     base_system_prompt: str | None,
-    extra_fragment: str | None,
+    extra_fragments: str | Iterable[str] | None,
 ) -> str | None:
-    if extra_fragment is None:
+    if extra_fragments is None:
         return base_system_prompt
 
+    fragments = [extra_fragments] if isinstance(extra_fragments, str) else list(extra_fragments)
+    normalized_fragments = [fragment.strip() for fragment in fragments if fragment and fragment.strip()]
+    if not normalized_fragments:
+        return base_system_prompt
+
+    merged_fragment = "\n\n".join(normalized_fragments)
+
     if base_system_prompt is None:
-        return build_system_prompt() + "\n\n" + extra_fragment
+        return build_system_prompt() + "\n\n" + merged_fragment
 
     stripped_base = base_system_prompt.strip()
     if not stripped_base:
-        return extra_fragment
+        return merged_fragment
 
-    return stripped_base + "\n\n" + extra_fragment
+    return stripped_base + "\n\n" + merged_fragment

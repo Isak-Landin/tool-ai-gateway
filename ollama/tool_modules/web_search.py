@@ -1,5 +1,5 @@
 from ollama.tool_module import OllamaToolModule
-from ollama.tool_registry import register_tool_module
+from ollama.tool_registry import register_tool
 
 
 WEB_SEARCH_TOOL_MODULE = OllamaToolModule(
@@ -31,4 +31,4 @@ WEB_SEARCH_TOOL_MODULE = OllamaToolModule(
 )
 
 
-register_tool_module(WEB_SEARCH_TOOL_MODULE)
+register_tool(WEB_SEARCH_TOOL_MODULE)

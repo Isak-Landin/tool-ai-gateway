@@ -1,64 +1,115 @@
-from ollama.config import get_default_chat_options
-from ollama.prompts import build_system_message, merge_system_prompt_fragments
-from ollama.tool_registry import build_tool_prompt_fragment, build_tool_schemas
+from __future__ import annotations
+
+from ollama.prompts import build_system_message
 
 
-def build_messages(
-    user_message: str | None = None,
-    history: list[dict] | None = None,
-    messages: list[dict] | None = None,
-    system_prompt: str | None = None,
-) -> list[dict]:
-    if messages is not None:
-        if user_message is not None or history is not None:
-            raise ValueError("Use either messages or user_message/history, not both")
-        return list(messages)
-
-    if user_message is None or not str(user_message).strip():
-        raise ValueError("user_message is required when messages is not provided")
-
-    built_messages = [build_system_message(system_prompt=system_prompt)]
-
-    if history:
-        built_messages.extend(history)
-
-    built_messages.append(
-        {
-            "role": "user",
-            "content": user_message,
-        }
-    )
-
-    return built_messages
-
-
-def build_chat_payload(
-    model: str,
-    user_message: str | None = None,
-    history: list[dict] | None = None,
-    messages: list[dict] | None = None,
-    system_prompt: str | None = None,
+def build_chat_message(
+    role: str,
+    content: str | None = None,
+    *,
+    tool_calls: list[dict] | None = None,
     tool_name: str | None = None,
+    images: list[str] | None = None,
+    thinking: str | None = None,
 ) -> dict:
-    effective_system_prompt = merge_system_prompt_fragments(
-        base_system_prompt=system_prompt,
-        extra_fragment=build_tool_prompt_fragment(tool_name),
-    )
+    if role not in {"system", "user", "assistant", "tool"}:
+        raise ValueError(f"Unsupported chat message role: {role}")
 
-    payload = {
+    message = {"role": role}
+
+    if content is not None:
+        message["content"] = content
+    if tool_calls is not None:
+        message["tool_calls"] = list(tool_calls)
+    if tool_name is not None:
+        message["tool_name"] = tool_name
+    if images is not None:
+        message["images"] = list(images)
+    if thinking is not None:
+        message["thinking"] = thinking
+
+    return message
+
+
+def create_chat_envelope(
+    model: str,
+    *,
+    messages: list[dict] | None = None,
+    tools: list[dict] | None = None,
+    stream: bool | None = None,
+    options: dict | None = None,
+    format: str | dict | None = None,
+    keep_alive: str | int | None = None,
+    think: bool | None = None,
+) -> dict:
+    envelope = {
         "model": model,
-        "messages": build_messages(
-            user_message=user_message,
-            history=history,
-            messages=messages,
-            system_prompt=effective_system_prompt,
-        ),
+        "messages": list(messages or []),
     }
 
-    payload.update(get_default_chat_options())
+    return merge_chat_envelope_fields(
+        envelope,
+        tools=list(tools) if tools else None,
+        stream=stream,
+        options=dict(options) if options else None,
+        format=format,
+        keep_alive=keep_alive,
+        think=think,
+    )
 
-    tools = build_tool_schemas(tool_name)
-    if tools:
-        payload["tools"] = tools
 
-    return payload
+def merge_chat_envelope_fields(chat_envelope: dict, **fields: object) -> dict:
+    for field_name, field_value in fields.items():
+        if field_value is not None:
+            chat_envelope[field_name] = field_value
+
+    return chat_envelope
+
+
+def append_chat_message(chat_envelope: dict, message: dict) -> dict:
+    chat_envelope.setdefault("messages", []).append(dict(message))
+    return chat_envelope
+
+
+def append_system_message(chat_envelope: dict, system_prompt: str | None = None) -> dict:
+    return append_chat_message(
+        chat_envelope,
+        build_system_message(system_prompt=system_prompt),
+    )
+
+
+def append_user_message(chat_envelope: dict, content: str) -> dict:
+    return append_chat_message(chat_envelope, build_chat_message(role="user", content=content))
+
+
+def append_assistant_message(
+    chat_envelope: dict,
+    content: str | None = None,
+    *,
+    tool_calls: list[dict] | None = None,
+    tool_name: str | None = None,
+    images: list[str] | None = None,
+    thinking: str | None = None,
+) -> dict:
+    effective_content = content
+    if effective_content is None and tool_calls is not None:
+        effective_content = ""
+
+    return append_chat_message(
+        chat_envelope,
+        build_chat_message(
+            role="assistant",
+            content=effective_content,
+            tool_calls=tool_calls,
+            tool_name=tool_name,
+            images=images,
+            thinking=thinking,
+        ),
+    )
+
+
+def append_tool_message(chat_envelope: dict, content: str, tool_name: str) -> dict:
+    return append_chat_message(
+        chat_envelope,
+        build_chat_message(role="tool", content=content, tool_name=tool_name),
+    )

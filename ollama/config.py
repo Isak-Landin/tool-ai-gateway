@@ -9,7 +9,14 @@ def get_ollama_default_model() -> str:
     return os.getenv("OLLAMA_MODEL", "seamon67/Ministral-3-Reasoning:14b")
 
 
-def get_default_chat_options() -> dict:
+def get_default_chat_request_fields() -> dict:
     return {
         "stream": False,
+        "options": {
+            "temperature": 0.5,
+        },
     }
+
+
+def get_default_chat_options() -> dict:
+    return get_default_chat_request_fields()

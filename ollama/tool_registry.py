@@ -9,12 +9,12 @@ _REGISTERED_TOOL_MODULES: dict[str, OllamaToolModule] = {}
 _DEFAULT_MODULES_LOADED = False
 
 
-def register_tool_module(module: OllamaToolModule) -> None:
-    existing = _REGISTERED_TOOL_MODULES.get(module.name)
-    if existing is not None and existing != module:
-        raise ValueError(f"Ollama tool module '{module.name}' is already registered")
+def register_tool(tool: OllamaToolModule) -> None:
+    existing = _REGISTERED_TOOL_MODULES.get(tool.name)
+    if existing is not None and existing != tool:
+        raise ValueError(f"Ollama tool module '{tool.name}' is already registered")
 
-    _REGISTERED_TOOL_MODULES[module.name] = module
+    _REGISTERED_TOOL_MODULES[tool.name] = tool
 
 
 def ensure_default_tool_modules_loaded() -> None:
@@ -28,40 +28,40 @@ def ensure_default_tool_modules_loaded() -> None:
     _DEFAULT_MODULES_LOADED = True
 
 
-def get_tool_module(name: str) -> OllamaToolModule:
+def get_registered_tool(name: str) -> OllamaToolModule:
     ensure_default_tool_modules_loaded()
 
-    module = _REGISTERED_TOOL_MODULES.get(name)
-    if module is None:
+    tool = _REGISTERED_TOOL_MODULES.get(name)
+    if tool is None:
         raise ValueError(f"Unknown Ollama tool module: {name}")
 
-    return module
+    return tool
 
 
-def list_tool_modules() -> list[OllamaToolModule]:
+def list_registered_tools() -> list[OllamaToolModule]:
     ensure_default_tool_modules_loaded()
     return list(_REGISTERED_TOOL_MODULES.values())
 
 
-def resolve_tool_modules(tool_names: str | Iterable[str] | None = None) -> list[OllamaToolModule]:
+def resolve_registered_tools(tool_names: str | Iterable[str] | None = None) -> list[OllamaToolModule]:
     if tool_names is None:
         return []
 
     ensure_default_tool_modules_loaded()
 
     names = [tool_names] if isinstance(tool_names, str) else list(tool_names)
-    return [get_tool_module(name) for name in names]
+    return [get_registered_tool(name) for name in names]
 
 
 def build_tool_schemas(tool_names: str | Iterable[str] | None = None) -> list[dict]:
-    return [module.build_schema() for module in resolve_tool_modules(tool_names)]
+    return [tool.build_schema() for tool in resolve_registered_tools(tool_names)]
 
 
 def build_tool_prompt_fragment(tool_names: str | Iterable[str] | None = None) -> str | None:
     fragments = [
         fragment
-        for module in resolve_tool_modules(tool_names)
-        if (fragment := module.build_prompt_fragment()) is not None
+        for tool in resolve_registered_tools(tool_names)
+        if (fragment := tool.build_prompt_fragment()) is not None
     ]
 
     if not fragments:
