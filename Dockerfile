@@ -16,7 +16,7 @@ COPY api.py /app/api.py
 COPY project_resolution.py /app/project_resolution.py
 COPY runtime_binding.py /app/runtime_binding.py
 COPY project_handle.py /app/project_handle.py
-COPY execution.py /app/execution.py
+COPY execution /app/execution
 COPY persistence.py /app/persistence.py
 COPY errors.py /app/errors.py
 COPY db/* /app/db/
