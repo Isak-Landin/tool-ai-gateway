@@ -111,6 +111,31 @@ class GitHub:
     def git_pull(self):
         return self.run_git(["pull", "origin", self.branch], require_key=True)
 
+    def git_switch_branch(self, branch_name, pull_from_origin=False):
+        normalized_branch_name = str(branch_name).strip()
+        if not normalized_branch_name:
+            raise GitHubError(message="branch_name is required")
+
+        try:
+            switch_output = self.run_git(["checkout", normalized_branch_name])
+        except GitHubError:
+            switch_output = self.run_git(
+                ["checkout", "-b", normalized_branch_name, f"origin/{normalized_branch_name}"],
+                require_key=True,
+            )
+
+        self.branch = normalized_branch_name
+
+        result = {
+            "branch_name": normalized_branch_name,
+            "switch_output": switch_output,
+        }
+
+        if pull_from_origin:
+            result["pull_output"] = self.git_pull()
+
+        return result
+
     def git_push(self):
         return self.run_git(["push", "origin", self.branch], require_key=True)
 
