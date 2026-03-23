@@ -1,6 +1,6 @@
 from project_handle import ProjectHandle
 from git.utils import GitHub
-from persistence import MessagesRepository, FilesRepository
+from persistence import ExecutionPersistence
 
 
 class ProjectBindingError(Exception):
@@ -17,14 +17,7 @@ class ProjectBinder:
 
         project_id = project_row.get("project_id")
 
-        # bind persistence accessors
-        handle.bind_messages_accessor(MessagesRepository(project_id=project_id))
-        handle.bind_files_accessor(
-            FilesRepository(
-                project_id=project_id,
-                repo_path=project_row.get("repo_path"),
-            )
-        )
+        handle.bind_execution_persistence(ExecutionPersistence(project_id=project_id))
 
         # bind git executor
         handle.bind_git(
