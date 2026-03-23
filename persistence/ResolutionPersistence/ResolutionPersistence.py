@@ -1,7 +1,7 @@
 from errors import ResolutionPersistenceError
 
 
-class ProjectResolutionPersistence:
+class ResolutionPersistence:
     def __init__(self, db_connection=None):
         self.db_connection = db_connection
 

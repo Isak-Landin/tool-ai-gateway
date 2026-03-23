@@ -1,7 +1,7 @@
 from errors import RuntimeBindingPersistenceError
 
 
-class ProjectRuntimeBindingPersistence:
+class RuntimeBindingPersistence:
     def __init__(self, db_connection=None):
         self.db_connection = db_connection
 

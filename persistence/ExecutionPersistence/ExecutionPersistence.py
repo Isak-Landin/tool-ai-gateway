@@ -1,4 +1,3 @@
-
 from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -9,7 +8,7 @@ from errors import ExecutionPersistenceError
 
 
 
-class ProjectExecutionPersistence:
+class ExecutionPersistence:
     def __init__(self, db_connection=None, project_id: int | None = None):
         self.db_connection = db_connection
         self.project_id = project_id

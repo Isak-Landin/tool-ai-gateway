@@ -7,7 +7,7 @@ from errors import RoutePersistenceError
 
 
 
-class ProjectRoutePersistence:
+class RoutePersistence:
     def __init__(self, db_connection=None):
         self.db_connection = db_connection
 
@@ -108,5 +108,5 @@ class ProjectRoutePersistence:
                 session.close()
 
 
-class ProjectsRepository(ProjectRoutePersistence):
+class ProjectsRepository(RoutePersistence):
     """Compatibility alias for existing route-level callers."""

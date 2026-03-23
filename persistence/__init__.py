@@ -1,29 +1,29 @@
 from persistence.FilesRepository.FilesRepository import FilesRepository
 from persistence.MessagesRepository.MessagesRepository import MessagesRepository
-from persistence.ProjectExecutionPersistence.ProjectExecutionPersistence import (
-    ProjectExecutionPersistence,
+from persistence.ExecutionPersistence.ExecutionPersistence import (
+    ExecutionPersistence,
 )
-from persistence.ProjectHandleRuntimePersistence.ProjectHandleRuntimePersistence import (
-    ProjectHandleRuntimePersistence,
+from persistence.ProjectHandlePersistence.ProjectHandlePersistence import (
+    ProjectHandlePersistence,
 )
-from persistence.ProjectResolutionPersistence.ProjectResolutionPersistence import (
-    ProjectResolutionPersistence,
+from persistence.ResolutionPersistence.ResolutionPersistence import (
+    ResolutionPersistence,
 )
-from persistence.ProjectRoutePersistence.ProjectRoutePersistence import (
-    ProjectRoutePersistence,
+from persistence.RoutePersistence.RoutePersistence import (
+    RoutePersistence,
     ProjectsRepository,
 )
-from persistence.ProjectRuntimeBindingPersistence.ProjectRuntimeBindingPersistence import (
-    ProjectRuntimeBindingPersistence,
+from persistence.RuntimeBindingPersistence.RuntimeBindingPersistence import (
+    RuntimeBindingPersistence,
 )
 
 __all__ = [
     "FilesRepository",
     "MessagesRepository",
-    "ProjectExecutionPersistence",
-    "ProjectHandleRuntimePersistence",
-    "ProjectResolutionPersistence",
-    "ProjectRoutePersistence",
-    "ProjectRuntimeBindingPersistence",
+    "ExecutionPersistence",
+    "ProjectHandlePersistence",
+    "ResolutionPersistence",
+    "RoutePersistence",
+    "RuntimeBindingPersistence",
     "ProjectsRepository",
 ]
