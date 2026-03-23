@@ -49,7 +49,7 @@ Intended chat run:
 1. accept a bound project runtime and validated chat input
 2. validate execution-specific preconditions
 3. load a bounded recent project history window
-4. load selected project context
+4. load selected project context from the current local repository state
 5. decide tool availability and choose run context deterministically
 6. build the model-ready message/input set
 7. persist the user turn
@@ -68,9 +68,9 @@ from __future__ import annotations
 import json
 import os
 from datetime import datetime
+from functools import partial
 from typing import Any, Callable
 
-from archon.archon import archon_rag_query, archon_search
 from ollama.builder import (
     append_assistant_message,
     append_chat_message,
@@ -86,6 +86,9 @@ from ollama.ollama_client import parse_model_output, send_chat_envelope
 from ollama.prompts import merge_system_prompt_fragments
 from ollama.tool_registry import build_tool_prompt_fragment, build_tool_schemas
 from project_handle import ProjectHandle
+from repository_listing import list_repository_tree
+from repository_search import search_repository_text
+from web_search.web_search import web_search
 
 
 DEFAULT_RECENT_HISTORY_LIMIT = int(os.getenv("EXECUTION_RECENT_HISTORY_LIMIT", "20"))
@@ -194,12 +197,12 @@ class WorkflowOrchestrator:
         selected_context_sections: list[str] = []
 
         for selected_context_row in selected_context_rows:
-            file_name = selected_context_row.get("name") or "unknown"
+            file_identity = selected_context_row.get("path") or selected_context_row.get("name") or "unknown"
             file_content = selected_context_row.get("content")
             if not file_content:
                 continue
 
-            selected_context_sections.append(f"File: {file_name}\n{file_content}")
+            selected_context_sections.append(f"File: {file_identity}\n{file_content}")
 
         if not selected_context_sections:
             return None
@@ -213,22 +216,67 @@ class WorkflowOrchestrator:
 
         return user_message + "\n\n" + selected_context_block
 
-    def _get_tool_executors(self) -> dict[str, Callable[..., Any]]:
-        tool_executors: dict[str, Callable[..., Any]] = {
-            "archon_search": archon_search,
-            "archon_rag_query": archon_rag_query,
+    def _require_repo_path(self, handle: ProjectHandle) -> str:
+        repo_path = getattr(handle, "repo_path", None)
+        if not str(repo_path).strip():
+            raise WorkflowExecutionError("ProjectHandle.repo_path is required for repository tools")
+
+        return repo_path
+
+    def _require_git_executor(self, handle: ProjectHandle):
+        git_executor = getattr(handle, "git", None)
+        if git_executor is None:
+            raise WorkflowExecutionError("ProjectHandle.git is required for git tools")
+
+        return git_executor
+
+    def _run_repository_text_search(
+        self,
+        handle: ProjectHandle,
+        query: str,
+        relative_repo_path: str | None = None,
+        case_sensitive: bool = False,
+        max_results: int = 100,
+    ) -> list[dict]:
+        return search_repository_text(
+            repo_path=self._require_repo_path(handle),
+            query=query,
+            relative_repo_path=relative_repo_path,
+            case_sensitive=case_sensitive,
+            max_results=max_results,
+        )
+
+    def _run_repository_tree_listing(
+        self,
+        handle: ProjectHandle,
+        relative_repo_path: str | None = None,
+    ) -> list[dict]:
+        return list_repository_tree(
+            repo_path=self._require_repo_path(handle),
+            relative_repo_path=relative_repo_path,
+        )
+
+    def _switch_repository_branch(
+        self,
+        handle: ProjectHandle,
+        branch_name: str,
+        pull_from_origin: bool = False,
+    ) -> dict:
+        return self._require_git_executor(handle).git_switch_branch(
+            branch_name=branch_name,
+            pull_from_origin=pull_from_origin,
+        )
+
+    def _get_tool_executors(self, handle: ProjectHandle) -> dict[str, Callable[..., Any]]:
+        return {
+            "web_search": web_search,
+            "search_repository_text": partial(self._run_repository_text_search, handle),
+            "list_repository_tree": partial(self._run_repository_tree_listing, handle),
+            "switch_repository_branch": partial(self._switch_repository_branch, handle),
         }
 
-        try:
-            from web_search.web_search import web_search
-        except ModuleNotFoundError:
-            return tool_executors
-
-        tool_executors["web_search"] = web_search
-        return tool_executors
-
-    def _select_chat_tool_names(self) -> list[str]:
-        return list(self._get_tool_executors().keys())
+    def _select_chat_tool_names(self, handle: ProjectHandle) -> list[str]:
+        return list(self._get_tool_executors(handle).keys())
 
     def _parse_ollama_created_at(self, created_at_value: str | None) -> datetime | None:
         if created_at_value is None:
@@ -272,7 +320,7 @@ class WorkflowOrchestrator:
         except TypeError as e:
             raise WorkflowExecutionError("Tool result is not JSON serializable") from e
 
-    def _execute_tool_call(self, tool_call: dict) -> tuple[str, Any]:
+    def _execute_tool_call(self, handle: ProjectHandle, tool_call: dict) -> tuple[str, Any]:
         function_data = tool_call.get("function") or {}
         tool_name = function_data.get("name") or ""
         arguments = function_data.get("arguments") or {}
@@ -283,7 +331,7 @@ class WorkflowOrchestrator:
         if not isinstance(arguments, dict):
             raise WorkflowExecutionError("Ollama returned non-dict tool arguments")
 
-        tool_executor = self._get_tool_executors().get(tool_name)
+        tool_executor = self._get_tool_executors(handle).get(tool_name)
         if tool_executor is None:
             raise WorkflowExecutionError(f"Unknown tool: {tool_name}")
 
@@ -336,7 +384,7 @@ class WorkflowOrchestrator:
         selected_context_rows = execution_persistence.load_selected_context(selected_file_names)
         user_turn_content = self._build_user_turn_content(message, selected_context_rows)
 
-        tool_names = self._select_chat_tool_names()
+        tool_names = self._select_chat_tool_names(handle)
         chat_envelope = self._build_chat_envelope(
             history_messages=history_messages,
             user_turn_content=user_turn_content,
@@ -383,7 +431,7 @@ class WorkflowOrchestrator:
             )
 
             for tool_call in assistant_tool_calls:
-                tool_name, tool_result = self._execute_tool_call(tool_call)
+                tool_name, tool_result = self._execute_tool_call(handle, tool_call)
                 tool_result_content = self._serialize_tool_result_content(tool_result)
 
                 execution_persistence.store_artifact(
