@@ -1,3 +1,52 @@
+"""
+Execution layer contract and current runtime implementation.
+
+Layer rule summary:
+
+- This layer is called only after request entry has already validated transport
+  input and, for project-scoped runtime work, after project resolution and
+  runtime binding have already succeeded.
+- This layer receives project-scoped execution input plus a usable bound runtime.
+- This layer returns execution result data upward, but does not shape HTTP
+  status codes, route payloads, or transport-specific errors.
+
+Being called from above:
+
+- request entry invokes execution only for routes that truly need project-scoped
+  behavior
+- project resolution owns finding the project row
+- runtime binding owns constructing the usable runtime/handle
+- execution should assume it receives an already-bound runtime surface rather
+  than performing route parsing or runtime construction itself
+
+Calling downward:
+
+- execution calls persistence-owned surfaces to load prior state and persist
+  execution-owned results
+- execution calls repo/file access surfaces when selected project context is
+  needed
+- execution calls model invocation surfaces when a prompt or message set is
+  ready to be executed
+- execution calls tool, git, or other runtime surfaces only as part of
+  orchestrated project behavior
+
+Execution ownership:
+
+- workflow ordering
+- context assembly
+- model/tool sequencing
+- execution-owned persistence ordering
+- translation between a bound runtime and lower-level module calls
+
+Execution does not own:
+
+- HTTP parsing or response shaping
+- project lookup
+- runtime construction
+- database bootstrap
+- route-level error mapping
+"""
+
 from project_handle import ProjectHandle
 from ollama.ollama_client import call_ollama
 from archon.archon import archon_search, archon_rag_query
@@ -5,6 +54,69 @@ from archon.archon import archon_search, archon_rag_query
 
 class WorkflowExecutionError(Exception):
     pass
+
+
+class WorkflowOrchestratorReplica:
+    """
+    Placeholder representation of the intended execution-layer contract.
+
+    This class is intentionally non-functional. It exists to capture how the
+    execution layer should communicate upward and downward without copying the
+    current runtime implementation shape.
+    """
+
+    def prepare_chat_run(self, bound_runtime, chat_input):
+        """
+        Chat entry preparation:
+        - accepts a bound project runtime from the runtime-binding layer
+        - accepts chat input that has already passed route/request checks
+        - validates execution-layer preconditions for a project-scoped chat run
+
+        This seam should not parse HTTP input or construct runtime objects.
+        """
+        pass
+
+    def collect_chat_context(self, bound_runtime, chat_input):
+        """
+        Chat context collection:
+        - asks persistence for prior chat state and message history
+        - asks file/repo access surfaces for selected project context
+        - prepares the execution-owned inputs needed before model/tool work begins
+
+        This seam represents chat-context assembly, not transport behavior.
+        """
+        pass
+
+    def run_chat_cycle(self, chat_state):
+        """
+        Chat orchestration:
+        - coordinates model invocation
+        - coordinates tool/runtime calls when the workflow requires them
+        - owns sequencing between user, assistant, and tool phases
+
+        This seam is where execution-layer ordering belongs.
+        """
+        pass
+
+    def persist_chat_run(self, chat_state, chat_outputs):
+        """
+        Chat persistence:
+        - persists execution-owned chat artifacts in the order the workflow
+          requires
+        - keeps persistence focused on storage while execution owns sequencing
+
+        This seam should not perform route-level response shaping.
+        """
+        pass
+
+    def build_chat_result(self, chat_outputs):
+        """
+        Chat result shaping:
+        - returns execution result data to the caller above this layer
+        - leaves HTTP status codes, response models, and transport mapping to the
+          request-entry layer
+        """
+        pass
 
 class WorkflowOrchestrator:
     def _build_history(self, history_rows: list[dict]) -> list[dict]:
