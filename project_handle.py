@@ -16,8 +16,7 @@ class ProjectHandle:
         self.key_path = project_row.get("key_path") or project_row.get("ssh_key")
 
         self.git = None
-        self.files = None
-        self.messages = None
+        self.execution_persistence = None
         self.shell = None
 
         self.tools = None
@@ -26,11 +25,8 @@ class ProjectHandle:
     def bind_git(self, git_executor):
         self.git = git_executor
 
-    def bind_files_accessor(self, files_accessor):
-        self.files = files_accessor
-
-    def bind_messages_accessor(self, messages_accessor):
-        self.messages = messages_accessor
+    def bind_execution_persistence(self, execution_persistence):
+        self.execution_persistence = execution_persistence
 
     def bind_shell(self, shell_executor):
         self.shell = shell_executor
@@ -44,11 +40,8 @@ class ProjectHandle:
     def is_git_bound(self) -> bool:
         return self.git is not None
 
-    def is_files_bound(self) -> bool:
-        return self.files is not None
-
-    def is_messages_bound(self) -> bool:
-        return self.messages is not None
+    def is_execution_persistence_bound(self) -> bool:
+        return self.execution_persistence is not None
 
     def is_shell_bound(self) -> bool:
         return self.shell is not None
