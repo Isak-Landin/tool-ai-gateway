@@ -1,5 +1,5 @@
 """
-Execution layer contract and current runtime implementation.
+Execution layer rules and intended behavior.
 
 Layer rule summary:
 
@@ -45,6 +45,24 @@ Execution does not own:
 - runtime construction
 - database bootstrap
 - route-level error mapping
+
+Intended chat run:
+
+1. accept a bound project runtime and validated chat input
+2. validate execution-specific preconditions
+3. load a bounded recent project history window
+4. load selected project context
+5. decide tool availability and choose run context deterministically
+6. build the model-ready message/input set
+7. persist the user turn
+8. execute the model call
+9. if tool calls are returned:
+   - persist the assistant tool-call turn
+   - execute tool calls in order
+   - persist tool results
+   - continue the run until a final assistant answer is produced
+10. persist the final assistant turn
+11. return execution result data upward
 """
 
 from project_handle import ProjectHandle
@@ -58,19 +76,18 @@ class WorkflowExecutionError(Exception):
 
 class WorkflowOrchestratorReplica:
     """
-    Placeholder representation of the intended execution-layer contract.
+    Non-functional representation of the intended execution-layer contract.
 
-    This class is intentionally non-functional. It exists to capture how the
-    execution layer should communicate upward and downward without copying the
-    current runtime implementation shape.
+    This class exists to show execution behavior in implementation order without
+    introducing real runtime behavior yet.
     """
 
     def prepare_chat_run(self, bound_runtime, chat_input):
         """
         Chat entry preparation:
-        - accepts a bound project runtime from the runtime-binding layer
-        - accepts chat input that has already passed route/request checks
-        - validates execution-layer preconditions for a project-scoped chat run
+        - accept a bound project runtime from the runtime-binding layer
+        - accept chat input that has already passed route/request checks
+        - validate execution-layer preconditions for a project-scoped chat run
 
         This seam should not parse HTTP input or construct runtime objects.
         """
@@ -79,9 +96,10 @@ class WorkflowOrchestratorReplica:
     def collect_chat_context(self, bound_runtime, chat_input):
         """
         Chat context collection:
-        - asks persistence for prior chat state and message history
-        - asks file/repo access surfaces for selected project context
-        - prepares the execution-owned inputs needed before model/tool work begins
+        - load prior chat state and message history
+        - load selected project context
+        - decide which tool surfaces belong in the current run
+        - prepare the execution-owned inputs needed before model work begins
 
         This seam represents chat-context assembly, not transport behavior.
         """
@@ -90,9 +108,10 @@ class WorkflowOrchestratorReplica:
     def run_chat_cycle(self, chat_state):
         """
         Chat orchestration:
-        - coordinates model invocation
-        - coordinates tool/runtime calls when the workflow requires them
-        - owns sequencing between user, assistant, and tool phases
+        - build the model-ready input set
+        - execute the model call
+        - execute tool/runtime calls when the workflow requires them
+        - continue the model/tool cycle until a final assistant answer exists
 
         This seam is where execution-layer ordering belongs.
         """
@@ -101,8 +120,8 @@ class WorkflowOrchestratorReplica:
     def persist_chat_run(self, chat_state, chat_outputs):
         """
         Chat persistence:
-        - persists execution-owned chat artifacts in the order the workflow
-          requires
+        - persist the user turn before the model call
+        - persist assistant and tool artifacts in the order the workflow requires
         - keeps persistence focused on storage while execution owns sequencing
 
         This seam should not perform route-level response shaping.
@@ -144,6 +163,15 @@ class WorkflowOrchestrator:
         if not selected_files:
             return []
 
+        """
+        Layer/rule mismatch:
+        - This currently pulls selected context from persisted file rows only.
+        - Under the newer execution lifecycle, this step belongs to execution, but
+          the intended source is project-scoped context gathering for the current
+          run, not only previously stored file snapshots.
+        - The responsibility still belongs to the execution layer, but this
+          implementation reflects an older, narrower context model.
+        """
         file_rows = handle.files.list_by_project()
         selected_names = set(selected_files)
 
@@ -209,6 +237,15 @@ class WorkflowOrchestrator:
         )
         sequence_no += 1
 
+        """
+        Lifecycle mismatch:
+        - The newer execution lifecycle expects execution to decide tool
+          availability, build a model-ready input set, and then run the cycle.
+        - This direct single-call shape skips an explicit prepare-run step and
+          keeps the model invocation coupled to an older one-shot flow.
+        - This still belongs to the execution layer, but it does not match the
+          newer staged runtime process.
+        """
         response = call_ollama(effective_message, history)
 
         ollama_message = response.get("message") or {}
@@ -252,6 +289,16 @@ class WorkflowOrchestrator:
                 )
                 sequence_no += 1
 
+            """
+            Lifecycle mismatch:
+            - The intended execution lifecycle says tool work should continue
+              until a final assistant answer is produced and then return result
+              data upward.
+            - This branch stops after persisting assistant/tool artifacts and
+              raises instead of continuing the execution cycle to completion.
+            - The logic belongs to execution, but the incomplete follow-up path
+              no longer fits the defined runtime lifecycle.
+            """
             raise WorkflowExecutionError(
                 "Native Ollama tool follow-up requires ollama/ollama_client.py and ollama/builder.py "
                 "to support full message-history requests with tools."
