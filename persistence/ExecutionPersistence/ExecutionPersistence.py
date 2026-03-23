@@ -1,15 +1,19 @@
+from pathlib import Path
+
 from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 
-from db.models import File, Message
+from db.models import Message
 from db.session import SessionLocal
 from errors import ExecutionPersistenceError
+from repository_tools.common import get_repository_relative_path, resolve_repository_target
 
 
 class ExecutionPersistence:
-    def __init__(self, db_connection=None, project_id: int | None = None):
+    def __init__(self, db_connection=None, project_id: int | None = None, repo_path: str | None = None):
         self.db_connection = db_connection
         self.project_id = project_id
+        self.repo_path = repo_path
 
     def _require_project_id(self) -> int:
         if self.project_id is None:
@@ -48,15 +52,22 @@ class ExecutionPersistence:
             "created_at": row.created_at,
         }
 
-    def _serialize_file_row(self, row: File) -> dict:
+    def _require_repo_path(self) -> str:
+        if not str(self.repo_path).strip():
+            raise ExecutionPersistenceError(
+                "repo_path is required for execution selected context",
+                field="repo_path",
+                error_type="missing repo path",
+                file_id=__file__,
+            )
+
+        return str(self.repo_path)
+
+    def _serialize_selected_context_file(self, repo_root: Path, target_path: Path, content: str) -> dict:
         return {
-            "id": row.id,
-            "project_id": row.project_id,
-            "name": row.name,
-            "content": row.content,
-            "message_id": row.message_id,
-            "created_at": row.created_at,
-            "updated_at": row.updated_at,
+            "name": target_path.name,
+            "path": get_repository_relative_path(repo_root, target_path),
+            "content": content,
         }
 
     def load_recent_history(
@@ -135,49 +146,59 @@ class ExecutionPersistence:
 
     def load_selected_context(self, selected_files: list[str]) -> list[dict]:
         """
-        Load selected file context rows for the current project in caller order.
+        Load selected file context from the current local repository state in caller order.
         """
-        project_id = self._require_project_id()
-
         if not selected_files:
             return []
 
-        selected_names = [str(name).strip() for name in selected_files if str(name).strip()]
-        if not selected_names:
+        selected_paths = [str(selected_file).strip() for selected_file in selected_files if str(selected_file).strip()]
+        if not selected_paths:
             return []
 
-        session = self.db_connection or SessionLocal()
-        try:
-            stmt = (
-                select(File)
-                .where(File.project_id == project_id)
-                .where(File.name.in_(selected_names))
-                .order_by(File.created_at.desc(), File.id.desc())
+        repo_path = self._require_repo_path()
+        selected_context_rows: list[dict] = []
+
+        for selected_path in selected_paths:
+            try:
+                repo_root, target_path = resolve_repository_target(
+                    repo_path=repo_path,
+                    relative_repo_path=selected_path,
+                )
+            except ValueError as e:
+                raise ExecutionPersistenceError(
+                    str(e),
+                    field="selected_files",
+                    error_type="invalid selected path",
+                    file_id=__file__,
+                ) from e
+
+            if not target_path.is_file():
+                raise ExecutionPersistenceError(
+                    f"Selected path is not a file in repository: {get_repository_relative_path(repo_root, target_path)}",
+                    field="selected_files",
+                    error_type="invalid selected path",
+                    file_id=__file__,
+                )
+
+            try:
+                file_content = target_path.read_text(encoding="utf-8")
+            except OSError as e:
+                raise ExecutionPersistenceError(
+                    str(e),
+                    field="selected_files",
+                    error_type="file read error",
+                    file_id=__file__,
+                ) from e
+
+            selected_context_rows.append(
+                self._serialize_selected_context_file(
+                    repo_root=repo_root,
+                    target_path=target_path,
+                    content=file_content,
+                )
             )
-            rows = session.execute(stmt).scalars().all()
 
-            latest_by_name: dict[str, File] = {}
-            for row in rows:
-                if row.name and row.name not in latest_by_name:
-                    latest_by_name[row.name] = row
-
-            ordered_rows: list[dict] = []
-            for selected_name in selected_names:
-                row = latest_by_name.get(selected_name)
-                if row is not None:
-                    ordered_rows.append(self._serialize_file_row(row))
-
-            return ordered_rows
-        except SQLAlchemyError as e:
-            raise ExecutionPersistenceError(
-                str(e),
-                field="",
-                error_type="sql error",
-                file_id=__file__,
-            )
-        finally:
-            if self.db_connection is None:
-                session.close()
+        return selected_context_rows
 
     def load_next_sequence_no(self) -> int:
         """
