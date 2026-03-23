@@ -36,7 +36,7 @@ The first version should stay narrow.
 
 - accept a bound runtime and validated chat input
 - load a bounded recent project message window
-- load selected project context
+- load selected project context from the current local repository state
 - choose context deterministically inside execution
 - prepare one model-ready run
 - persist the user turn
@@ -56,6 +56,13 @@ The first version should stay narrow.
 - no large execution graph
 
 The MVP goal is a reliable, ordered project-scoped run with bounded context.
+
+### Current MVP Selected Context Rule
+
+- `selected_files` is treated as a list of repo-relative paths
+- execution loads selected context from the current local repository state
+- execution does not rely on persisted file snapshot rows for selected context
+- selected context should remain project-scoped and branch-aware because it comes from the bound local repo
 
 ## Intention
 

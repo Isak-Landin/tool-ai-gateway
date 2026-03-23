@@ -11,7 +11,7 @@ _This file is intentionally compact. It exists to show **who may talk to whom**,
 | **Project Resolution** | `project_resolution.py` | Resolve an existing project row for project-scoped work |
 | **Runtime Binding** | `runtime_binding.py` | Turn a resolved project row into a usable bound runtime |
 | **Project Handle** | `project_handle.py` | Hold one project-scoped runtime and its bound accessors/executors |
-| **Execution** | `execution.py` | Run project-scoped workflow logic |
+| **Execution** | `execution/` | Run project-scoped workflow logic |
 | **Persistence** | `persistence/` | Read and write database-backed state and scoped repo/file state |
 
 ## Intended Flow
@@ -46,7 +46,7 @@ Return flow is the reverse direction:
 | **Project Resolution** | Read project-scoped rows from persistence | Build runtime, bind services, execute workflow |
 | **Runtime Binding** | Construct `ProjectHandle`, bind accessors/executors, read runtime-needed persistence fields | Resolve projects, run workflow logic, shape route responses |
 | **Project Handle** | Store project-scoped runtime state and bound dependencies | Resolve, bind, persist, or execute by itself |
-| **Execution** | Use `ProjectHandle`, load/persist execution state, assemble bounded recent project context, choose context deterministically, call one execution model and runtime/tool surfaces | Resolve projects, construct runtime, shape HTTP/API responses |
+| **Execution** | Use `ProjectHandle`, load/persist execution state, assemble bounded recent project context, load selected context from the bound local repo, choose context deterministically, call one execution model and runtime/tool surfaces | Resolve projects, construct runtime, shape HTTP/API responses |
 | **Persistence** | Serve storage and repo/file access needs for higher layers | Orchestrate workflow, bind runtime, call back upward |
 
 ## Layer Details
@@ -112,6 +112,7 @@ Return flow is the reverse direction:
 
 - workflow ordering
 - bounded recent project context assembly
+- selected context loading from the bound local repository state
 - deterministic context selection for the current run
 - model/tool/runtime sequencing
 - execution-owned persistence ordering
