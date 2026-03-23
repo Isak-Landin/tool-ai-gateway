@@ -24,7 +24,12 @@ Return flow is the reverse direction:
 
 ## Allowed Interaction Matrix
 
-**Rule:** row layer initiates communication toward column layer.
+**Read this matrix as:**
+
+- **Rows = caller**
+- **Columns = target**
+
+**Rule:** a layer named on the left may initiate communication toward a layer named at the top.
 
 | Caller \\ Target | Project Resolution | Runtime Binding | Project Handle | Execution | Persistence |
 | --- | --- | --- | --- | --- | --- |
@@ -41,7 +46,7 @@ Return flow is the reverse direction:
 | **Project Resolution** | Read project-scoped rows from persistence | Build runtime, bind services, execute workflow |
 | **Runtime Binding** | Construct `ProjectHandle`, bind accessors/executors, read runtime-needed persistence fields | Resolve projects, run workflow logic, shape route responses |
 | **Project Handle** | Store project-scoped runtime state and bound dependencies | Resolve, bind, persist, or execute by itself |
-| **Execution** | Use `ProjectHandle`, load/persist execution state, assemble context, call model/tools/runtime surfaces | Resolve projects, construct runtime, shape HTTP/API responses |
+| **Execution** | Use `ProjectHandle`, load/persist execution state, assemble bounded recent project context, choose context deterministically, call one execution model and runtime/tool surfaces | Resolve projects, construct runtime, shape HTTP/API responses |
 | **Persistence** | Serve storage and repo/file access needs for higher layers | Orchestrate workflow, bind runtime, call back upward |
 
 ## Layer Details
@@ -106,9 +111,11 @@ Return flow is the reverse direction:
 **Owns**
 
 - workflow ordering
-- context assembly
+- bounded recent project context assembly
+- deterministic context selection for the current run
 - model/tool/runtime sequencing
 - execution-owned persistence ordering
+- one execution-model run flow for MVP
 
 **May communicate with**
 
@@ -143,6 +150,7 @@ Return flow is the reverse direction:
 
 - **Project Handle is not an orchestrator.** It is a bound runtime container.
 - **Execution is the first layer that may orchestrate.**
+- **Execution chooses bounded context for MVP.** Full project history may stay in DB, but execution should not send all of it by default.
 - **Persistence serves downward-only concerns.** It should not drive workflow.
 - **Runtime Binding may prepare runtime dependencies, but must not perform execution work.**
 - **Project Resolution stays narrow.** It resolves; it does not enrich into runtime behavior.
@@ -156,6 +164,5 @@ If a change needs to:
 | find a project by `project_id` | **Project Resolution** |
 | attach git/files/messages onto a project runtime | **Runtime Binding** |
 | hold bound runtime state during a project-scoped run | **Project Handle** |
-| run chat/tool/model workflow | **Execution** |
+| run chat/tool/model workflow with bounded recent project context | **Execution** |
 | read/write rows or scoped repo files | **Persistence** |
-
