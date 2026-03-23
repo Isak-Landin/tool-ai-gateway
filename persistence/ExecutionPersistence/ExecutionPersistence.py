@@ -6,8 +6,6 @@ from db.session import SessionLocal
 from errors import ExecutionPersistenceError
 
 
-
-
 class ExecutionPersistence:
     def __init__(self, db_connection=None, project_id: int | None = None):
         self.db_connection = db_connection
