@@ -1,12 +1,12 @@
 from fastapi import HTTPException, status, APIRouter
 from fastapi.responses import JSONResponse
 
-from project_resolution import (
+from ProjectResolver import (
     ProjectResolver,
     ProjectResolutionError,
     ProjectNotFoundError,
 )
-from runtime_binding import ProjectBindingError, ProjectBinder
+from ProjectRuntimeBinder import ProjectRuntimeBindingError, ProjectRuntimeBinder
 from execution import WorkflowExecutionError, WorkflowOrchestrator
 from persistence import ProjectsRepository
 from errors import PersistenceError
@@ -119,13 +119,13 @@ def run(project_id: int, req: ChatRequest):
 
     try:
         resolver = ProjectResolver()
-        binder = ProjectBinder()
+        binder = ProjectRuntimeBinder()
         orchestrator = WorkflowOrchestrator()
         return chat_workflow_entry(project_id, req, resolver, binder, orchestrator)
     except ProjectNotFoundError as e:
         print(f"[API ERROR] POST /projects/{project_id}/run not found: {e!r}")
         raise HTTPException(status_code=404, detail=str(e))
-    except (ProjectResolutionError, ProjectBindingError, WorkflowExecutionError) as e:
+    except (ProjectResolutionError, ProjectRuntimeBindingError, WorkflowExecutionError) as e:
         print(f"[API ERROR] POST /projects/{project_id}/run workflow failure: {e!r}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

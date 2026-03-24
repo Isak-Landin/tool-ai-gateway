@@ -7,7 +7,7 @@ from api_routes.project_routes.schemas import ChatResponse, ChatRequest
 def chat_workflow_entry(project_id, req: ChatRequest, resolver, binder, orchestrator) -> ChatResponse:
     """
     resolver = ProjectResolver()
-    binder = ProjectBinder()
+    binder = ProjectRuntimeBinder()
     orchestrator = WorkflowOrchestrator()
     """
 
