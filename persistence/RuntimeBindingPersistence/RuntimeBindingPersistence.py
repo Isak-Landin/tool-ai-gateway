@@ -1,15 +1,18 @@
-from errors import RuntimeBindingPersistenceError
+from persistence.ExecutionPersistence.ExecutionPersistence import ExecutionPersistence
 
 
-class RuntimeBindingPersistence:
-    def __init__(self, db_connection=None):
-        self.db_connection = db_connection
+class RuntimeBindingPersistence(ExecutionPersistence):
+    """
+    Runtime-binding-owned persistence surface.
 
-    def get_project_runtime_binding_fields(self, project_id: int) -> dict | None:
-        """
-        Expected usage:
-        - called by runtime binding only
-        - return the fields needed to bind runtime services and accessors
-        - keep runtime-binding needs separate from route-facing project reads
-        """
-        pass
+    This surface exists so runtime binding does not depend directly on the
+    execution persistence class, while still being able to provide the
+    execution-facing persistence dependency that the bound runtime exposes.
+    """
+
+    def __init__(self, db_connection=None, project_id: int | None = None, repo_path: str | None = None):
+        super().__init__(
+            db_connection=db_connection,
+            project_id=project_id,
+            repo_path=repo_path,
+        )

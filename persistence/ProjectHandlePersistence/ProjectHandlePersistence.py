@@ -8,7 +8,7 @@ class ProjectHandlePersistence:
     def get_project_handle_runtime_fields(self, project_id: int) -> dict | None:
         """
         Expected usage:
-        - called by ProjectHandle only
+        - called by BoundProjectRuntime only
         - return the fields needed to construct a usable project runtime object
         - may later replace or extend the current handle-specific persistence helper
         """
