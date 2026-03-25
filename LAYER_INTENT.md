@@ -258,6 +258,39 @@ The difference is:
 - Project Runtime Binder prepares the runtime
 - Execution uses the runtime
 
+## Clarification 6: Layer meaning should be visible in the module surface
+
+As the codebase grows, it becomes harder to protect layer intent if an entire layer is represented by one growing file or one flat object with many mixed responsibilities.
+
+The better long-term shape is:
+
+- a small intentional top-level surface for the layer
+- clearly grouped privileged or ownership-specific submodules
+- internal helpers that do not redefine the public meaning of the layer
+
+This matters because the top-level module surface becomes the architectural equivalent of a reachable endpoint.
+
+It should communicate:
+
+- what this layer is for
+- what kinds of entrypoints are intentionally reachable
+- which lower-level details are only internal support
+
+For example, a layer may later benefit from separating:
+
+- normal top-level layer entrypoints
+- use-specific surfaces intended for one owning higher layer
+- internal utility submodules that should not be treated as part of the layer contract
+
+The goal is not to build rigid caller policing everywhere.
+
+The goal is to make layer ownership visible in structure so that:
+
+- the intended usage is intuitive
+- growth does not collapse back into one oversized object
+- privileged behavior can be grouped intentionally instead of leaking across the full layer
+- tests and review can enforce the smaller public surface more easily
+
 Binding should answer:
 
 **"What should be attached?"**

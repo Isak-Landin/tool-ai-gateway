@@ -38,7 +38,6 @@ class ProjectDetailResponse(BaseModel):
     project_id: int
     name: str
     ai_model_name: str
-    orchestrator_name: str
     created_at: datetime.datetime
 
 

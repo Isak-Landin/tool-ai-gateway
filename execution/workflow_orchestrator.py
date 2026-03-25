@@ -85,10 +85,13 @@ from ollama.config import get_ollama_default_model
 from ollama.ollama_client import parse_model_output, send_chat_envelope
 from ollama.prompts import merge_system_prompt_fragments
 from ollama.tool_registry import build_tool_prompt_fragment, build_tool_schemas
-from project_handle import ProjectHandle
-from repository_listing import list_repository_tree
-from repository_search import search_repository_text
-from web_search.web_search import web_search
+from BoundProjectRuntime import BoundProjectRuntime
+from tools import (
+    execute_list_repository_tree,
+    execute_search_repository_text,
+    execute_switch_repository_branch,
+    execute_web_search,
+)
 
 
 DEFAULT_RECENT_HISTORY_LIMIT = int(os.getenv("EXECUTION_RECENT_HISTORY_LIMIT", "20"))
@@ -163,10 +166,17 @@ class WorkflowOrchestratorReplica:
 
 
 class WorkflowOrchestrator:
-    def _require_execution_persistence(self, handle: ProjectHandle):
+    def _get_execution_model(self, handle: BoundProjectRuntime) -> str:
+        model_name = getattr(handle, "ai_model_name", None)
+        if str(model_name).strip():
+            return str(model_name).strip()
+
+        return get_ollama_default_model()
+
+    def _require_execution_persistence(self, handle: BoundProjectRuntime):
         execution_persistence = getattr(handle, "execution_persistence", None)
         if execution_persistence is None:
-            raise WorkflowExecutionError("ProjectHandle.execution_persistence is required")
+            raise WorkflowExecutionError("BoundProjectRuntime.execution_persistence is required")
 
         return execution_persistence
 
@@ -216,29 +226,30 @@ class WorkflowOrchestrator:
 
         return user_message + "\n\n" + selected_context_block
 
-    def _require_repo_path(self, handle: ProjectHandle) -> str:
+    def _require_repo_path(self, handle: BoundProjectRuntime) -> str:
         repo_path = getattr(handle, "repo_path", None)
         if not str(repo_path).strip():
-            raise WorkflowExecutionError("ProjectHandle.repo_path is required for repository tools")
+            raise WorkflowExecutionError("BoundProjectRuntime.repo_path is required for repository tools")
 
         return repo_path
 
-    def _require_git_executor(self, handle: ProjectHandle):
-        git_executor = getattr(handle, "git", None)
-        if git_executor is None:
-            raise WorkflowExecutionError("ProjectHandle.git is required for git tools")
+    def _require_shell(self, handle: BoundProjectRuntime):
+        shell_executor = getattr(handle, "shell", None)
+        if shell_executor is None:
+            raise WorkflowExecutionError("BoundProjectRuntime.shell is required for shell-backed tools")
 
-        return git_executor
+        return shell_executor
 
     def _run_repository_text_search(
         self,
-        handle: ProjectHandle,
+        handle: BoundProjectRuntime,
         query: str,
         relative_repo_path: str | None = None,
         case_sensitive: bool = False,
         max_results: int = 100,
     ) -> list[dict]:
-        return search_repository_text(
+        return execute_search_repository_text(
+            shell_executor=self._require_shell(handle),
             repo_path=self._require_repo_path(handle),
             query=query,
             relative_repo_path=relative_repo_path,
@@ -248,34 +259,39 @@ class WorkflowOrchestrator:
 
     def _run_repository_tree_listing(
         self,
-        handle: ProjectHandle,
+        handle: BoundProjectRuntime,
         relative_repo_path: str | None = None,
     ) -> list[dict]:
-        return list_repository_tree(
+        return execute_list_repository_tree(
+            shell_executor=self._require_shell(handle),
             repo_path=self._require_repo_path(handle),
             relative_repo_path=relative_repo_path,
         )
 
     def _switch_repository_branch(
         self,
-        handle: ProjectHandle,
+        handle: BoundProjectRuntime,
         branch_name: str,
         pull_from_origin: bool = False,
     ) -> dict:
-        return self._require_git_executor(handle).git_switch_branch(
+        result = execute_switch_repository_branch(
+            shell_executor=self._require_shell(handle),
             branch_name=branch_name,
+            key_path=getattr(handle, "key_path", None),
             pull_from_origin=pull_from_origin,
         )
+        handle.branch = result["branch_name"]
+        return result
 
-    def _get_tool_executors(self, handle: ProjectHandle) -> dict[str, Callable[..., Any]]:
+    def _get_tool_executors(self, handle: BoundProjectRuntime) -> dict[str, Callable[..., Any]]:
         return {
-            "web_search": web_search,
+            "web_search": execute_web_search,
             "search_repository_text": partial(self._run_repository_text_search, handle),
             "list_repository_tree": partial(self._run_repository_tree_listing, handle),
             "switch_repository_branch": partial(self._switch_repository_branch, handle),
         }
 
-    def _select_chat_tool_names(self, handle: ProjectHandle) -> list[str]:
+    def _select_chat_tool_names(self, handle: BoundProjectRuntime) -> list[str]:
         return list(self._get_tool_executors(handle).keys())
 
     def _parse_ollama_created_at(self, created_at_value: str | None) -> datetime | None:
@@ -320,7 +336,7 @@ class WorkflowOrchestrator:
         except TypeError as e:
             raise WorkflowExecutionError("Tool result is not JSON serializable") from e
 
-    def _execute_tool_call(self, handle: ProjectHandle, tool_call: dict) -> tuple[str, Any]:
+    def _execute_tool_call(self, handle: BoundProjectRuntime, tool_call: dict) -> tuple[str, Any]:
         function_data = tool_call.get("function") or {}
         tool_name = function_data.get("name") or ""
         arguments = function_data.get("arguments") or {}
@@ -342,11 +358,12 @@ class WorkflowOrchestrator:
 
     def _build_chat_envelope(
         self,
+        handle: BoundProjectRuntime,
         history_messages: list[dict],
         user_turn_content: str,
         tool_names: list[str],
     ) -> dict:
-        chat_envelope = create_chat_envelope(model=get_ollama_default_model())
+        chat_envelope = create_chat_envelope(model=self._get_execution_model(handle))
 
         tool_prompt_fragment = build_tool_prompt_fragment(tool_names)
         effective_system_prompt = merge_system_prompt_fragments(
@@ -368,9 +385,9 @@ class WorkflowOrchestrator:
 
         return chat_envelope
 
-    def run_chat(self, handle: ProjectHandle, message: str, selected_files: list[str] | None = None) -> dict:
+    def run_chat(self, handle: BoundProjectRuntime, message: str, selected_files: list[str] | None = None) -> dict:
         if handle is None:
-            raise WorkflowExecutionError("ProjectHandle is required")
+            raise WorkflowExecutionError("BoundProjectRuntime is required")
 
         if not str(message).strip():
             raise WorkflowExecutionError("message is required")
@@ -386,6 +403,7 @@ class WorkflowOrchestrator:
 
         tool_names = self._select_chat_tool_names(handle)
         chat_envelope = self._build_chat_envelope(
+            handle=handle,
             history_messages=history_messages,
             user_turn_content=user_turn_content,
             tool_names=tool_names,

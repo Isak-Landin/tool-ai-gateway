@@ -63,6 +63,7 @@ The MVP goal is a reliable, ordered project-scoped run with bounded context.
 - execution loads selected context from the current local repository state
 - execution does not rely on persisted file snapshot rows for selected context
 - selected context should remain project-scoped and branch-aware because it comes from the bound local repo
+- shell-backed tools should run from one bound repo-root shell with repo-relative paths
 
 ## Intention
 

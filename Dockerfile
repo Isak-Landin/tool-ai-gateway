@@ -13,17 +13,18 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -r /app/requirements.txt
 
 COPY api.py /app/api.py
-COPY project_resolution.py /app/project_resolution.py
-COPY runtime_binding.py /app/runtime_binding.py
-COPY project_handle.py /app/project_handle.py
+COPY ProjectResolver /app/ProjectResolver
+COPY ProjectRuntimeBinder /app/ProjectRuntimeBinder
+COPY BoundProjectRuntime /app/BoundProjectRuntime
+COPY repository_runtime /app/repository_runtime
 COPY execution /app/execution
 COPY persistence.py /app/persistence.py
 COPY errors.py /app/errors.py
 COPY db/* /app/db/
-COPY git /app/git
 COPY ollama /app/ollama
 COPY archon /app/archon
 COPY web_search /app/web_search
+COPY tools /app/tools
 COPY index.html /app/index.html
 COPY entrypoint.sh /app/entrypoint.sh
 

@@ -24,7 +24,6 @@ class RoutePersistence:
                 "project_id": result.project_id,
                 "name": result.name,
                 "ai_model_name": result.ai_model_name,
-                "orchestrator_name": result.orchestrator_name,
                 "repo_path": result.repo_path,
                 "remote_repo_url": result.remote_repo_url,
                 "branch": result.branch,
@@ -95,7 +94,6 @@ class RoutePersistence:
                     "project_id": r.project_id,
                     "name": r.name,
                     "ai_model_name": r.ai_model_name,
-                    "orchestrator_name": r.orchestrator_name,
                     "created_at": r.created_at
                     # Add any other fields needed
                 }

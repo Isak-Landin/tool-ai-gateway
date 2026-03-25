@@ -29,15 +29,11 @@ class Project(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
 
     ai_model_name: Mapped[str] = mapped_column(String(255), nullable=False, server_default=default_model)
-    orchestrator_name: Mapped[str] = mapped_column(String(255), nullable=False, server_default="default")
 
     repo_path: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     remote_repo_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     branch: Mapped[str] = mapped_column(String(255), nullable=False, server_default="main")
     ssh_key: Mapped[str | None] = mapped_column(String(1024), nullable=True)
-
-    system_prompt_version: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    system_prompt_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

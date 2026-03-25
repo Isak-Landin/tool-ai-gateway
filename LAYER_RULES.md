@@ -155,6 +155,23 @@ Return flow is the reverse direction:
 - **Persistence serves downward-only concerns.** It should not drive workflow.
 - **Project Runtime Binder may prepare runtime dependencies, but must not perform execution work.**
 - **Project Resolver stays narrow.** It resolves; it does not enrich into runtime behavior.
+- **Shell-backed tools run from one bound project shell.** Binder binds it, execution uses it.
+
+## Surface Shape Guidance
+
+- Each layer should aim to expose a **small intentional top-level surface**.
+- That top-level surface should represent the layer's reachable contract, not all internal machinery.
+- Shared implementation logic may live in internal helpers or submodules without becoming part of the public layer contract.
+- When a layer needs privileged or use-specific operations, group them into clearly named submodules rather than mixing them into one flat surface.
+- Naming should reflect ownership and intended usage, so drift feels wrong before tests or review catch it.
+
+Examples of acceptable shape direction:
+
+- top-level layer entrypoints that describe the layer's main intended usage
+- grouped submodules for privileged or ownership-specific operations such as `for_execution` or `for_runtime_binding`
+- internal helper modules that support the layer without redefining its public meaning
+
+This is preferred over broad caller-identity enforcement. The main goal is to make the correct reachable surface obvious, small, and structurally hard to misuse.
 
 ## Practical Use
 
