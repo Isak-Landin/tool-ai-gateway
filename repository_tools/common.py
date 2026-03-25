@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path, PurePosixPath
+import shlex
 
 
 IGNORED_PATHS_CONFIG_PATH = Path(__file__).resolve().parent / "ignored_paths.json"
@@ -73,3 +74,15 @@ def build_ripgrep_ignore_args(ignore_patterns: list[str]) -> list[str]:
         rg_args.extend(["-g", f"!{ignore_pattern}"])
 
     return rg_args
+
+
+def get_repository_shell_target_argument(repo_root: Path, target_path: Path) -> str:
+    if target_path == repo_root:
+        return "."
+
+    relative_target_path = target_path.relative_to(repo_root).as_posix()
+    return "./" + relative_target_path
+
+
+def quote_shell_args(args: list[str]) -> str:
+    return " ".join(shlex.quote(str(arg)) for arg in args)
