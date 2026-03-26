@@ -1,0 +1,135 @@
+.workspace-grid {
+    display: grid;
+    gap: var(--space-5);
+}
+
+.presenter-panel,
+.composer-panel {
+    padding: var(--space-5);
+}
+
+.presenter-toolbar,
+.presenter-header-row,
+.composer-controls {
+    display: flex;
+    gap: var(--space-4);
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.presenter-view {
+    display: none;
+}
+
+.presenter-view.is-active {
+    display: block;
+}
+
+.presenter-toggle-group {
+    display: inline-flex;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 0.3rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+}
+
+.presenter-toggle {
+    width: auto;
+    background: transparent;
+    color: var(--text-muted);
+    border: none;
+    padding: 0.6rem 0.95rem;
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.presenter-toggle.is-active {
+    background: rgba(124, 156, 255, 0.18);
+    color: var(--text);
+}
+
+.code-view {
+    min-height: 360px;
+    padding: var(--space-4);
+    border-radius: var(--radius-sm);
+    background: var(--panel-strong);
+    border: 1px solid var(--border);
+    color: #d7e4ff;
+}
+
+.chat-history-stack {
+    display: grid;
+    gap: var(--space-4);
+}
+
+.chat-entry {
+    padding: var(--space-4);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.chat-entry-user {
+    border-color: rgba(124, 156, 255, 0.22);
+}
+
+.chat-entry-header {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+}
+
+.thought-block {
+    margin-top: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(79, 209, 197, 0.18);
+    background: rgba(79, 209, 197, 0.08);
+}
+
+.thought-label {
+    margin: 0 0 var(--space-2);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+}
+
+.sidebar-title {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: var(--space-3);
+}
+
+.repo-tree,
+.repo-tree-children {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.repo-tree {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.repo-tree-item {
+    padding: 0.45rem 0.2rem;
+    color: var(--text-muted);
+}
+
+.repo-tree-item-directory > span {
+    color: var(--text);
+}
+
+.repo-tree-children {
+    margin-top: var(--space-2);
+    margin-left: var(--space-4);
+    display: grid;
+    gap: var(--space-2);
+    border-left: 1px solid var(--border);
+    padding-left: var(--space-3);
+}

@@ -1,0 +1,37 @@
+{% extends "layouts/app_base.html" %}
+
+{% block page_css %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/layouts/project.css') }}">
+{% endblock %}
+
+{% block app_content %}
+<section class="project-shell">
+    <header class="project-shell-header panel">
+        <div>
+            <p class="eyebrow">Project Workspace</p>
+            <h1>{{ project.name }}</h1>
+        </div>
+        <div class="project-shell-meta">
+            <span class="meta-pill">Project #{{ project.project_id }}</span>
+            <span class="meta-pill">Branch {{ project.active_branch }}</span>
+            <span class="meta-pill">Model {{ project.active_model }}</span>
+        </div>
+    </header>
+
+    <div class="project-shell-body">
+        <aside class="project-sidebar panel">
+            <nav class="project-nav" aria-label="Project navigation">
+                {% for item in project_nav %}
+                    <a href="{{ url_for(item.endpoint, project_id=project.project_id) }}">{{ item.label }}</a>
+                {% endfor %}
+            </nav>
+            {% block project_sidebar %}{% endblock %}
+        </aside>
+
+        <section class="project-canvas">
+            {% block project_content %}{% endblock %}
+        </section>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,19 @@
+.panel-hero {
+    max-width: 880px;
+    padding: clamp(2rem, 5vw, 4rem);
+    margin: 3rem auto 0;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)),
+        var(--panel);
+}
+
+.panel-hero h1 {
+    font-size: clamp(2.5rem, 6vw, 4.6rem);
+    line-height: 1.04;
+    margin-bottom: var(--space-4);
+}
+
+.panel-hero .lede {
+    max-width: 60ch;
+    font-size: 1.05rem;
+}

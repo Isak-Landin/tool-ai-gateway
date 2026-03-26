@@ -1,0 +1,10 @@
+{% extends "layouts/public_base.html" %}
+{% block title %}Empty States · {{ app_name }}{% endblock %}
+{% block page_css %}{{ super() }}<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/support/status.css') }}">{% endblock %}
+{% block public_content %}
+<section class="panel panel-form form-limit">
+    <p class="eyebrow">Support</p>
+    <h1>Empty State Variants</h1>
+    <p class="lede">Placeholder preview page for designed empty-state patterns across project lists, repository views, and other workspace surfaces.</p>
+</section>
+{% endblock %}

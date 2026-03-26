@@ -3,33 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}AI Tool Gateway{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
+    <title>{% block title %}{{ app_name }}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/foundation/theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/foundation/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/buttons.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/forms.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/primitives.css') }}">
+    {% block page_css %}{% endblock %}
 </head>
-<body>
-    <nav class="navbar">
-        <div class="navbar-container">
-            <a href="{{ url_for('index') }}" class="navbar-brand">AI Tool Gateway</a>
-            <div class="navbar-nav">
-                <a href="{{ url_for('index') }}" class="nav-link">Projects</a>
-            </div>
-        </div>
-    </nav>
-
-    <main class="main-container">
-        {% if error_msg %}
-            <div class="alert alert-error">
-                <span class="alert-icon">⚠️</span>
-                {{ error_msg }}
-            </div>
-        {% endif %}
-
-        {% block content %}{% endblock %}
-    </main>
-
-    <footer class="footer">
-        <p>Gateway: <code>{{ gateway_base_url }}</code></p>
-    </footer>
+<body class="{% block body_class %}theme-shell{% endblock %}">
+    {% block shell %}{% endblock %}
+    <script src="{{ url_for('static', filename='js/core.js') }}"></script>
+    {% block page_js %}{% endblock %}
 </body>
 </html>

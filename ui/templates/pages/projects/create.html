@@ -1,0 +1,17 @@
+{% extends "layouts/app_base.html" %}
+{% block title %}Create Project · {{ app_name }}{% endblock %}
+{% block page_css %}{{ super() }}<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/projects/create.css') }}">{% endblock %}
+{% block app_content %}
+<section class="panel panel-form form-limit">
+    <p class="eyebrow">Project bootstrap</p>
+    <h1>Create Project</h1>
+    <form class="form-grid">
+        <label>Project name <input type="text" placeholder="gateway-ui"></label>
+        <label>Remote repository URL <input type="text" placeholder="git@github.com:user/repo.git"></label>
+        <div class="button-row">
+            <button type="button" class="button button-primary">Create project</button>
+            <a class="button button-secondary" href="{{ url_for('projects_pages.projects') }}">Cancel</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

@@ -1,0 +1,6 @@
+{% extends "layouts/public_base.html" %}
+{% block title %}503 · {{ app_name }}{% endblock %}
+{% block page_css %}{{ super() }}<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/support/status.css') }}">{% endblock %}
+{% block public_content %}
+<section class="panel panel-form form-limit"><p class="eyebrow">Support</p><h1>Service unavailable</h1><p class="lede">Placeholder support page for unavailable dependencies or maintenance windows.</p></section>
+{% endblock %}

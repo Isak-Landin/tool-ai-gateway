@@ -1,0 +1,58 @@
+.public-shell {
+    background: radial-gradient(circle at top, #1b2a51 0%, var(--bg-public) 40%, #060914 100%);
+}
+
+.site-header-public {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(8, 12, 24, 0.68);
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid var(--border);
+}
+
+.site-header-public .shell-width {
+    padding: 1rem 0;
+}
+
+.site-header-public .header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+}
+
+.site-header-public .header-nav {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.site-header-public .header-nav a {
+    color: var(--text-muted);
+    padding: 0.55rem 0.8rem;
+    border-radius: 999px;
+}
+
+.site-header-public .header-nav a:hover {
+    color: var(--text);
+    background: rgba(124, 156, 255, 0.12);
+}
+
+.public-shell .brand-mark {
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+.public-shell .site-footer {
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: var(--space-5) 0;
+}
+
+.public-shell .footer-row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}

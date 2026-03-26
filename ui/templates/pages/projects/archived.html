@@ -1,0 +1,6 @@
+{% extends "layouts/app_base.html" %}
+{% block title %}Archived Projects · {{ app_name }}{% endblock %}
+{% block page_css %}{{ super() }}<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/projects/collection_detail.css') }}">{% endblock %}
+{% block app_content %}
+<section class="panel page-intro"><p class="eyebrow">Projects</p><h1>Archived Projects</h1><p class="lede">Placeholder page for archived project collections.</p></section>
+{% endblock %}

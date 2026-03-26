@@ -1,0 +1,6 @@
+{% extends "layouts/app_base.html" %}
+{% block title %}Account · {{ app_name }}{% endblock %}
+{% block page_css %}{{ super() }}<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/account/overview.css') }}">{% endblock %}
+{% block app_content %}
+<section class="panel page-intro"><p class="eyebrow">Account</p><h1>Account Overview</h1><p class="lede">Placeholder area for profile, preferences, and future security controls.</p></section>
+{% endblock %}

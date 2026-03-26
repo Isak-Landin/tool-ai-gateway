@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block body_class %}theme-shell app-shell{% endblock %}
+
+{% block page_css %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/layouts/app.css') }}">
+{% endblock %}
+
+{% block shell %}
+<div class="shell shell-app">
+    <header class="site-header site-header-app">
+        <div class="shell-width header-row">
+            <a class="brand-mark" href="{{ url_for('app_pages.home') }}">{{ app_name }}</a>
+            <nav class="header-nav" aria-label="Product navigation">
+                {% for item in product_nav %}
+                    <a href="{{ url_for(item.endpoint) }}">{{ item.label }}</a>
+                {% endfor %}
+            </nav>
+        </div>
+    </header>
+
+    <main class="shell-main shell-width">
+        {% block app_content %}{% endblock %}
+    </main>
+
+    {% include "partials/site_footer.html" %}
+</div>
+{% endblock %}

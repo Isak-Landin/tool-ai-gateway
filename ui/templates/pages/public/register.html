@@ -1,0 +1,15 @@
+{% extends "layouts/public_base.html" %}
+{% block title %}Register · {{ app_name }}{% endblock %}
+{% block page_css %}{{ super() }}<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/public/auth.css') }}">{% endblock %}
+{% block public_content %}
+<section class="auth-shell panel panel-form">
+    <p class="eyebrow">User-bound access</p>
+    <h1>Create account</h1>
+    <form class="form-grid">
+        <label>Name <input type="text" placeholder="Your name"></label>
+        <label>Email <input type="email" placeholder="name@example.com"></label>
+        <label>Password <input type="password" placeholder="Create password"></label>
+        <div class="button-row"><button type="button" class="button button-primary">Create account</button></div>
+    </form>
+</section>
+{% endblock %}

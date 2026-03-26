@@ -1,0 +1,56 @@
+.project-shell {
+    display: grid;
+    gap: var(--space-5);
+}
+
+.project-shell-header {
+    padding: var(--space-5);
+}
+
+.project-shell-meta {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    margin-top: var(--space-3);
+}
+
+.project-shell-body {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: var(--space-5);
+    align-items: start;
+}
+
+.project-sidebar {
+    position: sticky;
+    top: 92px;
+    padding: var(--space-4);
+    display: grid;
+    gap: var(--space-5);
+}
+
+.project-nav {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.project-nav a {
+    padding: 0.75rem 0.9rem;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+}
+
+.project-nav a:hover {
+    color: var(--text);
+    background: rgba(124, 156, 255, 0.12);
+}
+
+@media (max-width: 1100px) {
+    .project-shell-body {
+        grid-template-columns: 1fr;
+    }
+
+    .project-sidebar {
+        position: static;
+    }
+}

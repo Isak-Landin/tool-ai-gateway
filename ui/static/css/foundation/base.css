@@ -1,0 +1,50 @@
+.shell-width {
+    width: min(calc(100% - 2rem), var(--max-width));
+    margin: 0 auto;
+}
+
+.shell-main {
+    padding: var(--space-6) 0 var(--space-7);
+}
+
+.eyebrow {
+    margin: 0 0 var(--space-2);
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.75rem;
+}
+
+.lede,
+.muted {
+    color: var(--text-muted);
+}
+
+.panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow);
+}
+
+.form-grid {
+    display: grid;
+    gap: var(--space-4);
+}
+
+.form-grid label,
+.composer-controls label,
+.composer-field {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.form-limit {
+    max-width: 720px;
+}
+
+@media (max-width: 960px) {
+    .shell-main {
+        padding-top: var(--space-5);
+    }
+}

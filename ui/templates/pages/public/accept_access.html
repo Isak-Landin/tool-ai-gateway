@@ -1,0 +1,14 @@
+{% extends "layouts/public_base.html" %}
+{% block title %}Accept Access · {{ app_name }}{% endblock %}
+{% block page_css %}{{ super() }}<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/public/auth.css') }}">{% endblock %}
+{% block public_content %}
+<section class="auth-shell panel panel-form">
+    <p class="eyebrow">Invitation</p>
+    <h1>Accept Access</h1>
+    <p class="lede">Placeholder page for invitation acceptance and future access onboarding.</p>
+    <div class="button-row">
+        <button type="button" class="button button-primary">Accept invitation</button>
+        <a class="button button-secondary" href="{{ url_for('public.login') }}">Login instead</a>
+    </div>
+</section>
+{% endblock %}

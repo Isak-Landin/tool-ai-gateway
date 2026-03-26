@@ -1,0 +1,10 @@
+{% extends "layouts/app_base.html" %}
+{% block title %}Home · {{ app_name }}{% endblock %}
+{% block page_css %}{{ super() }}<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/app/home.css') }}">{% endblock %}
+{% block app_content %}
+<section class="panel page-intro">
+    <p class="eyebrow">Signed-in home</p>
+    <h1>Workspace-first product shell</h1>
+    <p class="lede">This page exists to define application structure, not backend behavior. Projects, account, and settings all extend the same app shell.</p>
+</section>
+{% endblock %}

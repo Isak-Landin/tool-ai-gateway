@@ -1,0 +1,24 @@
+{% extends "layouts/app_base.html" %}
+{% block title %}Projects · {{ app_name }}{% endblock %}
+{% block page_css %}{{ super() }}<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/projects/index.css') }}">{% endblock %}
+{% block app_content %}
+<section class="page-header-row">
+    <div>
+        <p class="eyebrow">Projects</p>
+        <h1>My Projects</h1>
+    </div>
+    <a class="button button-primary" href="{{ url_for('projects_pages.create_project') }}">New Project</a>
+</section>
+<section class="card-grid">
+    {% for project in projects %}
+    <a class="panel panel-link" href="{{ url_for('project.workspace', project_id=project.project_id) }}">
+        <div class="panel-header-row">
+            <h2>{{ project.name }}</h2>
+            <span class="meta-pill">#{{ project.project_id }}</span>
+        </div>
+        <p class="muted">{{ project.status }}</p>
+        <p class="muted">Model: {{ project.model }}</p>
+    </a>
+    {% endfor %}
+</section>
+{% endblock %}

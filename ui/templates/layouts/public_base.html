@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block body_class %}theme-shell public-shell{% endblock %}
+
+{% block page_css %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/layouts/public.css') }}">
+{% endblock %}
+
+{% block shell %}
+<div class="shell shell-public">
+    <header class="site-header site-header-public">
+        <div class="shell-width header-row">
+            <a class="brand-mark" href="{{ url_for('public.landing') }}">{{ app_name }}</a>
+            <nav class="header-nav" aria-label="Public navigation">
+                <a href="{{ url_for('public.login') }}">Login</a>
+                <a href="{{ url_for('public.register') }}">Register</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="shell-main shell-width">
+        {% block public_content %}{% endblock %}
+    </main>
+
+    {% include "partials/site_footer.html" %}
+</div>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends "layouts/project_base.html" %}
+
+{% block page_js %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/workspace.js') }}"></script>
+{% endblock %}
+
+{% block project_sidebar %}
+<section class="sidebar-section">
+    <p class="sidebar-title">Repository</p>
+    <ul class="repo-tree" aria-label="Repository tree">
+        {% for node in repo_tree %}
+        <li class="repo-tree-item repo-tree-item-{{ node.type }}">
+            <span>{{ node.label }}</span>
+            {% if node.type == 'directory' and node.children %}
+            <ul class="repo-tree-children">
+                {% for child in node.children %}
+                <li class="repo-tree-item repo-tree-item-{{ child.type }}">{{ child.label }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+</section>
+{% endblock %}
+
+{% block project_content %}
+<section class="workspace-grid">
+    <div class="panel presenter-panel">
+        <div class="presenter-toolbar">
+            <div>
+                <p class="eyebrow">Central presenter</p>
+                <h2>Shared file and AI view</h2>
+            </div>
+            <div class="presenter-toggle-group" role="tablist" aria-label="Presenter modes">
+                <button type="button" class="presenter-toggle is-active" data-presenter-target="file">File</button>
+                <button type="button" class="presenter-toggle" data-presenter-target="chat">AI</button>
+            </div>
+        </div>
+
+        <section class="presenter-view is-active" data-presenter-view="file">
+            <div class="presenter-header-row">
+                <span class="meta-pill">README.md</span>
+                <span class="muted">Repository-root file view</span>
+            </div>
+            <pre class="code-view"># Placeholder file presenter
+
+This central surface is intentionally dominant.
+It is designed for readable file contents rather than a preview-sized panel.
+
+- repository tree stays visible
+- file contents stay readable
+- presenter can toggle without page reload</pre>
+        </section>
+
+        <section class="presenter-view" data-presenter-view="chat">
+            <div class="presenter-header-row">
+                <span class="meta-pill">AI / Chat</span>
+                <span class="muted">History and model thoughts live here</span>
+            </div>
+            <div class="chat-history-stack">
+                {% for entry in chat_entries %}
+                <article class="chat-entry chat-entry-{{ entry.role }}">
+                    <header class="chat-entry-header">
+                        <strong>{{ entry.label }}</strong>
+                        <span class="muted">{{ entry.role }}</span>
+                    </header>
+                    <p>{{ entry.content }}</p>
+                    {% if entry.thought %}
+                    <div class="thought-block">
+                        <p class="thought-label">Model thought</p>
+                        <p>{{ entry.thought }}</p>
+                    </div>
+                    {% endif %}
+                </article>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+
+    <div class="panel composer-panel">
+        <div class="composer-controls">
+            <label>
+                <span>Branch</span>
+                <select>
+                    {% for branch in branches %}
+                    <option {% if branch == project.active_branch %}selected{% endif %}>{{ branch }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                <span>Model</span>
+                <select>
+                    {% for model in models %}
+                    <option {% if model == project.active_model %}selected{% endif %}>{{ model }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <button type="button" class="button button-secondary">Context</button>
+        </div>
+        <label class="composer-field">
+            <span class="eyebrow">Chat input</span>
+            <textarea rows="7" placeholder="Ask about the repository, request a change, or continue the current line of reasoning."></textarea>
+        </label>
+        <div class="button-row button-row-end">
+            <button type="button" class="button button-primary">Send</button>
+        </div>
+    </div>
+</section>
+{% endblock %}
