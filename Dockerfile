@@ -4,6 +4,7 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    openssh-client \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
@@ -18,7 +19,7 @@ COPY ProjectRuntimeBinder /app/ProjectRuntimeBinder
 COPY BoundProjectRuntime /app/BoundProjectRuntime
 COPY repository_runtime /app/repository_runtime
 COPY execution /app/execution
-COPY persistence.py /app/persistence.py
+COPY persistence /app/persistence
 COPY errors.py /app/errors.py
 COPY db/* /app/db/
 COPY ollama /app/ollama

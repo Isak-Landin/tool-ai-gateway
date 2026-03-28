@@ -8,8 +8,11 @@ services:
       - ./.env
     environment:
       PYTHONUNBUFFERED: "1"
+      PROJECTS_ROOT: ${PROJECTS_ROOT}
     ports:
       - "${GATEWAY_PORT}:${GATEWAY_PORT}"
+    volumes:
+      - ${PROJECTS_ROOT}:${PROJECTS_ROOT}
     restart: unless-stopped
     depends_on:
       - gateway-db
