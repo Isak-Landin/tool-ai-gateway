@@ -121,6 +121,7 @@ It answers the question:
 
 - runtime ordering
 - context assembly
+- message processing during the run
 - selected context loading for the run
 - deciding which tools belong in the run
 - model and tool sequencing
@@ -164,6 +165,7 @@ It answers the question:
 
 - reading stored entities
 - writing stored entities
+- storing and serving project message/history artifacts needed by MVP execution
 - exposing lower-level repository/file access surfaces
 - serving execution-facing storage needs
 - serving runtime-binding-facing storage needs

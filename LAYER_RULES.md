@@ -46,8 +46,8 @@ Return flow is the reverse direction:
 | **Project Resolver** | Read project-scoped rows from persistence | Build runtime, bind services, execute workflow |
 | **Project Runtime Binder** | Construct `BoundProjectRuntime`, bind dependencies, read runtime-needed persistence fields | Resolve projects, run workflow logic, shape route responses |
 | **Bound Project Runtime** | Store project-scoped runtime state and bound dependencies | Resolve, bind, persist, or execute by itself |
-| **Execution** | Use `BoundProjectRuntime`, load/persist execution state, assemble bounded recent project context, load selected context from the bound local repo, choose context deterministically, call one execution model and runtime/tool surfaces | Resolve projects, construct runtime, shape HTTP/API responses |
-| **Persistence** | Serve storage and repo/file access needs for higher layers | Orchestrate workflow, bind runtime, call back upward |
+| **Execution** | Use `BoundProjectRuntime`, load/persist execution state, process ordered project messages, assemble bounded recent project context, load selected context from the bound local repo, choose context deterministically, call one execution model and runtime/tool surfaces | Resolve projects, construct runtime, shape HTTP/API responses |
+| **Persistence** | Serve storage and repo/file access needs for higher layers, including required MVP message/history persistence | Orchestrate workflow, bind runtime, call back upward |
 
 ## Layer Details
 
@@ -152,6 +152,7 @@ Return flow is the reverse direction:
 - **Bound Project Runtime is not an orchestrator.** It is a bound runtime container.
 - **Execution is the first layer that may orchestrate.**
 - **Execution chooses bounded context for MVP.** Full project history may stay in DB, but execution should not send all of it by default.
+- **Execution must process persisted project messages for MVP.** Message loading and message persistence are part of the required MVP run flow.
 - **Persistence serves downward-only concerns.** It should not drive workflow.
 - **Project Runtime Binder may prepare runtime dependencies, but must not perform execution work.**
 - **Project Resolver stays narrow.** It resolves; it does not enrich into runtime behavior.
