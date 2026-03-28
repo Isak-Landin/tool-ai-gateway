@@ -10,6 +10,7 @@ class ChatRequest(BaseModel):
     message: str
     selected_files: list[str] = Field(default_factory=list)
     branch: str | None = None
+    ai_model_name: str | None = None
 
 
 class ChatResponse(BaseModel):
@@ -18,6 +19,7 @@ class ChatResponse(BaseModel):
     message: str
     selected_files: list[str]
     branch: str
+    ai_model_name: str
     next_layer: str
 
 
@@ -38,7 +40,6 @@ class ProjectDetailResponse(BaseModel):
     ok: bool
     project_id: int
     name: str
-    ai_model_name: str
     branch: str
     created_at: datetime.datetime
 

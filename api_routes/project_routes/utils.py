@@ -18,6 +18,7 @@ def chat_workflow_entry(project_id, req: ChatRequest, resolver, binder, orchestr
             handle=handle,
             message=req.message,
             selected_files=req.selected_files,
+            ai_model_name=req.ai_model_name,
         )
 
         return ChatResponse(
@@ -26,6 +27,7 @@ def chat_workflow_entry(project_id, req: ChatRequest, resolver, binder, orchestr
             message=result.get("answer", result.get("message", "")),
             selected_files=req.selected_files,
             branch=handle.branch,
+            ai_model_name=result.get("ai_model_name", ""),
             next_layer="execution_completed",
         )
     finally:

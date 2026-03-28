@@ -121,6 +121,9 @@ def run(project_id: int, req: ChatRequest):
     if req.branch is not None and not str(req.branch).strip():
         raise HTTPException(status_code=400, detail="branch must not be blank")
 
+    if req.ai_model_name is not None and not str(req.ai_model_name).strip():
+        raise HTTPException(status_code=400, detail="ai_model_name must not be blank")
+
     try:
         resolver = ProjectResolver()
         binder = ProjectRuntimeBinder()
