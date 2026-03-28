@@ -1,0 +1,20 @@
+services:
+  tool-gateway-ui-dev:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    container_name: ui-tool-gateway-dev
+    environment:
+      GATEWAY_BASE_URL: ${GATEWAY_BASE_URL:-http://localhost:8000}
+      UI_HOST: 0.0.0.0
+      UI_PORT: 4000
+      FLASK_DEBUG: "true"
+      PYTHONUNBUFFERED: "1"
+    ports:
+      - "${DEV_UI_PORT:-4400}:4000"
+    volumes:
+      - ./ui/app.py:/app/app.py
+      - ./ui/webapp:/app/webapp
+      - ./ui/templates:/app/templates
+      - ./ui/static:/app/static
+    restart: unless-stopped
