@@ -88,8 +88,8 @@ from ollama.tool_registry import build_tool_prompt_fragment, build_tool_schemas
 from BoundProjectRuntime import BoundProjectRuntime
 from tools import (
     execute_list_repository_tree,
+    execute_return_to_user,
     execute_search_repository_text,
-    execute_switch_repository_branch,
     execute_web_search,
 )
 
@@ -99,70 +99,6 @@ DEFAULT_RECENT_HISTORY_LIMIT = int(os.getenv("EXECUTION_RECENT_HISTORY_LIMIT", "
 
 class WorkflowExecutionError(Exception):
     pass
-
-
-class WorkflowOrchestratorReplica:
-    """
-    Non-functional representation of the intended execution-layer contract.
-
-    This class exists to show execution behavior in implementation order without
-    introducing real runtime behavior yet.
-    """
-
-    def prepare_chat_run(self, bound_runtime, chat_input):
-        """
-        Chat entry preparation:
-        - accept a bound project runtime from the runtime-binding layer
-        - accept chat input that has already passed route/request checks
-        - validate execution-layer preconditions for a project-scoped chat run
-
-        This seam should not parse HTTP input or construct runtime objects.
-        """
-        pass
-
-    def collect_chat_context(self, bound_runtime, chat_input):
-        """
-        Chat context collection:
-        - load prior chat state and message history
-        - load selected project context
-        - decide which tool surfaces belong in the current run
-        - prepare the execution-owned inputs needed before model work begins
-
-        This seam represents chat-context assembly, not transport behavior.
-        """
-        pass
-
-    def run_chat_cycle(self, chat_state):
-        """
-        Chat orchestration:
-        - build the model-ready input set
-        - execute the model call
-        - execute tool/runtime calls when the workflow requires them
-        - continue the model/tool cycle until a final assistant answer exists
-
-        This seam is where execution-layer ordering belongs.
-        """
-        pass
-
-    def persist_chat_run(self, chat_state, chat_outputs):
-        """
-        Chat persistence:
-        - persist the user turn before the model call
-        - persist assistant and tool artifacts in the order the workflow requires
-        - keeps persistence focused on storage while execution owns sequencing
-
-        This seam should not perform route-level response shaping.
-        """
-        pass
-
-    def build_chat_result(self, chat_outputs):
-        """
-        Chat result shaping:
-        - returns execution result data to the caller above this layer
-        - leaves HTTP status codes, response models, and transport mapping to the
-          request-entry layer
-        """
-        pass
 
 
 class WorkflowOrchestrator:
@@ -233,12 +169,12 @@ class WorkflowOrchestrator:
 
         return repo_path
 
-    def _require_shell(self, handle: BoundProjectRuntime):
-        shell_executor = getattr(handle, "shell", None)
-        if shell_executor is None:
-            raise WorkflowExecutionError("BoundProjectRuntime.shell is required for shell-backed tools")
+    def _require_repository_runtime(self, handle: BoundProjectRuntime):
+        repository_runtime = getattr(handle, "repository_runtime", None)
+        if repository_runtime is None:
+            raise WorkflowExecutionError("BoundProjectRuntime.repository_runtime is required for shell-backed tools")
 
-        return shell_executor
+        return repository_runtime
 
     def _run_repository_text_search(
         self,
@@ -248,9 +184,10 @@ class WorkflowOrchestrator:
         case_sensitive: bool = False,
         max_results: int = 100,
     ) -> list[dict]:
+        repository_runtime = self._require_repository_runtime(handle)
         return execute_search_repository_text(
-            shell_executor=self._require_shell(handle),
-            repo_path=self._require_repo_path(handle),
+            shell_executor=repository_runtime.shell,
+            repo_path=repository_runtime.repo_path,
             query=query,
             relative_repo_path=relative_repo_path,
             case_sensitive=case_sensitive,
@@ -262,33 +199,19 @@ class WorkflowOrchestrator:
         handle: BoundProjectRuntime,
         relative_repo_path: str | None = None,
     ) -> list[dict]:
+        repository_runtime = self._require_repository_runtime(handle)
         return execute_list_repository_tree(
-            shell_executor=self._require_shell(handle),
-            repo_path=self._require_repo_path(handle),
+            shell_executor=repository_runtime.shell,
+            repo_path=repository_runtime.repo_path,
             relative_repo_path=relative_repo_path,
         )
 
-    def _switch_repository_branch(
-        self,
-        handle: BoundProjectRuntime,
-        branch_name: str,
-        pull_from_origin: bool = False,
-    ) -> dict:
-        result = execute_switch_repository_branch(
-            shell_executor=self._require_shell(handle),
-            branch_name=branch_name,
-            key_path=getattr(handle, "key_path", None),
-            pull_from_origin=pull_from_origin,
-        )
-        handle.branch = result["branch_name"]
-        return result
-
     def _get_tool_executors(self, handle: BoundProjectRuntime) -> dict[str, Callable[..., Any]]:
         return {
+            "return_to_user": execute_return_to_user,
             "web_search": execute_web_search,
             "search_repository_text": partial(self._run_repository_text_search, handle),
             "list_repository_tree": partial(self._run_repository_tree_listing, handle),
-            "switch_repository_branch": partial(self._switch_repository_branch, handle),
         }
 
     def _select_chat_tool_names(self, handle: BoundProjectRuntime) -> list[str]:
@@ -355,6 +278,24 @@ class WorkflowOrchestrator:
             return tool_name, tool_executor(**arguments)
         except TypeError as e:
             raise WorkflowExecutionError(f"Invalid arguments for tool '{tool_name}'") from e
+        except ValueError as e:
+            raise WorkflowExecutionError(f"Invalid arguments for tool '{tool_name}'") from e
+
+    def _extract_return_to_user_call(self, assistant_tool_calls: list[dict]) -> dict | None:
+        return_calls = [
+            tool_call
+            for tool_call in assistant_tool_calls
+            if ((tool_call.get("function") or {}).get("name") == "return_to_user")
+        ]
+        if not return_calls:
+            return None
+
+        if len(return_calls) != 1 or len(assistant_tool_calls) != 1:
+            raise WorkflowExecutionError(
+                "return_to_user must be the only tool call in its assistant turn"
+            )
+
+        return return_calls[0]
 
     def _build_chat_envelope(
         self,
@@ -432,12 +373,35 @@ class WorkflowOrchestrator:
             )
             sequence_no += 1
 
-            if not assistant_tool_calls:
+            return_to_user_tool_call = self._extract_return_to_user_call(assistant_tool_calls)
+            if return_to_user_tool_call is not None:
+                tool_name, tool_result = self._execute_tool_call(handle, return_to_user_tool_call)
+                tool_result_content = self._serialize_tool_result_content(tool_result)
+
+                execution_persistence.store_artifact(
+                    {
+                        "sequence_no": sequence_no,
+                        "role": "tool",
+                        "content": tool_result_content,
+                        "tool_name": tool_name,
+                        "raw_message_json": build_chat_message(
+                            role="tool",
+                            content=tool_result_content,
+                            tool_name=tool_name,
+                        ),
+                        "raw_response_json": {
+                            "tool_call": return_to_user_tool_call,
+                            "tool_result": tool_result,
+                        },
+                    }
+                )
+
                 return {
                     "ok": True,
                     "execution_type": "chat",
                     "project_id": handle.project_id,
                     "answer": assistant_content or "",
+                    "return_to_user": tool_result,
                 }
 
             append_assistant_message(

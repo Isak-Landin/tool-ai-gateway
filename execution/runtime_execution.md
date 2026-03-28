@@ -64,6 +64,8 @@ The MVP goal is a reliable, ordered project-scoped run with bounded context.
 - execution does not rely on persisted file snapshot rows for selected context
 - selected context should remain project-scoped and branch-aware because it comes from the bound local repo
 - shell-backed tools should run from one bound repo-root shell with repo-relative paths
+- branch switching is not part of the current MVP execution tool set
+- execution returns control to the user only when the model calls `return_to_user`
 
 ## Intention
 
