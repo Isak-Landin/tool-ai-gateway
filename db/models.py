@@ -34,6 +34,7 @@ class Project(Base):
     remote_repo_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     branch: Mapped[str] = mapped_column(String(255), nullable=False, server_default="main")
     ssh_key: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    public_key_path: Mapped[str | None] = mapped_column(String(1024), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
