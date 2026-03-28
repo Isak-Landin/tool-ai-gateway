@@ -32,6 +32,7 @@ class MessagesRepository:
                     "role": r.role,
                     "content": r.content,
                     "thinking": r.thinking,
+                    "ai_model_name": r.ai_model_name,
                     "tool_name": r.tool_name,
                     "tool_calls_json": r.tool_calls_json,
                     "images_json": r.images_json,
@@ -61,6 +62,7 @@ class MessagesRepository:
                 "role": message.role,
                 "content": message.content,
                 "thinking": message.thinking,
+                "ai_model_name": message.ai_model_name,
             }
 
         except SQLAlchemyError as e:

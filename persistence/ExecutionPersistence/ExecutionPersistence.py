@@ -37,7 +37,7 @@ class ExecutionPersistence:
             "tool_name": row.tool_name,
             "tool_calls_json": row.tool_calls_json,
             "images_json": row.images_json,
-            "ollama_model": row.ollama_model,
+            "ai_model_name": row.ai_model_name,
             "ollama_created_at": row.ollama_created_at,
             "done": row.done,
             "done_reason": row.done_reason,

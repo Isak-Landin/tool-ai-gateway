@@ -79,7 +79,6 @@ class ProjectPersistence:
             return {
                 "project_id": result.project_id,
                 "name": result.name,
-                "ai_model_name": result.ai_model_name,
                 "branch": result.branch,
                 "created_at": result.created_at,
             }
@@ -213,7 +212,6 @@ class ProjectPersistence:
                 {
                     "project_id": r.project_id,
                     "name": r.name,
-                    "ai_model_name": r.ai_model_name,
                     "branch": r.branch,
                     "created_at": r.created_at,
                 }

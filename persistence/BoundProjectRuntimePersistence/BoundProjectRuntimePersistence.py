@@ -27,7 +27,6 @@ class BoundProjectRuntimePersistence:
             return {
                 "project_id": project.project_id,
                 "name": project.name,
-                "ai_model_name": project.ai_model_name,
                 "repo_path": project.repo_path,
                 "remote_repo_url": project.remote_repo_url,
                 "branch": project.branch,
