@@ -35,6 +35,7 @@ The first version should stay narrow.
 ### Scope
 
 - accept a bound runtime and validated chat input
+- accept an optional execution-time `ai_model_name` override for the run
 - load a bounded recent project message window
 - load selected project context from the current local repository state
 - choose context deterministically inside execution
@@ -56,6 +57,13 @@ The first version should stay narrow.
 - no large execution graph
 
 The MVP goal is a reliable, ordered project-scoped run with bounded context.
+
+### MVP Message Processing Requirement
+
+- message processing is required MVP behavior, not optional future polish
+- execution must load recent project messages as bounded run context
+- execution must persist user, assistant, and tool artifacts in ordered sequence
+- persisted message artifacts must retain the actual `ai_model_name` used for the run so model choice remains historically visible even if later runs use a different model
 
 ### Current MVP Selected Context Rule
 

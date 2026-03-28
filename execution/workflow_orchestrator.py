@@ -102,10 +102,9 @@ class WorkflowExecutionError(Exception):
 
 
 class WorkflowOrchestrator:
-    def _get_execution_model(self, handle: BoundProjectRuntime) -> str:
-        model_name = getattr(handle, "ai_model_name", None)
-        if str(model_name).strip():
-            return str(model_name).strip()
+    def _get_execution_model(self, ai_model_name: str | None = None) -> str:
+        if str(ai_model_name).strip():
+            return str(ai_model_name).strip()
 
         return get_ollama_default_model()
 
@@ -236,7 +235,7 @@ class WorkflowOrchestrator:
             "tool_calls_json": parsed_output.get("tool_calls") or None,
             "tool_name": parsed_output.get("tool_name"),
             "images_json": parsed_output.get("images"),
-            "ollama_model": parsed_output.get("model"),
+            "ai_model_name": parsed_output.get("model"),
             "ollama_created_at": self._parse_ollama_created_at(parsed_output.get("created_at")),
             "done": parsed_output.get("done"),
             "done_reason": parsed_output.get("done_reason"),
@@ -299,12 +298,12 @@ class WorkflowOrchestrator:
 
     def _build_chat_envelope(
         self,
-        handle: BoundProjectRuntime,
         history_messages: list[dict],
         user_turn_content: str,
         tool_names: list[str],
+        execution_model_name: str,
     ) -> dict:
-        chat_envelope = create_chat_envelope(model=self._get_execution_model(handle))
+        chat_envelope = create_chat_envelope(model=execution_model_name)
 
         tool_prompt_fragment = build_tool_prompt_fragment(tool_names)
         effective_system_prompt = merge_system_prompt_fragments(
@@ -326,7 +325,13 @@ class WorkflowOrchestrator:
 
         return chat_envelope
 
-    def run_chat(self, handle: BoundProjectRuntime, message: str, selected_files: list[str] | None = None) -> dict:
+    def run_chat(
+        self,
+        handle: BoundProjectRuntime,
+        message: str,
+        selected_files: list[str] | None = None,
+        ai_model_name: str | None = None,
+    ) -> dict:
         if handle is None:
             raise WorkflowExecutionError("BoundProjectRuntime is required")
 
@@ -343,11 +348,12 @@ class WorkflowOrchestrator:
         user_turn_content = self._build_user_turn_content(message, selected_context_rows)
 
         tool_names = self._select_chat_tool_names(handle)
+        execution_model_name = self._get_execution_model(ai_model_name=ai_model_name)
         chat_envelope = self._build_chat_envelope(
-            handle=handle,
             history_messages=history_messages,
             user_turn_content=user_turn_content,
             tool_names=tool_names,
+            execution_model_name=execution_model_name,
         )
 
         sequence_no = execution_persistence.load_next_sequence_no()
@@ -356,6 +362,7 @@ class WorkflowOrchestrator:
                 "sequence_no": sequence_no,
                 "role": "user",
                 "content": user_turn_content,
+                "ai_model_name": execution_model_name,
                 "raw_message_json": build_chat_message(role="user", content=user_turn_content),
             }
         )
@@ -383,6 +390,7 @@ class WorkflowOrchestrator:
                         "sequence_no": sequence_no,
                         "role": "tool",
                         "content": tool_result_content,
+                        "ai_model_name": execution_model_name,
                         "tool_name": tool_name,
                         "raw_message_json": build_chat_message(
                             role="tool",
@@ -400,6 +408,7 @@ class WorkflowOrchestrator:
                     "ok": True,
                     "execution_type": "chat",
                     "project_id": handle.project_id,
+                    "ai_model_name": execution_model_name,
                     "answer": assistant_content or "",
                     "return_to_user": tool_result,
                 }
@@ -421,6 +430,7 @@ class WorkflowOrchestrator:
                         "sequence_no": sequence_no,
                         "role": "tool",
                         "content": tool_result_content,
+                        "ai_model_name": execution_model_name,
                         "tool_name": tool_name,
                         "raw_message_json": build_chat_message(
                             role="tool",
