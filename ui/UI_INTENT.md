@@ -1,231 +1,86 @@
 # UI Intent Map
 
-_This document is a visual and navigational planning document for the UI only._
+_This document defines the intended UI direction for the product surface._
 
-_It does not define backend contracts, response shapes, persistence details, or execution behavior._
+_It is UI planning, not a backend contract._
+
+_When UI assumptions conflict with stabilized lower-layer behavior, the lower layers should win and the UI intent should be updated._
 
 ## Purpose
 
-The UI should present one coherent product surface for:
+The UI should present one coherent project-centered product surface for:
 
 - entering the system
-- understanding what projects exist
-- moving into one project workspace
-- asking questions and reading responses
-- managing project-level setup and configuration
-- handling account access and future user-bound ownership cleanly
+- seeing what projects exist
+- creating a project
+- working inside one project workspace
+- reading files and repository structure
+- reading AI/chat history
+- sending new project-scoped requests
 
-The goal is not to preserve current pages as the final structure.  
-The goal is to define the page system the UI should grow toward while keeping one consistent visual language.
+## Current Intent Priority
 
-## Design Direction
+The current priority is not broad user-account coverage.
 
-The UI should feel like:
+The current priority is:
 
-- a focused project workspace
-- calm, readable, and tool-oriented
-- capable of supporting both a narrow MVP and a broader final product
+- project collection flow
+- project creation flow
+- primary project workspace
+- project history visibility
+- project settings only where they are truly project-scoped
 
-The design language should prioritize:
+User/account/auth surfaces can still exist in planning, but they are not the current source of MVP shape.
 
-- clear hierarchy
-- strong spacing rhythm
-- durable workspace layouts
-- restrained color usage
-- obvious navigation
-- predictable page shells
+## Core Product Shape
 
-## Theme System
+The product should feel:
 
-### Core visual character
+- project-centered
+- technical but calm
+- stable across pages
+- closer to a workspace than to a collection of utility screens
 
-The theme should be:
+The UI should communicate that the project page is where real work happens.
 
-- dark-aware or dark-first in feeling, even if light mode remains available
-- minimal rather than decorative
-- technical without looking raw or unfinished
-- consistent across auth, dashboard, project, and settings pages
+## Navigation Model
 
-### Visual principles
+### Product-level navigation
 
-- one global app shell
-- one consistent typography system
-- one spacing system
-- one card system
-- one form system
-- one status color system
-- one interaction language for buttons, tabs, sidebars, and panels
-
-### Primary surfaces
-
-The UI should rely on a small set of repeated surfaces:
-
-- app background
-- top navigation
-- left project/workspace navigation
-- content canvas
-- cards
-- panels
-- tables/lists
-- forms
-- message/thread surfaces
-- modal/drawer surfaces
-
-### Interaction states
-
-Every page family should support a consistent treatment for:
-
-- default
-- hover
-- active
-- selected
-- disabled
-- loading
-- empty
-- success
-- warning
-- error
-
-## Global Navigation Model
-
-The UI should eventually have two navigation levels.
-
-### 1. Product-level navigation
-
-Used before entering a specific project and when moving between major product areas.
-
-Main destinations:
+Primary destinations that matter right now:
 
 - Home
 - Projects
 - New Project
+
+Future or lower-priority destinations:
+
 - Account
 - Settings
 - Login / Logout
 
-### 2. Project-level navigation
+### Project-level navigation
 
-Used after entering a specific project workspace.
-
-Main destinations:
+Primary project destinations:
 
 - Workspace
 - Activity
 - Settings
 
-## Page Families
+The project workspace remains the main working page.
 
-The UI should be planned as page families, not only isolated pages.
+## Current MVP Route Direction
 
-### A. Entry and auth pages
-
-These pages establish product access and user identity.
-
-Planned pages:
-
-- Landing / Home
-- Login
-- Register
-- Forgot Password
-- Reset Password
-- Invitation / Accept Access
-
-Intent:
-
-- explain the product simply
-- provide clean access entry
-- separate public entry from signed-in workspace pages
-
-### B. Project collection pages
-
-These pages show project ownership and project discovery.
-
-Planned pages:
-
-- My Projects
-- Shared With Me
-- Archived Projects
-- Create Project
-- Project Bootstrap Complete
-
-Intent:
-
-- make user-bound project organization obvious
-- support ownership and collaboration later without redesigning the whole shell
-- keep project creation visually separate from project work
-
-### C. Project workspace pages
-
-These pages are the core signed-in product experience.
-
-Planned pages:
-
-- Project Workspace
-- Project Activity / History
-- Project Settings
-
-Intent:
-
-- provide one stable workspace shell
-- let the user stay oriented inside one project
-- allow future growth without changing the basic navigation model
-- keep the most important project work in one integrated screen rather than splitting it too early
-
-### D. Account and user pages
-
-These pages handle user-level identity and preferences.
-
-Planned pages:
-
-- Account Overview
-- Profile
-- User Preferences
-- Security
-
-Intent:
-
-- keep personal settings separate from project settings
-- make future user-bound project ownership feel native
-
-### E. System and support pages
-
-These pages support app-wide UX consistency.
-
-Planned pages:
-
-- Not Found
-- Access Denied
-- Service Unavailable
-- Empty State Variants
-
-Intent:
-
-- make failure states feel designed, not accidental
-- preserve the same shell and tone across edge cases
-
-## Route and Page Map
-
-This map is intentionally UI-facing only.
-
-### Public routes
+### Public MVP route
 
 - `/`
-- `/login`
-- `/register`
-- `/forgot-password`
-- `/reset-password`
 
-### Authenticated top-level routes
+### Project collection MVP routes
 
-- `/home`
 - `/projects`
 - `/projects/new`
-- `/projects/shared`
-- `/projects/archived`
-- `/account`
-- `/settings`
 
-### Project workspace routes
+### Project MVP routes
 
 - `/projects/<project_id>`
 - `/projects/<project_id>/activity`
@@ -237,323 +92,245 @@ This map is intentionally UI-facing only.
 - `/404`
 - `/503`
 
-## Recommended Shell Structure
+## Page Roles
 
-### Public shell
+### Landing / Home
 
-Used for landing and auth pages.
+Role:
 
-Visual structure:
+- explain the product simply
+- route the user toward projects
+- visually prepare the user for the workspace
 
-- simplified top bar
-- centered content
-- strong headline area
-- minimal distractions
+### Projects List
 
-### App shell
+Role:
 
-Used for signed-in top-level pages like project lists and account pages.
+- show project collection at a glance
+- act as the default signed-in entry into actual work
 
-Visual structure:
+### Create Project
 
-- persistent top navigation
-- optional secondary navigation
-- page title area
-- content grid or list area
+Role:
 
-### Project workspace shell
+- handle project bootstrap as a dedicated setup step
+- stay visually separate from the day-to-day workspace
 
-Used for all project subpages.
+### Project Workspace
 
-Visual structure:
+Role:
 
-- persistent top navigation
-- persistent project sidebar
-- project title/status strip
-- main work canvas
-- optional right-side contextual panel
+- be the primary project interaction page
+- combine repository navigation, file reading, AI/chat history, and request submission
 
-This shell should remain stable even as individual project subpages change.
+### Project Activity
 
-## Primary Project Workspace
+Role:
 
-The default project page should be the main project workspace.
+- show ordered message/history activity and notable execution events
 
-It should not be treated as a thin landing page that immediately pushes the user into many separate pages for normal work.
+### Project Settings
 
-The project page is meant to hold the most important working surfaces together in one layout.
+Role:
 
-### Core workspace composition
+- hold actual project-scoped configuration only
+- avoid polluting the main workspace with rare controls
 
-The main project workspace should be organized around three major regions:
+## Workspace Composition
+
+The project workspace should be organized around three major regions:
 
 - repository tree
 - central presenter
-- chat area
+- chat/input region
 
-These are not the only possible sections in the final interface, but they are the primary visual structure.
+These are the main structural anchors.
 
-### 1. Repository tree region
+## Repository Tree Region
 
 Intent:
 
-- present the repository as a navigable file tree
+- show repository-root structure
 - prioritize orientation and safety
-- allow directory expansion on demand
+- allow controlled directory expansion
 
 Rules:
 
-- the tree starts from the repository root, not the broader project directory
-- root-level repository files should be visible immediately
-- directories should default to closed
-- the default closed state should still avoid an empty-looking tree
-- the project container itself should not appear as an extra collapsed parent layer
+- start from repository root, not broader project storage
+- root-level files should be visible immediately
+- directories should default closed
+- the tree should not start in an empty-looking state
+- the project container itself should not appear as an extra parent layer
 
-Reasoning:
-
-- users should see real repository files immediately
-- the tree should feel useful on first load
-- the UI should not visually encourage navigation into non-repository project storage
-
-Visual behavior:
-
-- tall but relatively narrow
-- optimized for scanning
-- supports expandable directories
-- supports clear selected-file state
-
-### 2. Central presenter region
+## Central Presenter Region
 
 Intent:
 
-- act as the main large reading surface in the workspace
-- give enough width for real code, text, and conversation reading
-- remain the dominant content pane
-
-Visual behavior:
-
-- larger than the repository tree
-- both wide and tall
-- suited for long-form file reading and long-form conversation reading
-- able to host tabs, file title bars, and future inline utilities if needed
-
-This region should feel closer to a primary workspace presenter than a small preview panel.
-
-### Presenter modes
+- be the dominant reading surface
+- support real file reading
+- support real conversation/history reading
 
 The central presenter should support local no-reload toggling between:
 
 - file content mode
 - AI/chat history mode
 
-This should be a direct workspace toggle, not a full page navigation pattern.
-
-Suggested visual direction:
-
-- one file-oriented toggle icon
-- one AI/chat-oriented toggle icon
-- quick switching between views inside the same presenter container
-
 ### File content mode
 
-In file content mode, the central presenter shows:
+Shows:
 
-- the currently selected file
+- currently selected file
 - readable file content
-- file-oriented title or tab affordances
+- file-oriented title information
 
 ### AI/chat history mode
 
-In AI/chat history mode, the same central presenter shows:
+Shows:
 
 - chat history
-- AI responses
+- assistant responses
 - model thoughts
 
-Model thought presentation should belong with the chat experience, not in a separate unrelated page area.
+Model thoughts belong with AI/chat history, not in a separate unrelated area.
 
-The thought view should therefore live inside the AI/chat mode of the central presenter.
-
-### 3. Chat region
+## Chat/Input Region
 
 Intent:
 
-- provide the main user-to-system interaction surface
-- anchor the active input controls for the chat experience
-- allow relatively long prompts without feeling cramped
-- coexist with repository navigation and file reading in the same workspace
+- anchor the active user request flow
+- stay wide enough for real prompts
+- stay integrated with the workspace rather than becoming a detached page
 
-Visual behavior:
+The input area should support:
 
-- wide enough for comfortable writing
-- short compared with the file presenter, but not so short that longer prompts become frustrating
-- tall enough to support real prompt writing without hiding the text too early
-
-The chat input area should visually support:
-
-- message input
+- prompt input
 - send action
-- branch selection dropdown
-- model selection dropdown
+- branch selection
+- model selection
 - room for future adjacent controls
 
-The chat history itself should not compete with the file tree for space in a separate main region.
+The large history-reading surface belongs in the central presenter, not in the input region.
 
-Instead:
+## Model Selection Direction
 
-- the input and control surface remain in the chat region
-- the larger chat history and model thought reading surface live in the central presenter when AI/chat mode is active
+The UI must no longer treat the project itself as owning one persistent selected model.
 
-## Workspace Layout Direction
+That older assumption is deprecated.
 
-The project workspace should feel closer to an IDE-inspired environment than a sequence of separate utility pages.
+### Current intended model behavior
 
-The intended layout direction is:
+- model choice is a workspace/run-time concern
+- the project record should not be the owner of selected model state
+- the model actually used for a response should be archived on message artifacts through `messages.ai_model_name`
 
-- narrow repository navigation on one side
-- dominant toggleable presenter in the middle
-- integrated chat input area as a major workspace section
+### What this means for the UI
 
-This does not require copying any existing editor literally.  
-It means the workspace should prioritize simultaneous visibility of:
+- the workspace may present a model dropdown
+- changing the selected model should affect future runs, not rewrite project metadata
+- previously generated responses should still show which model produced them through message history data
 
-- repository structure
-- the currently selected file or AI/chat history
-- the current input and conversation controls
+### MVP sourcing of model options
 
-## Project Page Role
+For current MVP simplicity:
 
-`/projects/<project_id>` should be the primary working page for a project.
+- the UI may provide a static model-option list inside the UI layer
 
-It should combine:
+Later, the cleaner long-term direction is:
 
-- repository navigation
-- file viewing
-- AI/chat history viewing
-- chat interaction
-- project-scoped controls
+- a separate non-persistence-backed backend route such as `/models`
+- that route should represent live backend model availability rather than database-stored values
 
-It should not be treated as a temporary overview page that exists only to link outward to the “real” pages.
+That route is part of the intended direction, but not required to be implemented right now.
 
-## Secondary Project Pages
+## Branch Selection Direction
 
-The project should still be allowed to have additional pages when they serve distinct secondary roles.
+Branch remains more project/runtime-adjacent than model selection.
 
-Recommended secondary pages:
+Current intent:
 
-- `/projects/<project_id>/activity`
-- `/projects/<project_id>/settings`
+- the project may still have a default branch
+- the workspace may allow branch override for runs
+- branch selection belongs in workspace controls because it affects repository-scoped work
 
-Optional future secondary pages may exist, but the core repository/file/chat experience should remain centered on the primary workspace page.
+## Message and History Direction
 
-## Recommended Page Roles
+Message processing is required MVP behavior, not optional polish.
 
-### Landing / Home
+The UI should assume:
 
-Role:
+- project history matters
+- message persistence matters
+- assistant outputs and tool artifacts form an ordered project history
+- the actual `ai_model_name` used for a response belongs in message history
 
-- present the product clearly
-- route people to login or project work
+This supports:
 
-### Projects
+- project activity view
+- AI/chat history mode in the workspace
+- future auditability of which model produced which response
 
-Role:
+## Project Settings Direction
 
-- show project collection at a glance
-- become the default signed-in home
+Project settings should only include fields that are truly project-scoped.
 
-### Create Project
+Reasonable project-scoped fields:
 
-Role:
+- project name
+- default branch
 
-- handle project setup as a focused creation flow
-- feel separate from the main workspace
+Not intended as project-scoped settings:
 
-### Project Workspace
+- a permanent project-owned selected model
 
-Role:
+## Theme and Shell Direction
 
-- be the primary interaction surface for a project
-- combine repository tree, central toggleable presenter, and chat input/control area in one coherent workspace
-- become the visual center of the MVP and remain valid in the final product
+The UI should keep:
 
-### Project Activity
+- one global theme language
+- one stable public shell
+- one stable app shell
+- one stable project shell
 
-Role:
+The workspace should feel IDE-adjacent in structure, but should not copy a specific editor literally.
 
-- present history and notable workspace events in one readable timeline-oriented page
+## MVP Expectations
 
-### Project Settings
+The MVP UI should already assume:
 
-Role:
+- repository navigation is real
+- file reading is real
+- message history is real
+- message persistence is real
+- execution is project-scoped
+- the workspace is the primary product surface
 
-- hold project-specific controls without polluting the main work pages
+The MVP UI should not assume:
 
-## MVP Page Set
+- placeholder project status fields are backend truth
+- hardcoded tree/file/history data is backend truth
+- project metadata owns current model selection
 
-The MVP UI can stay narrow while still matching the final structure direction.
+## Future Expansion
 
-Recommended MVP page set:
+The final product can still extend the same UI system with:
 
-- Landing or Projects Home
-- Login
-- Projects List
-- Create Project
-- Project Workspace
-- Project Settings
-- Designed error pages
+- auth flows
+- richer project collection views
+- collaboration views
+- account and security pages
+- richer activity timelines
+- deeper context-management surfaces
+- live model availability discovery
 
-This gives MVP a real product shape without needing every future page immediately.
+The important thing is that these should extend the same workspace-centered system rather than replace it.
 
-## Final Product Expansion
+## References
 
-The final UI can extend the same page map with:
+This UI direction is primarily shaped by:
 
-- registration and invitation flows
-- shared-project views
-- archived-project views
-- richer account/security surfaces
-- project activity timelines
-- more advanced context-management pages
-- deeper repository workspace panels
-
-The important thing is that these should feel like natural additions to the same system, not a redesign.
-
-## Current UI vs Intended UI
-
-Current visible surfaces are still very small:
-
-- project list
-- create project
-- project detail
-- error page
-
-These should be treated as early fragments of a larger page family system.
-
-The intended next UI direction is not “add one-off pages.”  
-It is:
-
-- establish the theme
-- establish the page families
-- establish the shell system
-- then implement pages inside that structure
-
-## References That Shaped This Direction
-
-This UI mapping was shaped by the broader project intent:
-
-- `README.md`
 - `LAYER_INTENT.md`
 - `LAYER_RULES.md`
 - `execution/runtime_execution.md`
-- `ollama/ollama_architecture_intent.md`
+- current backend data and lower-layer ownership
 
-Those documents suggest:
-
-- MVP should stay focused and reliable
-- the product is project-centered
-- execution remains project-scoped and iterative
-- the UI must support both narrow MVP use and a broader final workspace model
-- the primary project experience should keep repository structure, file reading, AI/chat history, and chat controls together on one main page
-
-This UI document translates that into page structure and theme direction only.
+This file intentionally follows those sources instead of treating placeholder UI code as truth.
