@@ -18,17 +18,12 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.base import Base
-import os
-
-default_model = os.getenv("OLLAMA_MODEL", "qwen3:8b")
 
 class Project(Base):
     __tablename__ = "projects"
 
     project_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-
-    ai_model_name: Mapped[str] = mapped_column(String(255), nullable=False, server_default=default_model)
 
     repo_path: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     remote_repo_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
@@ -79,7 +74,7 @@ class Message(Base):
     tool_calls_json: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB, nullable=True)
     images_json: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB, nullable=True)
 
-    ollama_model: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    ai_model_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     ollama_created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     done: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
