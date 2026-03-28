@@ -9,6 +9,7 @@ import datetime
 class ChatRequest(BaseModel):
     message: str
     selected_files: list[str] = Field(default_factory=list)
+    branch: str | None = None
 
 
 class ChatResponse(BaseModel):
@@ -16,13 +17,13 @@ class ChatResponse(BaseModel):
     project_id: int
     message: str
     selected_files: list[str]
+    branch: str
     next_layer: str
 
 
 class ProjectCreateRequest(BaseModel):
     name: str
     remote_repo_url: str
-    ssh_key: str
 
 
 class ProjectCreateResponse(BaseModel):
@@ -30,7 +31,7 @@ class ProjectCreateResponse(BaseModel):
     project_id: int
     name: str
     remote_repo_url: str
-    ssh_key: str
+    public_key: str
 
 
 class ProjectDetailResponse(BaseModel):
@@ -38,6 +39,7 @@ class ProjectDetailResponse(BaseModel):
     project_id: int
     name: str
     ai_model_name: str
+    branch: str
     created_at: datetime.datetime
 
 

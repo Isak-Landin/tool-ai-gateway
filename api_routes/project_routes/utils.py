@@ -12,7 +12,7 @@ def chat_workflow_entry(project_id, req: ChatRequest, resolver, binder, orchestr
     """
 
     project_row = resolver.resolve_by_id(project_id)
-    handle = binder.bind(project_row)
+    handle = binder.bind(project_row, branch_override=req.branch)
     try:
         result = orchestrator.run_chat(
             handle=handle,
@@ -25,6 +25,7 @@ def chat_workflow_entry(project_id, req: ChatRequest, resolver, binder, orchestr
             project_id=project_id,
             message=result.get("answer", result.get("message", "")),
             selected_files=req.selected_files,
+            branch=handle.branch,
             next_layer="execution_completed",
         )
     finally:

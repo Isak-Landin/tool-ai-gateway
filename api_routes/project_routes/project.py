@@ -8,7 +8,7 @@ from ProjectResolver import (
 )
 from ProjectRuntimeBinder import ProjectRuntimeBindingError, ProjectRuntimeBinder
 from execution import WorkflowExecutionError, WorkflowOrchestrator
-from persistence import ProjectsRepository
+from persistence.ProjectPersistence import ProjectPersistence
 from errors import PersistenceError
 
 from api_routes.project_routes.utils import chat_workflow_entry
@@ -24,11 +24,10 @@ projects_router = APIRouter(prefix="/projects", tags=["projects"])
 def create_project(req: ProjectCreateRequest) -> ProjectCreateResponse | JSONResponse:
     """Create a new project. Returns 201 on success."""
     try:
-        project_repository = ProjectsRepository()
-        new_project = project_repository.create_project(
+        project_persistence = ProjectPersistence()
+        new_project = project_persistence.create_project(
             name=req.name,
             remote_repo_url=req.remote_repo_url,
-            ssh_key=req.ssh_key,
         )
         if new_project:
             return ProjectCreateResponse(ok=True, **new_project)
@@ -66,8 +65,8 @@ def create_project(req: ProjectCreateRequest) -> ProjectCreateResponse | JSONRes
 @projects_router.get("")
 def list_projects():
     try:
-        project_repository = ProjectsRepository()
-        all_projects = project_repository.list_all_projects()
+        project_persistence = ProjectPersistence()
+        all_projects = project_persistence.list_all_projects()
         projects_with_ok = [
             ProjectDetailResponse(ok=True, **project)
             for project in all_projects
@@ -88,14 +87,16 @@ def list_projects():
 @projects_router.get("/{project_id}")
 def get_project(project_id: int):
     try:
-        project_resolver = ProjectResolver()
-        project = project_resolver.resolve_by_id(project_id)
+        project_persistence = ProjectPersistence()
+        project = project_persistence.get_project_by_id(project_id)
+        if not project:
+            raise ProjectNotFoundError(f"Project not found for id={project_id}")
         return ProjectDetailResponse(ok=True, **project)
     except ProjectNotFoundError as e:
         print(f"[API ERROR] GET /projects/{project_id} not found: {e!r}")
         raise HTTPException(status_code=404, detail=str(e))
-    except ProjectResolutionError as e:
-        print(f"[API ERROR] GET /projects/{project_id} resolution failure: {e!r}")
+    except PersistenceError as e:
+        print(f"[API ERROR] GET /projects/{project_id} persistence failure: {e!r}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         print(f"[API ERROR] GET /projects/{project_id} unexpected failure: {e!r}")
@@ -116,6 +117,9 @@ def delete_project(project_id: int):
 def run(project_id: int, req: ChatRequest):
     if not str(req.message).strip():
         raise HTTPException(status_code=400, detail="message is required")
+
+    if req.branch is not None and not str(req.branch).strip():
+        raise HTTPException(status_code=400, detail="branch must not be blank")
 
     try:
         resolver = ProjectResolver()
