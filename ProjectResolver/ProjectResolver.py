@@ -1,6 +1,7 @@
 from typing import Any
 
-from persistence import ProjectsRepository
+from errors import ResolutionPersistenceError
+from persistence import ResolutionPersistence
 
 
 class ProjectResolutionError(Exception):
@@ -14,18 +15,17 @@ class ProjectNotFoundError(ProjectResolutionError):
 class ProjectResolver:
     def __init__(self, db_connection: Any = None, requesting_route=None):
         self.db_connection = db_connection
-        self.projects_repo = ProjectsRepository(db_connection)
+        self.resolution_persistence = ResolutionPersistence(db_connection)
         self.requesting_route = requesting_route
 
     def resolve_by_id(self, project_id: int) -> dict:
         if project_id is None:
             raise ProjectResolutionError("project_id is required")
 
-        project_row = None
-        if not self.requesting_route:
-            project_row = self.projects_repo.get_project_by_id(project_id)
-        elif self.requesting_route == "project_detail":
-            project_row = self.projects_repo.get_project_by_id(project_id)
+        try:
+            project_row = self.resolution_persistence.get_project_resolution_fields(project_id)
+        except ResolutionPersistenceError as e:
+            raise ProjectResolutionError(str(e)) from e
 
         if not project_row:
             raise ProjectNotFoundError(f"Project not found for id={project_id}")

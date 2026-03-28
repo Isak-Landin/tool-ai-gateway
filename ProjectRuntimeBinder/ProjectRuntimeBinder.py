@@ -1,6 +1,7 @@
 from BoundProjectRuntime import BoundProjectRuntime
+from errors import RuntimeBindingPersistenceError
 from persistence import RuntimeBindingPersistence
-from repository_runtime.shell import ProjectShell
+from repository_runtime import RepositoryRuntime
 
 
 class ProjectRuntimeBindingError(Exception):
@@ -8,8 +9,14 @@ class ProjectRuntimeBindingError(Exception):
 
 
 class ProjectRuntimeBinder:
-    def _require_project_id(self, project_row: dict) -> int:
-        project_id = project_row.get("project_id")
+    def __init__(self, db_connection=None, runtime_binding_persistence: RuntimeBindingPersistence | None = None):
+        self.db_connection = db_connection
+        self.runtime_binding_persistence = runtime_binding_persistence or RuntimeBindingPersistence(
+            db_connection=db_connection
+        )
+
+    def _require_project_id(self, resolved_project: dict) -> int:
+        project_id = resolved_project.get("project_id")
         if project_id is None:
             raise ProjectRuntimeBindingError("project_id is required for runtime binding")
 
@@ -38,28 +45,43 @@ class ProjectRuntimeBinder:
         if not bound_project_runtime.is_execution_persistence_bound():
             raise ProjectRuntimeBindingError("BoundProjectRuntime.execution_persistence must be bound")
 
-        if not bound_project_runtime.is_shell_bound():
-            raise ProjectRuntimeBindingError("BoundProjectRuntime.shell must be bound")
+        if not bound_project_runtime.is_repository_runtime_bound():
+            raise ProjectRuntimeBindingError("BoundProjectRuntime.repository_runtime must be bound")
 
-    def bind(self, project_row: dict, branch_override: str | None = None) -> BoundProjectRuntime:
+    def _load_runtime_binding_fields(self, project_id: int) -> dict:
+        try:
+            project_row = self.runtime_binding_persistence.get_runtime_binding_fields(project_id)
+        except RuntimeBindingPersistenceError as e:
+            raise ProjectRuntimeBindingError(str(e)) from e
+
         if not project_row:
-            raise ProjectRuntimeBindingError("project_row is required")
+            raise ProjectRuntimeBindingError(f"Project runtime fields not found for id={project_id}")
 
-        project_id = self._require_project_id(project_row)
+        return project_row
+
+    def bind(self, resolved_project: dict, branch_override: str | None = None) -> BoundProjectRuntime:
+        if not resolved_project:
+            raise ProjectRuntimeBindingError("resolved_project is required")
+
+        project_id = self._require_project_id(resolved_project)
+        project_row = self._load_runtime_binding_fields(project_id)
         repo_path = self._require_repo_path(project_row)
         effective_branch = self._resolve_effective_branch(project_row, branch_override=branch_override)
 
         bound_project_runtime = BoundProjectRuntime(project_row)
         bound_project_runtime.branch = effective_branch
 
-        bound_project_runtime.bind_shell(
-            ProjectShell(
-                working_directory=repo_path,
+        bound_project_runtime.bind_repository_runtime(
+            RepositoryRuntime(
+                repo_path=repo_path,
+                branch=effective_branch,
+                key_path=project_row.get("key_path") or project_row.get("ssh_key"),
+                remote_repo_url=project_row.get("remote_repo_url"),
             )
         )
 
         bound_project_runtime.bind_execution_persistence(
-            RuntimeBindingPersistence(
+            self.runtime_binding_persistence.build_execution_persistence(
                 project_id=project_id,
                 repo_path=repo_path,
             )
