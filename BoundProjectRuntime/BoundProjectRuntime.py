@@ -11,7 +11,6 @@ class BoundProjectRuntime:
         self.project_id = project_row.get("project_id")
 
         self.name = project_row.get("name")
-        self.ai_model_name = project_row.get("ai_model_name")
         self.repo_path = project_row.get("repo_path")
         self.remote_repo_url = project_row.get("remote_repo_url")
         self.branch = project_row.get("branch") or "main"
