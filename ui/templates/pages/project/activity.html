@@ -1,4 +1,5 @@
 {% extends "layouts/project_base.html" %}
+{% block page_css %}{{ super() }}<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/project/secondary.css') }}">{% endblock %}
 {% block project_content %}
 <section class="panel page-intro"><p class="eyebrow">Project</p><h2>Activity</h2><p class="lede">Secondary page placeholder for project activity and timeline surfaces.</p></section>
 {% endblock %}

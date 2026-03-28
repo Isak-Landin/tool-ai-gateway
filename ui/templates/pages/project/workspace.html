@@ -1,5 +1,10 @@
 {% extends "layouts/project_base.html" %}
 
+{% block page_css %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/project/workspace.css') }}">
+{% endblock %}
+
 {% block page_js %}
 {{ super() }}
 <script src="{{ url_for('static', filename='js/workspace.js') }}"></script>
@@ -7,27 +12,55 @@
 
 {% block project_sidebar %}
 <section class="sidebar-section">
-    <p class="sidebar-title">Repository</p>
-    <ul class="repo-tree" aria-label="Repository tree">
-        {% for node in repo_tree %}
-        <li class="repo-tree-item repo-tree-item-{{ node.type }}">
-            <span>{{ node.label }}</span>
-            {% if node.type == 'directory' and node.children %}
-            <ul class="repo-tree-children">
-                {% for child in node.children %}
-                <li class="repo-tree-item repo-tree-item-{{ child.type }}">{{ child.label }}</li>
+    <div class="sidebar-surface">
+        <div class="sidebar-header">
+            <div>
+                <p class="sidebar-title">Repository tree</p>
+                <p class="sidebar-subtitle">Repository root only</p>
+            </div>
+            <span class="meta-pill">repo</span>
+        </div>
+
+        <div class="tree-panel">
+            <ul class="repo-tree" aria-label="Repository tree">
+                {% for node in repo_tree %}
+                <li class="repo-tree-item repo-tree-item-{{ node.type }}">
+                    <div class="repo-tree-row">
+                        <span class="repo-tree-icon" aria-hidden="true">{{ "▸" if node.type == "directory" else "•" }}</span>
+                        <span class="repo-tree-label">{{ node.label }}</span>
+                    </div>
+                    {% if node.type == 'directory' and node.children %}
+                    <ul class="repo-tree-children">
+                        {% for child in node.children %}
+                        <li class="repo-tree-item repo-tree-item-{{ child.type }}">
+                            <div class="repo-tree-row">
+                                <span class="repo-tree-icon" aria-hidden="true">{{ "▸" if child.type == "directory" else "•" }}</span>
+                                <span class="repo-tree-label">{{ child.label }}</span>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </li>
                 {% endfor %}
             </ul>
-            {% endif %}
-        </li>
-        {% endfor %}
-    </ul>
+        </div>
+    </div>
 </section>
 {% endblock %}
 
 {% block project_content %}
 <section class="workspace-grid">
     <div class="panel presenter-panel">
+        <div class="workspace-topbar">
+            <div class="workspace-topbar-dots" aria-hidden="true">
+                <span class="workspace-dot"></span>
+                <span class="workspace-dot"></span>
+                <span class="workspace-dot"></span>
+            </div>
+            <span class="workspace-topbar-title">Project workspace</span>
+        </div>
+
         <div class="presenter-toolbar">
             <div>
                 <p class="eyebrow">Central presenter</p>
@@ -41,36 +74,59 @@
 
         <section class="presenter-view is-active" data-presenter-view="file">
             <div class="presenter-header-row">
-                <span class="meta-pill">README.md</span>
-                <span class="muted">Repository-root file view</span>
+                <div class="presenter-file-meta">
+                    <span class="meta-pill">README.md</span>
+                    <span class="presenter-subtle">Repository-root file view</span>
+                </div>
+                <span class="presenter-language">Markdown</span>
             </div>
-            <pre class="code-view"># Placeholder file presenter
 
-This central surface is intentionally dominant.
-It is designed for readable file contents rather than a preview-sized panel.
-
-- repository tree stays visible
-- file contents stay readable
-- presenter can toggle without page reload</pre>
+            <div class="code-window">
+                <div class="code-gutter" aria-hidden="true">
+                    <span>1</span>
+                    <span>2</span>
+                    <span>3</span>
+                    <span>4</span>
+                    <span>5</span>
+                    <span>6</span>
+                    <span>7</span>
+                    <span>8</span>
+                </div>
+                <pre class="code-view"><span class="code-line"><span class="token-comment"># project workspace placeholder</span></span>
+<span class="code-line"><span class="token-keyword">def</span> <span class="token-function">describe_workspace</span>():</span>
+<span class="code-line">    <span class="token-keyword">return</span> {</span>
+<span class="code-line">        <span class="token-string">"tree"</span>: <span class="token-string">"repository navigation stays visible"</span>,</span>
+<span class="code-line">        <span class="token-string">"presenter"</span>: <span class="token-string">"file and AI history share one surface"</span>,</span>
+<span class="code-line">        <span class="token-string">"composer"</span>: <span class="token-string">"branch, model, input, and send controls"</span>,</span>
+<span class="code-line">    }</span>
+<span class="code-line"></span></pre>
+            </div>
         </section>
 
         <section class="presenter-view" data-presenter-view="chat">
             <div class="presenter-header-row">
-                <span class="meta-pill">AI / Chat</span>
-                <span class="muted">History and model thoughts live here</span>
+                <div class="presenter-file-meta">
+                    <span class="meta-pill">AI / Chat</span>
+                    <span class="presenter-subtle">History and model thoughts live here</span>
+                </div>
+                <span class="presenter-language">Live thread</span>
             </div>
+
             <div class="chat-history-stack">
                 {% for entry in chat_entries %}
                 <article class="chat-entry chat-entry-{{ entry.role }}">
                     <header class="chat-entry-header">
-                        <strong>{{ entry.label }}</strong>
-                        <span class="muted">{{ entry.role }}</span>
+                        <div class="chat-entry-meta">
+                            <strong>{{ entry.label }}</strong>
+                            <span class="muted">{{ entry.role }}</span>
+                        </div>
+                        <span class="chat-entry-state">{{ "Answered" if entry.role == "assistant" else "Input" }}</span>
                     </header>
-                    <p>{{ entry.content }}</p>
+                    <p class="chat-entry-content">{{ entry.content }}</p>
                     {% if entry.thought %}
                     <div class="thought-block">
                         <p class="thought-label">Model thought</p>
-                        <p>{{ entry.thought }}</p>
+                        <p class="thought-content">{{ entry.thought }}</p>
                     </div>
                     {% endif %}
                 </article>
@@ -81,28 +137,40 @@ It is designed for readable file contents rather than a preview-sized panel.
 
     <div class="panel composer-panel">
         <div class="composer-controls">
-            <label>
-                <span>Branch</span>
-                <select>
-                    {% for branch in branches %}
-                    <option {% if branch == project.active_branch %}selected{% endif %}>{{ branch }}</option>
-                    {% endfor %}
-                </select>
+            <label class="composer-select">
+                <span class="composer-label">Branch</span>
+                <span class="composer-select-shell">
+                    <select>
+                        {% for branch in branches %}
+                        <option {% if branch == project.active_branch %}selected{% endif %}>{{ branch }}</option>
+                        {% endfor %}
+                    </select>
+                    <span class="composer-caret" aria-hidden="true">▾</span>
+                </span>
             </label>
-            <label>
-                <span>Model</span>
-                <select>
-                    {% for model in models %}
-                    <option {% if model == project.active_model %}selected{% endif %}>{{ model }}</option>
-                    {% endfor %}
-                </select>
+
+            <label class="composer-select">
+                <span class="composer-label">Model</span>
+                <span class="composer-select-shell">
+                    <select>
+                        {% for model in models %}
+                        <option {% if model == project.active_model %}selected{% endif %}>{{ model }}</option>
+                        {% endfor %}
+                    </select>
+                    <span class="composer-caret" aria-hidden="true">▾</span>
+                </span>
             </label>
+
             <button type="button" class="button button-secondary">Context</button>
         </div>
-        <label class="composer-field">
-            <span class="eyebrow">Chat input</span>
-            <textarea rows="7" placeholder="Ask about the repository, request a change, or continue the current line of reasoning."></textarea>
-        </label>
+
+        <div class="composer-body">
+            <label class="composer-field">
+                <span class="eyebrow">Chat input</span>
+                <textarea rows="7" placeholder="Ask about the repository, request a change, or continue the current line of reasoning."></textarea>
+            </label>
+        </div>
+
         <div class="button-row button-row-end">
             <button type="button" class="button button-primary">Send</button>
         </div>

@@ -1,12 +1,12 @@
 .public-shell {
-    background: radial-gradient(circle at top, #1b2a51 0%, var(--bg-public) 40%, #060914 100%);
+    background: radial-gradient(circle at top, #1a2d57 0%, var(--bg-public) 38%, #060914 100%);
 }
 
 .site-header-public {
     position: sticky;
     top: 0;
     z-index: 10;
-    background: rgba(8, 12, 24, 0.68);
+    background: rgba(7, 12, 24, 0.8);
     backdrop-filter: blur(18px);
     border-bottom: 1px solid var(--border);
 }
@@ -36,12 +36,13 @@
 
 .site-header-public .header-nav a:hover {
     color: var(--text);
-    background: rgba(124, 156, 255, 0.12);
+    background: rgba(138, 166, 255, 0.14);
 }
 
 .public-shell .brand-mark {
     font-weight: 700;
     letter-spacing: 0.01em;
+    color: var(--text);
 }
 
 .public-shell .site-footer {

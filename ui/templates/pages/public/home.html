@@ -7,13 +7,208 @@
 {% endblock %}
 
 {% block public_content %}
-<section class="hero panel panel-hero">
-    <p class="eyebrow">Project-centered AI workspace</p>
-    <h1>One workspace for repository navigation, file reading, and chat-driven interaction.</h1>
-    <p class="lede">This structure-first UI keeps public entry simple and reserves the rich multi-pane experience for the project workspace.</p>
-    <div class="button-row">
-        <a class="button button-primary" href="{{ url_for('public.login') }}">Login</a>
-        <a class="button button-secondary" href="{{ url_for('public.register') }}">Create account</a>
-    </div>
-</section>
+<div class="home-stack">
+    <section class="hero-shell panel panel-hero">
+        <div class="hero-copy">
+            <p class="eyebrow">Project-centered AI workspace</p>
+            <h1>One workspace for repo, files, and AI.</h1>
+            <p class="lede">
+                AI Tool Gateway is built around a project workspace instead of a scattered set of tool pages.
+                Repository structure, file reading, model thoughts, and chat controls stay visually connected.
+            </p>
+            <div class="button-row hero-actions">
+                <a class="button button-primary" href="{{ url_for('public.login') }}">Login</a>
+                <a class="button button-secondary" href="{{ url_for('public.register') }}">Create account</a>
+                <a class="button button-secondary" href="{{ url_for('project.workspace', project_id=14) }}">Open workspace preview</a>
+            </div>
+            <div class="hero-microcopy">
+                <span class="micro-pill">Repository-first</span>
+                <span class="micro-pill">Shared presenter</span>
+                <span class="micro-pill">Thought-aware chat</span>
+            </div>
+        </div>
+
+        <aside class="hero-visual" aria-hidden="true">
+            <div class="hero-visual-card hero-visual-card-primary">
+                <p class="hero-visual-label">Workspace shape</p>
+                <div class="hero-visual-window">
+                    <div class="hero-visual-rail"></div>
+                    <div class="hero-visual-main">
+                        <div class="hero-visual-main-bar"></div>
+                        <div class="hero-visual-lines">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero-visual-stack">
+                <div class="hero-visual-card">
+                    <p class="hero-visual-label">Shared presenter</p>
+                    <p class="hero-visual-text">Files and AI history share the same reading surface.</p>
+                </div>
+
+                <div class="hero-visual-card hero-visual-card-accent">
+                    <p class="hero-visual-label">Project context</p>
+                    <div class="hero-visual-pills">
+                        <span>Repo tree</span>
+                        <span>Branch switch</span>
+                        <span>Model thoughts</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </section>
+
+    <section class="workspace-preview-section panel">
+        <div class="section-heading section-heading-inline">
+            <div>
+                <p class="eyebrow">Workspace preview</p>
+                <h2>See the main project page before you enter it.</h2>
+            </div>
+            <p class="lede">The preview is intentionally separated from the hero so it can read like an actual interface instead of a compressed illustration.</p>
+        </div>
+
+        <div class="hero-preview panel">
+            <div class="preview-topbar">
+                <span class="preview-dot"></span>
+                <span class="preview-dot"></span>
+                <span class="preview-dot"></span>
+                <span class="preview-title">Project Workspace Preview</span>
+            </div>
+            <div class="preview-body">
+                <aside class="preview-tree">
+                    <p class="preview-label">Repo tree</p>
+                    <ul>
+                        <li><span>README.md</span></li>
+                        <li><span>api.py</span></li>
+                        <li>
+                            <span>execution/</span>
+                            <ul>
+                                <li><span>workflow_orchestrator.py</span></li>
+                                <li><span>runtime_execution.md</span></li>
+                            </ul>
+                        </li>
+                        <li><span>ui/</span></li>
+                    </ul>
+                </aside>
+                <div class="preview-presenter">
+                    <div class="preview-mode-tabs">
+                        <span class="preview-mode is-active">File</span>
+                        <span class="preview-mode">AI</span>
+                    </div>
+                    <div class="preview-code">
+                        <p class="preview-label">Central presenter</p>
+                        <pre>def create_app():
+    app = Flask(...)
+    register_blueprints(app)
+    return app</pre>
+                    </div>
+                    <div class="preview-composer">
+                        <div class="preview-control-row">
+                            <span class="preview-select">main <span class="preview-caret">▾</span></span>
+                            <span class="preview-select">qwen3:8b <span class="preview-caret">▾</span></span>
+                        </div>
+                        <div class="preview-input">Ask about the repository, request a change, or continue the current task...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="value-section">
+        <div class="section-heading">
+            <p class="eyebrow">Why this structure</p>
+            <h2>One workspace shape from landing page to project work.</h2>
+            <p class="lede">The landing page should explain the product clearly, but it should also visually prepare the user for the kind of workspace they are entering.</p>
+        </div>
+
+        <div class="value-grid">
+            <article class="value-card panel">
+                <p class="value-index">01</p>
+                <h3>Repository awareness stays visible</h3>
+                <p class="muted">The file tree is not hidden behind secondary screens. The product centers repo structure from the first meaningful workspace view.</p>
+            </article>
+
+            <article class="value-card panel">
+                <p class="value-index">02</p>
+                <h3>The central presenter does more than one job</h3>
+                <p class="muted">Files and AI history share the same dominant reading surface, so the interface stays compact without feeling cramped.</p>
+            </article>
+
+            <article class="value-card panel">
+                <p class="value-index">03</p>
+                <h3>Chat remains grounded in project context</h3>
+                <p class="muted">Model thoughts, chat history, controls, and repo reading stay visually tied together rather than scattering across disconnected pages.</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="journey-section panel">
+        <div class="section-heading section-heading-inline">
+            <div>
+                <p class="eyebrow">Product journey</p>
+                <h2>Simple entry, deeper workspace.</h2>
+            </div>
+            <p class="lede">The public surface stays minimal, while the signed-in flow grows into a denser, more capable project environment.</p>
+        </div>
+
+        <div class="journey-grid">
+            <article class="journey-step">
+                <span class="journey-number">1</span>
+                <h3>Enter cleanly</h3>
+                <p class="muted">Landing, login, and account entry should be calm and obvious, with little visual noise.</p>
+            </article>
+
+            <article class="journey-step">
+                <span class="journey-number">2</span>
+                <h3>Choose the project</h3>
+                <p class="muted">Projects become the user-bound collection surface that leads into actual work instead of acting as an endpoint by themselves.</p>
+            </article>
+
+            <article class="journey-step">
+                <span class="journey-number">3</span>
+                <h3>Work inside the project</h3>
+                <p class="muted">The project page becomes the real workspace: repo tree, central presenter, AI/chat history, and composer controls.</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="principles-section">
+        <div class="section-heading">
+            <p class="eyebrow">Design principles</p>
+            <h2>Technical, calm, and readable.</h2>
+        </div>
+
+        <div class="principles-grid">
+            <article class="principle-card panel">
+                <h3>Structured without feeling rigid</h3>
+                <p class="muted">The theme should feel deliberate and durable, with enough density for real work but enough spacing to remain clear.</p>
+            </article>
+
+            <article class="principle-card panel">
+                <h3>Focused on surfaces that matter</h3>
+                <p class="muted">Headers, panels, cards, toggles, and form controls share one theme language so page detail does not drift from the product shell.</p>
+            </article>
+
+            <article class="principle-card panel">
+                <h3>Prepared for growth</h3>
+                <p class="muted">The landing page should already feel compatible with account pages, project collections, and the richer workspace that follows.</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="cta-section panel">
+        <div>
+            <p class="eyebrow">Get started</p>
+            <h2>Move from product entry to project work without changing visual language.</h2>
+        </div>
+        <div class="button-row">
+            <a class="button button-primary" href="{{ url_for('public.register') }}">Create account</a>
+            <a class="button button-secondary" href="{{ url_for('projects_pages.projects') }}">Inspect project pages</a>
+        </div>
+    </section>
+</div>
 {% endblock %}
