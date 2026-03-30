@@ -15,6 +15,9 @@ document.addEventListener("DOMContentLoaded", () => {
         projectId,
         project: null,
         branch: "",
+        models: [],
+        defaultModel: "",
+        defaultSelection: "auto",
         treeEntries: [],
         collapsedDirs: new Set(),
         selectedFiles: new Set(),
@@ -75,8 +78,8 @@ async function initializeWorkspacePage(ui, page, state) {
     if (branchInput) {
         branchInput.value = state.branch;
     }
-    populateModelOptions(ui, modelSelect);
     setActivePresenter(page, "file");
+    await loadModelOptions(ui, page, state, modelSelect);
 
     presenterButtons.forEach((button) => {
         button.addEventListener("click", () => {
@@ -224,16 +227,48 @@ function fillSettingsPage(ui, project, nameInput, branchInput, createdAtNode, up
     }
 }
 
-function populateModelOptions(ui, selectNode) {
+async function loadModelOptions(ui, page, state, selectNode) {
+    const statusNode = page.querySelector("[data-run-status]");
     if (!selectNode) {
         return;
     }
 
-    const options = ui.config.workspaceModelOptions.length ? ui.config.workspaceModelOptions : ["qwen3:8b"];
-    selectNode.replaceChildren(...options.map((option) => {
+    try {
+        const payload = await ui.requestJson("/models");
+        state.models = Array.isArray(payload?.models) ? payload.models : [];
+        state.defaultModel = String(payload?.default_model || "").trim();
+        state.defaultSelection = String(payload?.default_selection || "auto").trim() || "auto";
+
+        if (!state.models.length) {
+            throw new Error("Backend returned no model options.");
+        }
+
+        selectNode.disabled = false;
+        populateModelOptions(selectNode, state.models, state.defaultSelection);
+        setStatus(statusNode, "muted", `Using backend model catalog. Auto resolves to ${state.defaultModel}.`);
+    } catch (error) {
+        state.models = [];
+        state.defaultModel = "";
+        state.defaultSelection = "auto";
+        selectNode.disabled = true;
+        selectNode.replaceChildren(buildUnavailableModelOption());
+        setStatus(statusNode, "error", getErrorMessage(error, "Failed to load backend model options."));
+    }
+}
+
+function buildUnavailableModelOption() {
+    const node = document.createElement("option");
+    node.value = "";
+    node.textContent = "Model options unavailable";
+    return node;
+}
+
+function populateModelOptions(selectNode, models, defaultSelection) {
+    selectNode.replaceChildren(...models.map((option) => {
         const node = document.createElement("option");
-        node.value = option;
-        node.textContent = option;
+        node.value = option.value;
+        node.textContent = option.label;
+        node.selected = option.value === defaultSelection;
         return node;
     }));
 }
@@ -662,7 +697,8 @@ async function runProjectChat(ui, page, state) {
     }
 
     const branch = normalizeBranchValue(branchInput?.value, state.project?.branch || "main");
-    const aiModelName = String(modelSelect?.value || "").trim();
+    const selectedModelValue = String(modelSelect?.value || "").trim();
+    const aiModelName = selectedModelValue && selectedModelValue !== "auto" ? selectedModelValue : null;
 
     if (submitButton) {
         submitButton.disabled = true;
@@ -676,7 +712,7 @@ async function runProjectChat(ui, page, state) {
                 message,
                 selected_files: Array.from(state.selectedFiles),
                 branch,
-                ai_model_name: aiModelName || null,
+                ai_model_name: aiModelName,
             },
         });
 
@@ -710,7 +746,7 @@ function setStatus(node, tone, message) {
     }
 
     node.hidden = false;
-    node.className = `panel-status panel-status-${tone}`;
+    node.className = tone === "muted" ? "panel-status" : `panel-status panel-status-${tone}`;
     node.textContent = message;
 }
 

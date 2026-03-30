@@ -24,38 +24,11 @@ For this file:
 
 ## MVP-Critical Active Gaps and Deprecations
 
-### 1. UI route surface still exceeds the live FastAPI backend surface
+### Current non-user-account backend expectation failures
 
-The current FastAPI backend only exposes project-scoped routes under `/projects`.
+These are the active mismatches that do **not** depend on user-account existence and therefore belong at the top of the current register.
 
-The Flask UI route packages still expose public/account/application pages that visually imply backend-backed actions, but there are no matching backend APIs yet for:
-
-- `/login`
-- `/register`
-- `/forgot-password`
-- `/reset-password`
-- `/accept-access`
-- `/logout`
-- `/account`
-- `/account/profile`
-- `/account/preferences`
-- `/account/security`
-- `/settings`
-
-Route issues:
-
-- the public auth pages render forms and action buttons, but there is no backend login/session route contract behind them
-- the account pages render as navigable product surfaces, but there is no backend profile/preferences/security route contract behind them
-- the application settings page exists as a route shell, but there is no backend settings contract behind it
-- invitation/access acceptance has a UI page, but there is no backend invitation-token validation or acceptance route
-
-Current MVP risk:
-
-- future UI work can accidentally harden around nonexistent auth/account/backend contracts
-- browser-only success/error states can be invented where the backend has no ownership yet
-- route/package structure can look more complete than the backend actually is, which hides real product incompleteness
-
-### 2. Project bootstrap follow-up data is only available at create time
+### 1. Project bootstrap follow-up data is only available at create time
 
 `POST /projects` returns the bootstrap-facing values the UI needs:
 
@@ -83,7 +56,7 @@ Current MVP risk:
 - future UI work can be tempted to persist bootstrap-only values in the browser because the backend cannot re-serve them
 - bootstrap/setup recovery flows remain undefined even though project creation itself succeeds
 
-### 3. Branch-aware workspace behavior still lacks authoritative branch-source support
+### 2. Branch-aware workspace behavior still lacks authoritative branch-source support
 
 The backend supports branch-aware reads and runs through:
 
@@ -108,7 +81,7 @@ Current MVP risk:
 - future UI work can silently invent fake branch options if the missing backend source is not kept explicit
 - branch UX can drift into client-side guessing instead of backend-owned repository truth
 
-### 4. Project activity is backed only by message history, not a first-class activity feed
+### 3. Project activity is backed only by message history, not a first-class activity feed
 
 The UI has a dedicated activity route:
 
@@ -132,7 +105,7 @@ Current MVP risk:
 - project history ownership can drift if callers start duplicating activity shaping outside the intended bound message surface
 - richer activity screens will be tempted to overfit to raw message storage instead of waiting for a true route-facing activity contract
 
-### 5. Repository transport/sync expectations are still missing from the backend route surface
+### 4. Repository transport/sync expectations are still missing from the backend route surface
 
 The current backend supports live repository reading/searching plus project-scoped run execution, but it does not expose standalone backend routes for repository transport/sync operations such as:
 
@@ -155,20 +128,44 @@ Current MVP risk:
 - git pull/push controls can be reintroduced carelessly through the wrong lower owner if the missing route contract is not documented now
 - bootstrap can appear “complete” in UI terms even when the repo is not yet remotely usable
 
-## Active Backend-Support Gaps Outside Current Project MVP
+## Later-Intent User-Account-Dependent Gaps
 
-These do not block the current JS-driven project workspace shell, but they are still real route/backend expectation gaps visible in the UI surface.
+User-account existence is expected for final and later MVP intent, not for the current project-scoped backend pass.
 
-### 6. Model-option sourcing remains UI-local rather than backend-owned
+These mismatches should remain documented, but they are intentionally separated from the current non-user backend expectation failures above.
 
-The backend accepts `ai_model_name` on `POST /projects/{project_id}/run` and archives the actual model on message history, but there is still no backend route for authoritative model-option discovery such as `/models`.
+### 5. UI route surface still exceeds the live FastAPI backend surface for auth/account/app settings
+
+The current FastAPI backend only exposes project-scoped routes under `/projects`.
+
+The Flask UI route packages still expose public/account/application pages that visually imply backend-backed actions, but there are no matching backend APIs yet for:
+
+- `/login`
+- `/register`
+- `/forgot-password`
+- `/reset-password`
+- `/accept-access`
+- `/logout`
+- `/account`
+- `/account/profile`
+- `/account/preferences`
+- `/account/security`
+- `/settings`
+
+Route issues:
+
+- the public auth pages render forms and action buttons, but there is no backend login/session route contract behind them
+- the account pages render as navigable product surfaces, but there is no backend profile/preferences/security route contract behind them
+- the application settings page exists as a route shell, but there is no backend settings contract behind it
+- invitation/access acceptance has a UI page, but there is no backend invitation-token validation or acceptance route
 
 Current risk:
 
-- UI model-option lists can drift from runtime reality
-- future UI work can mistake a local convenience list for backend truth
+- future UI work can accidentally harden around nonexistent auth/account/backend contracts
+- browser-only success/error states can be invented where the backend has no ownership yet
+- route/package structure can look more complete than the backend actually is, which hides real product incompleteness
 
-### 7. User/account/application settings routes remain UI-only shells
+### 6. User/account/application settings routes remain UI-only shells
 
 Even if they are not part of the current workspace MVP, the UI still contains route packages and templates that imply future backend support for:
 

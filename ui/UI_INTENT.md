@@ -233,16 +233,12 @@ That older assumption is deprecated.
 
 ### MVP sourcing of model options
 
-For current MVP simplicity:
+Current intended direction:
 
-- the UI may provide a static model-option list inside the UI layer
-
-Later, the cleaner long-term direction is:
-
-- a separate non-persistence-backed backend route such as `/models`
-- that route should represent live backend model availability rather than database-stored values
-
-That route is part of the intended direction, but not required to be implemented right now.
+- model-option sourcing belongs to the backend, not to UI config
+- a separate non-persistence-backed backend route such as `/models` should expose the authoritative run-time selections
+- the UI should treat `auto` as "use the backend default model" rather than duplicating that default locally
+- the backend default should resolve from the same `OLLAMA_MODEL` configuration execution already uses
 
 ## Branch Selection Direction
 

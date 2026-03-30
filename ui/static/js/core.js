@@ -3,9 +3,6 @@ document.documentElement.classList.add('js');
 (() => {
     const rawConfig = window.__AI_TOOL_GATEWAY_UI_CONFIG__ || {};
     const gatewayBaseUrl = String(rawConfig.gatewayBaseUrl || '').replace(/\/+$/, '');
-    const workspaceModelOptions = Array.isArray(rawConfig.workspaceModelOptions)
-        ? rawConfig.workspaceModelOptions.filter((option) => String(option || '').trim())
-        : [];
 
     function buildApiUrl(path) {
         const normalizedPath = String(path || '').startsWith("/") ? String(path || "") : `/${String(path || "")}`;
@@ -69,7 +66,6 @@ document.documentElement.classList.add('js');
     window.AIToolGatewayUI = {
         config: {
             gatewayBaseUrl,
-            workspaceModelOptions,
         },
         buildApiUrl,
         requestJson,

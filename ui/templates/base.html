@@ -11,10 +11,10 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/primitives.css') }}">
     {% block page_css %}{% endblock %}
 </head>
-<body class="{% block body_class %}theme-shell{% endblock %}">
-    {% block shell %}{% endblock %}
+    <body class="{% block body_class %}theme-shell{% endblock %}">
+        {% block shell %}{% endblock %}
     <script>
-        window.__AI_TOOL_GATEWAY_UI_CONFIG__ = {{ {"gatewayBaseUrl": gateway_base_url, "workspaceModelOptions": workspace_model_options}|tojson }};
+        window.__AI_TOOL_GATEWAY_UI_CONFIG__ = {{ {"gatewayBaseUrl": gateway_base_url}|tojson }};
     </script>
     <script src="{{ url_for('static', filename='js/core.js') }}"></script>
     {% block page_js %}{% endblock %}

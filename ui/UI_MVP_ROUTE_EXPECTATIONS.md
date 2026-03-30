@@ -241,6 +241,7 @@ That route is a UI continuation route. It does not require a separate backend AP
 
 This route depends on composed backend data from:
 
+- `GET /models`
 - `GET /projects/{project_id}`
 - `GET /projects/{project_id}/messages`
 - `GET /projects/{project_id}/repository/tree`
@@ -312,22 +313,19 @@ Current intended behavior:
 - the chosen value is sent with a run when needed
 - the message history archives the actual `ai_model_name` used
 
-For MVP simplicity right now:
+Current intended direction:
 
-- the UI may provide a static model-option list locally
-- those options should be treated as UI-owned run controls, not backend-backed project metadata
-
-Longer-term intended direction:
-
-- a separate non-persistence-backed backend route such as `/models`
-
-That route is documented direction only, not a current implementation requirement.
+- the UI should load model options from a backend-owned route such as `GET /models`
+- the backend route should reflect the same `OLLAMA_MODEL` default execution already uses
+- the UI should expose an `auto` selection that sends no explicit `ai_model_name` override, letting the backend default resolve the run
+- explicit model choices remain run-time controls, not project metadata
 
 ### Current backend sufficiency
 
 Enough to support the workspace direction:
 
 - yes
+- `GET /models` now exists as the backend-owned model-option discovery route
 
 ## 5. Project Settings
 

@@ -21,7 +21,6 @@ def create_app() -> Flask:
         context = build_navigation_context()
         context["app_name"] = app.config["APP_NAME"]
         context["gateway_base_url"] = app.config["GATEWAY_BASE_URL"]
-        context["workspace_model_options"] = list(app.config["WORKSPACE_MODEL_OPTIONS"])
         return context
 
     return app
