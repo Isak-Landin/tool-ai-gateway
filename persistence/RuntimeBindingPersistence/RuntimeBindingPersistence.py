@@ -3,6 +3,7 @@ from persistence.ExecutionPersistence.ExecutionPersistence import ExecutionPersi
 from persistence.BoundProjectRuntimePersistence.BoundProjectRuntimePersistence import (
     BoundProjectRuntimePersistence,
 )
+from persistence.FilesRepository.FilesRepository import FilesRepository
 from errors import BoundProjectRuntimePersistenceError
 
 
@@ -61,4 +62,30 @@ class RuntimeBindingPersistence:
             db_connection=self.db_connection,
             project_id=effective_project_id,
             repo_path=str(effective_repo_path).strip(),
+        )
+
+    def build_files_repository(
+        self,
+        project_id: int | None = None,
+        repo_path: str | None = None,
+    ) -> FilesRepository:
+        effective_project_id = project_id if project_id is not None else self.project_id
+        effective_repo_path = repo_path if repo_path is not None else self.repo_path
+
+        if effective_project_id is None:
+            raise RuntimeBindingPersistenceError(
+                "project_id is required to build files repository",
+                field="project_id",
+                error_type="missing project id",
+                file_id=__file__,
+            )
+
+        return FilesRepository(
+            db_connection=self.db_connection,
+            project_id=effective_project_id,
+            repo_path=(
+                str(effective_repo_path).strip()
+                if effective_repo_path is not None and str(effective_repo_path).strip()
+                else None
+            ),
         )
