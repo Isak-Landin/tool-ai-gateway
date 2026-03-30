@@ -4,6 +4,7 @@ from persistence.BoundProjectRuntimePersistence.BoundProjectRuntimePersistence i
     BoundProjectRuntimePersistence,
 )
 from persistence.FilesRepository.FilesRepository import FilesRepository
+from persistence.MessagesRepository.MessagesRepository import MessagesRepository
 from errors import BoundProjectRuntimePersistenceError
 
 
@@ -88,4 +89,23 @@ class RuntimeBindingPersistence:
                 if effective_repo_path is not None and str(effective_repo_path).strip()
                 else None
             ),
+        )
+
+    def build_messages_repository(
+        self,
+        project_id: int | None = None,
+    ) -> MessagesRepository:
+        effective_project_id = project_id if project_id is not None else self.project_id
+
+        if effective_project_id is None:
+            raise RuntimeBindingPersistenceError(
+                "project_id is required to build messages repository",
+                field="project_id",
+                error_type="missing project id",
+                file_id=__file__,
+            )
+
+        return MessagesRepository(
+            db_connection=self.db_connection,
+            project_id=effective_project_id,
         )
