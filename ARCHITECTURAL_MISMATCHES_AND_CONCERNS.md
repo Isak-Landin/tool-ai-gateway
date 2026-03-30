@@ -55,13 +55,14 @@ Current MVP risk:
 
 - execution and any future route/shared consumer can still harden around the wrong owner before the new bound file surface becomes the default seam everywhere
 
-### 2. Message-history ownership is structurally present, but not yet converged onto the intended shape
+### 2. Message-history ownership is now partially aligned, but execution remains intentionally separate
 
 The intended direction is now:
 
 - `MessagesRepository` refactored into the intentional persistence owner for message reads, writes, and route-usable history shaping
 - `ExecutionPersistence` kept focused on execution-owned ordering, bounded recent-history loading, and run artifact persistence
 - one bound project-scoped message/history dependency attached during runtime binding
+- execution keeps context-limit policy and ordered artifact sequencing rather than delegating those decisions to the bound message surface
 
 That means the following are now architecturally deprecated:
 
@@ -71,7 +72,7 @@ That means the following are now architecturally deprecated:
 
 Current MVP risk:
 
-- message history can still be exposed through the wrong seam even though the lower data support is already strong
+- execution and future route/shared consumers can still drift apart if the bound message surface is not adopted consistently outside execution-owned behavior
 
 ### 3. Execution-owned repository tree/search access is now execution-only by intent
 
@@ -92,7 +93,7 @@ Current MVP risk:
 
 - these surfaces can still look like the natural lower-layer owner even though the intended architecture now says otherwise
 
-### 4. `BoundProjectRuntime` and `ProjectRuntimeBinder` are now partially aligned, but only on the file side
+### 4. `BoundProjectRuntime` and `ProjectRuntimeBinder` are now partially aligned on both file and message binding
 
 The intended direction is now:
 
@@ -100,18 +101,20 @@ The intended direction is now:
 - one bound message-responsible project surface
 - `BoundProjectRuntime` as holder, not logic owner
 
-The file side of that alignment is now implemented:
+The file and message sides of that alignment are now implemented:
 
 - `ProjectRuntimeBinder` binds `FileRuntime`
 - `BoundProjectRuntime` holds `file_runtime`
+- `ProjectRuntimeBinder` binds `MessageRuntime`
+- `BoundProjectRuntime` holds `message_runtime`
 
 The runtime/binding shape remains incomplete overall because:
 
 This incompleteness is itself a mapped concern because it can hide deprecations in surrounding layers:
 
-- the message side still has no equivalent bound message surface
 - execution still uses older direct repository inspection paths instead of the new bound file surface
-- routes still do not yet depend on the implemented bound file surface
+- execution still intentionally uses `ExecutionPersistence` directly for bounded recent history and ordered artifact writes
+- routes still do not yet depend on the implemented bound file/message surfaces
 
 ### 5. Persistence wording and ownership expectations had drifted too broad
 
@@ -156,6 +159,36 @@ The current blocker is not missing raw capability.
 
 The blocker is that route work, runtime binding, and shared internal consumers can still drift around the intended message/file ownership model unless the mapped deprecations stay visible.
 
+### 8. API route structure and route error handling are now an explicit deprecation concern
+
+Current mapping from `api.py` and `api_routes/` shows:
+
+- only `project_routes` is actively included by `api.py`
+- `tool_routes` and `web_search_routes` are currently stale or non-participating route-package surfaces
+- some route modules still reflect partial or deprecated FastAPI structure
+
+The clearest route-structure deprecations are:
+
+- route modules using `@app.get(...)` style without owning a proper local FastAPI app or exported `APIRouter`
+- route packages existing without being assembled into the active API surface
+- backend route files that look like abandoned placeholders rather than real route contracts
+
+There is also an error-handling deprecation to keep visible:
+
+- mixing raised `HTTPException` with returned `JSONResponse` as if both are the normal UI-facing error contract
+
+Current intended direction:
+
+- API routes should catch backend/runtime errors in the route that was called
+- API routes should log those errors for server/container visibility
+- API routes should still return JSON error payloads to the UI rather than treating raised `HTTPException` as the normal application-facing error contract
+
+Current MVP risk:
+
+- API routes may harden around inconsistent response contracts
+- stale route packages may mislead future work about what backend route surface is actually live
+- ownership-aligned runtime surfaces may be added underneath an API layer that still returns errors inconsistently
+
 ## Remaining Unsolved Gaps
 
 These remain unsolved even with the intended direction already documented.
@@ -171,14 +204,15 @@ These remain unsolved even with the intended direction already documented.
 
 ### Message gaps
 
-- the new message-responsible project-bound surface is not yet consistently reflected as the expected route/runtime dependency
+- the new message-responsible project-bound surface is not yet consistently reflected as the expected route/runtime dependency everywhere else
 - `MessagesRepository` refactor intent still needs to stay explicit so the message side does not fall back to usage-style ownership
 - route-facing history shaping still needs to be clearly mapped onto the bound message surface rather than ad hoc querying
+- routes still do not consume the bound message surface
 
 ### Runtime/binding gaps
 
-- `ProjectRuntimeBinder` is now the binder of the intended project-bound file surface, but not yet the intended message surface
-- `BoundProjectRuntime` is now the holder of the intended project-bound file surface, but not yet the intended message surface
+- `ProjectRuntimeBinder` is now the binder of the intended project-bound file and message surfaces
+- `BoundProjectRuntime` is now the holder of the intended project-bound file and message surfaces
 - existing layers still visibly reflect the older dependency shape more strongly than the intended one, especially outside binding/runtime
 
 ### Cross-layer deprecation gaps
@@ -186,6 +220,8 @@ These remain unsolved even with the intended direction already documented.
 - execution still uses direct `repository_runtime` inspection paths for tool-facing tree/search behavior
 - that direct execution-owned access is not wrong for execution/tool behavior, but it is now architecturally deprecated as the general owner for route-facing or shared file/tree reads
 - route-level or caller-level duplication is still too easy because the intended bound file/message surfaces are not yet the easiest conceptual seam
+- API route packages still contain stale or non-assembled surfaces that do not reflect the actual live backend route contract
+- raised `HTTPException` still appears in active route content even though the intended UI-facing contract is logged backend failure plus JSON error response
 
 ## Suggested Solution Mapping
 
@@ -224,6 +260,13 @@ This message-specific object should:
 - be bound during project/runtime binding
 - be held by `BoundProjectRuntime` or equivalent
 - reuse persistence-backed message behavior rather than creating route-level duplication
+- avoid owning bounded context-limit policy that belongs to execution or pagination/scope policy that belongs to callers
+
+Current implementation note:
+
+- this is now implemented on the message side through `MessageRuntime`
+- it is bound by `ProjectRuntimeBinder` and held on `BoundProjectRuntime`
+- `ExecutionPersistence` still remains the direct execution seam for bounded recent-history loading, next-sequence loading, and ordered artifact writes
 
 ### 3. Refactor `FilesRepository` into an intentional persistence-facing role
 
@@ -249,6 +292,7 @@ At the same time:
 - `ExecutionPersistence` stays execution-owned
 - bounded recent-history loading stays execution-owned
 - ordered run artifact persistence stays execution-owned
+- next-sequence loading stays execution-owned
 
 ### 5. Keep execution-owned repository access execution-owned
 
@@ -275,11 +319,29 @@ That keeps routes from:
 - depending directly on persistence internals
 - hardening accidental ownership decisions
 
+### 7. Normalize API route structure and route error contracts
+
+API route direction should move toward:
+
+- active route modules exporting intentional `APIRouter` surfaces
+- `api.py` including only real assembled router packages
+- stale route packages either being completed or treated as deprecated/non-live surfaces
+- route handlers logging backend/runtime failures and returning JSON error payloads consistently to the UI
+
+This does not require changing the UI Flask side into anything else.
+
+It means the backend API contract should become coherent in:
+
+- structure
+- inclusion
+- response shape
+- error contract
+
 ## Source-of-Truth Context For The Mapping
 
 The following documented solution context is the baseline this file now uses when listing blockers, deprecations, and remaining gaps.
 
-### 1. Message history support
+### 1. Message history support now has a bound runtime owner for route/shared reads
 
 Current support is structurally present.
 
@@ -288,6 +350,8 @@ Evidence:
 - `db.models.Message`
 - `MessagesRepository`
 - `ExecutionPersistence`
+- `MessageRuntime/MessageRuntime.py`
+- `BoundProjectRuntime.message_runtime`
 - execution persistence ordering in `execution/workflow_orchestrator.py`
 
 What is already supported:
@@ -303,6 +367,7 @@ Conclusion:
 
 - message history is not the main architectural blocker
 - a project activity/history route can be supported from existing lower-layer data
+- the intended bound message-serving owner now exists for updated binding/runtime layers
 
 Suggested solution:
 
@@ -312,6 +377,7 @@ Suggested solution:
 - let `BoundProjectRuntime` hold that bound message surface without becoming the logic owner itself
 - let execution orchestrate ordered message use
 - let route-facing history reads reuse the bound/history-facing message surface instead of duplicating DB logic
+- keep message-selection policy in callers: execution for bounded context, routes for pagination or full-history scope
 
 ### 2. Live repository file-content behavior now has a bound runtime owner
 

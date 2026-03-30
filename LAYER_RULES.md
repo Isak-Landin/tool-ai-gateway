@@ -47,7 +47,7 @@ Return flow is the reverse direction:
 | **Project Runtime Binder** | Construct `BoundProjectRuntime`, bind dependencies, read runtime-needed persistence fields | Resolve projects, run workflow logic, shape route responses |
 | **Bound Project Runtime** | Store project-scoped runtime state and bound dependencies | Resolve, bind, persist, or execute by itself |
 | **Execution** | Use `BoundProjectRuntime`, load/persist execution state, process ordered project messages, assemble bounded recent project context, load selected context from the bound local repo, choose context deterministically, call one execution model and execution-scoped runtime/tool surfaces | Resolve projects, construct runtime, shape HTTP/API responses |
-| **Persistence** | Serve storage needs for higher layers, including required MVP message/history persistence and any persistence-backed file/archive storage | Orchestrate workflow, bind runtime, act as the livetime route-serving owner for project tree/file reads, call back upward |
+| **Persistence** | Serve storage needs for higher layers, including required MVP message/history persistence and any persistence-backed file/archive storage | Orchestrate workflow, bind runtime, act as the route-serving owner directly, call back upward |
 
 ## Layer Details
 
@@ -118,6 +118,7 @@ Return flow is the reverse direction:
 - execution-owned persistence ordering
 - one execution-model run flow for MVP
 - execution-scoped use of repository runtime tools where the behavior is truly execution/tool-only
+- direct use of `ExecutionPersistence` for bounded recent history, next-sequence loading, and ordered artifact writes
 
 **May communicate with**
 
@@ -132,6 +133,7 @@ Return flow is the reverse direction:
 **Architectural deprecation to remember**
 
 - direct execution use of repository tree/search helpers should not remain the general owner for non-execution file/tree consumers once the dedicated bound file surface exists
+- direct execution use of general route/shared message-history reads should not replace the intended bound message surface
 
 ### **Persistence**
 
@@ -140,6 +142,7 @@ Return flow is the reverse direction:
 - database-backed reads and writes
 - execution/history/file storage surfaces
 - persistence-backed file/archive storage surfaces
+- message/history persistence surfaces reused by execution and bound message-serving runtime dependencies
 
 **May communicate with**
 
@@ -158,6 +161,7 @@ Return flow is the reverse direction:
 - **Execution is the first layer that may orchestrate.**
 - **Execution chooses bounded context for MVP.** Full project history may stay in DB, but execution should not send all of it by default.
 - **Execution must process persisted project messages for MVP.** Message loading and message persistence are part of the required MVP run flow.
+- **Execution keeps message-selection policy.** Bounded recent-history limits remain execution-owned even after a bound message surface exists.
 - **Persistence serves downward-only concerns.** It should not drive workflow.
 - **Project Runtime Binder may prepare runtime dependencies, but must not perform execution work.**
 - **Project Resolver stays narrow.** It resolves; it does not enrich into runtime behavior.

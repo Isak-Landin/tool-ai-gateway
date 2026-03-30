@@ -169,6 +169,7 @@ It answers the question:
 - storing persistence-backed file/archive artifacts where needed
 - serving execution-facing storage needs
 - serving runtime-binding-facing storage needs
+- providing persistence seams reused by bound project message/file surfaces
 
 ### What it does not own
 
@@ -177,6 +178,7 @@ It answers the question:
 - binding runtime behavior
 - interpreting the user's goal
 - acting as the intended livetime route-serving owner for project tree/file reads
+- acting as the intended livetime route-serving owner for project message/history reads
 
 ### Why it exists as its own layer
 
@@ -378,6 +380,11 @@ That may include:
 - recent message history
 - execution-owned stored artifacts
 - scoped repository/file state
+
+In the intended split:
+
+- execution keeps bounded recent-history loading and ordered artifact persistence through `ExecutionPersistence`
+- bound project-scoped message surfaces reuse persistence for route/shared reads
 
 Persistence does not decide the workflow.  
 It serves the workflow.
