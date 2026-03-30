@@ -19,6 +19,7 @@ class BoundProjectRuntime:
         self.execution_persistence = None
         self.repository_runtime = None
         self.file_runtime = None
+        self.message_runtime = None
 
         # Reserved for future project-scoped context management.
         self.model_context = None
@@ -32,6 +33,9 @@ class BoundProjectRuntime:
     def bind_file_runtime(self, file_runtime):
         self.file_runtime = file_runtime
 
+    def bind_message_runtime(self, message_runtime):
+        self.message_runtime = message_runtime
+
     def bind_model_context(self, model_context_builder):
         self.model_context = model_context_builder
 
@@ -43,6 +47,9 @@ class BoundProjectRuntime:
 
     def is_file_runtime_bound(self) -> bool:
         return self.file_runtime is not None
+
+    def is_message_runtime_bound(self) -> bool:
+        return self.message_runtime is not None
 
     def close(self):
         if self.file_runtime and hasattr(self.file_runtime, "close"):
