@@ -1,15 +1,26 @@
 {% extends "layouts/app_base.html" %}
 {% block title %}Create Project · {{ app_name }}{% endblock %}
 {% block page_css %}{{ super() }}<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/projects/create.css') }}">{% endblock %}
+{% block page_js %}{{ super() }}<script src="{{ url_for('static', filename='js/projects.js') }}"></script>{% endblock %}
 {% block app_content %}
-<section class="panel panel-form form-limit">
+<section class="panel panel-form form-limit create-project-page" data-create-project-page>
     <p class="eyebrow">Project bootstrap</p>
     <h1>Create Project</h1>
-    <form class="form-grid">
-        <label>Project name <input type="text" placeholder="gateway-ui"></label>
-        <label>Remote repository URL <input type="text" placeholder="git@github.com:user/repo.git"></label>
+    <p class="lede">This step creates the project record, local storage root, and project SSH keypair used by later repository-backed work.</p>
+
+    <div class="panel-status panel-status-muted" data-create-project-status>Enter the project name and remote repository URL to begin bootstrap.</div>
+
+    <form class="form-grid" data-create-project-form>
+        <label>
+            <span>Project name</span>
+            <input type="text" name="name" placeholder="gateway-ui" autocomplete="off" required>
+        </label>
+        <label>
+            <span>Remote repository URL</span>
+            <input type="text" name="remote_repo_url" placeholder="git@github.com:user/repo.git" autocomplete="off" required>
+        </label>
         <div class="button-row">
-            <button type="button" class="button button-primary">Create project</button>
+            <button type="submit" class="button button-primary" data-create-project-submit>Create project</button>
             <a class="button button-secondary" href="{{ url_for('projects_pages.projects') }}">Cancel</a>
         </div>
     </form>

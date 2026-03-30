@@ -1,5 +1,40 @@
 {% extends "layouts/project_base.html" %}
 {% block page_css %}{{ super() }}<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/project/secondary.css') }}">{% endblock %}
 {% block project_content %}
-<section class="panel page-intro"><p class="eyebrow">Project</p><h2>Project Settings</h2><p class="lede">Secondary page placeholder for project-scoped settings.</p></section>
+<section class="panel secondary-page" data-project-page="settings" data-project-id="{{ project_id }}">
+    <div class="secondary-page-header">
+        <div>
+            <p class="eyebrow">Project Settings</p>
+            <h2>Project-scoped configuration</h2>
+            <p class="lede">Only stable project-owned fields should be edited here.</p>
+        </div>
+    </div>
+
+    <div class="panel-status panel-status-loading" data-project-settings-status>Loading project settings...</div>
+
+    <form class="form-grid settings-form" data-project-settings-form>
+        <label>
+            <span>Project name</span>
+            <input type="text" data-project-name-input name="name" autocomplete="off" required>
+        </label>
+        <label>
+            <span>Default branch</span>
+            <input type="text" data-project-branch-input name="branch" autocomplete="off" required>
+        </label>
+        <div class="settings-meta-grid">
+            <div class="panel settings-meta-card">
+                <p class="eyebrow">Created</p>
+                <p data-project-created-at>Loading...</p>
+            </div>
+            <div class="panel settings-meta-card">
+                <p class="eyebrow">Updated</p>
+                <p data-project-updated-at>Loading...</p>
+            </div>
+        </div>
+        <div class="button-row">
+            <button type="submit" class="button button-primary">Save settings</button>
+            <a class="button button-secondary" href="{{ url_for('project.workspace', project_id=project_id) }}">Back to workspace</a>
+        </div>
+    </form>
+</section>
 {% endblock %}

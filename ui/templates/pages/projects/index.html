@@ -1,24 +1,28 @@
 {% extends "layouts/app_base.html" %}
 {% block title %}Projects · {{ app_name }}{% endblock %}
 {% block page_css %}{{ super() }}<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/projects/index.css') }}">{% endblock %}
+{% block page_js %}{{ super() }}<script src="{{ url_for('static', filename='js/projects.js') }}"></script>{% endblock %}
 {% block app_content %}
-<section class="page-header-row">
-    <div>
-        <p class="eyebrow">Projects</p>
-        <h1>My Projects</h1>
-    </div>
-    <a class="button button-primary" href="{{ url_for('projects_pages.create_project') }}">New Project</a>
-</section>
-<section class="card-grid">
-    {% for project in projects %}
-    <a class="panel panel-link" href="{{ url_for('project.workspace', project_id=project.project_id) }}">
-        <div class="panel-header-row">
-            <h2>{{ project.name }}</h2>
-            <span class="meta-pill">#{{ project.project_id }}</span>
+<section class="projects-page" data-projects-index-page>
+    <section class="page-header-row">
+        <div>
+            <p class="eyebrow">Projects</p>
+            <h1>My Projects</h1>
+            <p class="lede">Project collection stays thin here so the real work can happen inside the project workspace.</p>
         </div>
-        <p class="muted">{{ project.status }}</p>
-        <p class="muted">Model: {{ project.model }}</p>
-    </a>
-    {% endfor %}
+        <a class="button button-primary" href="{{ url_for('projects_pages.create_project') }}">New Project</a>
+    </section>
+
+    <div class="panel-status panel-status-loading" data-projects-status>Loading projects...</div>
+
+    <section class="panel empty-state" data-projects-empty hidden>
+        <h2>No projects yet</h2>
+        <p class="muted">Create a project bootstrap to start the workspace-centered flow.</p>
+        <div class="button-row">
+            <a class="button button-primary" href="{{ url_for('projects_pages.create_project') }}">Create project</a>
+        </div>
+    </section>
+
+    <section class="card-grid" data-projects-list hidden></section>
 </section>
 {% endblock %}

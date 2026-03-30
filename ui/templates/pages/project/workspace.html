@@ -5,52 +5,50 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/project/workspace.css') }}">
 {% endblock %}
 
-{% block page_js %}
-{{ super() }}
-<script src="{{ url_for('static', filename='js/workspace.js') }}"></script>
-{% endblock %}
-
 {% block project_sidebar %}
 <section class="sidebar-section">
     <div class="sidebar-surface">
         <div class="sidebar-header">
             <div>
-                <p class="sidebar-title">Repository tree</p>
-                <p class="sidebar-subtitle">Repository root only</p>
+                <p class="sidebar-title">Repository explorer</p>
+                <p class="sidebar-subtitle">Live tree, search, and selected context</p>
             </div>
             <span class="meta-pill">repo</span>
         </div>
 
+        <form class="sidebar-search-form" data-repo-search-form>
+            <label class="composer-field">
+                <span class="composer-label">Search repository text</span>
+                <input type="search" name="query" data-repo-search-query placeholder="Search code or docs...">
+            </label>
+            <button type="submit" class="button button-secondary">Search</button>
+        </form>
+        <div class="panel-status panel-status-muted" data-repo-search-status>Repository search is available when you need it.</div>
+        <ul class="search-results" data-repo-search-results hidden></ul>
+        <div class="panel empty-state compact-empty-state" data-repo-search-empty>Search results will appear here.</div>
+
+        <div class="panel-status panel-status-loading" data-tree-status>Loading repository tree...</div>
         <div class="tree-panel">
-            <ul class="repo-tree" aria-label="Repository tree">
-                {% for node in repo_tree %}
-                <li class="repo-tree-item repo-tree-item-{{ node.type }}">
-                    <div class="repo-tree-row">
-                        <span class="repo-tree-icon" aria-hidden="true">{{ "▸" if node.type == "directory" else "•" }}</span>
-                        <span class="repo-tree-label">{{ node.label }}</span>
-                    </div>
-                    {% if node.type == 'directory' and node.children %}
-                    <ul class="repo-tree-children">
-                        {% for child in node.children %}
-                        <li class="repo-tree-item repo-tree-item-{{ child.type }}">
-                            <div class="repo-tree-row">
-                                <span class="repo-tree-icon" aria-hidden="true">{{ "▸" if child.type == "directory" else "•" }}</span>
-                                <span class="repo-tree-label">{{ child.label }}</span>
-                            </div>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                    {% endif %}
-                </li>
-                {% endfor %}
-            </ul>
+            <ul class="repo-tree" aria-label="Repository tree" data-repo-tree></ul>
+            <div class="panel empty-state compact-empty-state" data-tree-empty hidden>No repository tree is available for the current branch.</div>
+        </div>
+
+        <div class="selected-files-panel">
+            <div class="sidebar-header sidebar-header-tight">
+                <div>
+                    <p class="sidebar-title">Selected context</p>
+                    <p class="sidebar-subtitle">Files sent with the next run</p>
+                </div>
+            </div>
+            <ul class="selected-files" data-selected-files hidden></ul>
+            <div class="panel empty-state compact-empty-state" data-selected-files-empty>No files selected for run context yet.</div>
         </div>
     </div>
 </section>
 {% endblock %}
 
 {% block project_content %}
-<section class="workspace-grid">
+<section class="workspace-grid" data-project-page="workspace" data-project-id="{{ project_id }}">
     <div class="panel presenter-panel">
         <div class="workspace-topbar">
             <div class="workspace-topbar-dots" aria-hidden="true">
@@ -75,31 +73,19 @@
         <section class="presenter-view is-active" data-presenter-view="file">
             <div class="presenter-header-row">
                 <div class="presenter-file-meta">
-                    <span class="meta-pill">README.md</span>
-                    <span class="presenter-subtle">Repository-root file view</span>
+                    <span class="meta-pill" data-file-path>No file selected</span>
+                    <span class="presenter-subtle" data-file-meta>Choose a file from the repository tree or search results.</span>
                 </div>
-                <span class="presenter-language">Markdown</span>
+                <span class="presenter-language">Live file view</span>
             </div>
 
-            <div class="code-window">
-                <div class="code-gutter" aria-hidden="true">
-                    <span>1</span>
-                    <span>2</span>
-                    <span>3</span>
-                    <span>4</span>
-                    <span>5</span>
-                    <span>6</span>
-                    <span>7</span>
-                    <span>8</span>
-                </div>
-                <pre class="code-view"><span class="code-line"><span class="token-comment"># project workspace placeholder</span></span>
-<span class="code-line"><span class="token-keyword">def</span> <span class="token-function">describe_workspace</span>():</span>
-<span class="code-line">    <span class="token-keyword">return</span> {</span>
-<span class="code-line">        <span class="token-string">"tree"</span>: <span class="token-string">"repository navigation stays visible"</span>,</span>
-<span class="code-line">        <span class="token-string">"presenter"</span>: <span class="token-string">"file and AI history share one surface"</span>,</span>
-<span class="code-line">        <span class="token-string">"composer"</span>: <span class="token-string">"branch, model, input, and send controls"</span>,</span>
-<span class="code-line">    }</span>
-<span class="code-line"></span></pre>
+            <div class="panel-status panel-status-muted" data-file-status>Select a file to load repository content.</div>
+            <div class="panel empty-state compact-empty-state" data-file-empty>
+                File content will appear here after you open a repository file.
+            </div>
+            <div class="code-window" data-code-window hidden>
+                <div class="code-gutter" aria-hidden="true" data-file-gutter></div>
+                <pre class="code-view" data-file-content></pre>
             </div>
         </section>
 
@@ -107,73 +93,47 @@
             <div class="presenter-header-row">
                 <div class="presenter-file-meta">
                     <span class="meta-pill">AI / Chat</span>
-                    <span class="presenter-subtle">History and model thoughts live here</span>
+                    <span class="presenter-subtle">Ordered project message history</span>
                 </div>
                 <span class="presenter-language">Live thread</span>
             </div>
 
-            <div class="chat-history-stack">
-                {% for entry in chat_entries %}
-                <article class="chat-entry chat-entry-{{ entry.role }}">
-                    <header class="chat-entry-header">
-                        <div class="chat-entry-meta">
-                            <strong>{{ entry.label }}</strong>
-                            <span class="muted">{{ entry.role }}</span>
-                        </div>
-                        <span class="chat-entry-state">{{ "Answered" if entry.role == "assistant" else "Input" }}</span>
-                    </header>
-                    <p class="chat-entry-content">{{ entry.content }}</p>
-                    {% if entry.thought %}
-                    <div class="thought-block">
-                        <p class="thought-label">Model thought</p>
-                        <p class="thought-content">{{ entry.thought }}</p>
-                    </div>
-                    {% endif %}
-                </article>
-                {% endfor %}
-            </div>
+            <div class="panel-status panel-status-loading" data-chat-status>Loading project history...</div>
+            <div class="panel empty-state compact-empty-state" data-chat-empty hidden>No project history exists yet.</div>
+            <div class="chat-history-stack" data-chat-history hidden></div>
         </section>
     </div>
 
-    <div class="panel composer-panel">
+    <form class="panel composer-panel" data-run-form>
         <div class="composer-controls">
             <label class="composer-select">
-                <span class="composer-label">Branch</span>
-                <span class="composer-select-shell">
-                    <select>
-                        {% for branch in branches %}
-                        <option {% if branch == project.active_branch %}selected{% endif %}>{{ branch }}</option>
-                        {% endfor %}
-                    </select>
-                    <span class="composer-caret" aria-hidden="true">▾</span>
-                </span>
+                <span class="composer-label">Branch override</span>
+                <input type="text" data-branch-input placeholder="main" autocomplete="off">
             </label>
 
             <label class="composer-select">
                 <span class="composer-label">Model</span>
                 <span class="composer-select-shell">
-                    <select>
-                        {% for model in models %}
-                        <option {% if model == project.active_model %}selected{% endif %}>{{ model }}</option>
-                        {% endfor %}
-                    </select>
+                    <select data-model-select></select>
                     <span class="composer-caret" aria-hidden="true">▾</span>
                 </span>
             </label>
 
-            <button type="button" class="button button-secondary">Context</button>
+            <button type="button" class="button button-secondary" data-repo-reload>Reload repository</button>
         </div>
+
+        <div class="panel-status panel-status-muted" data-run-status>Choose context, enter a message, and run the project workflow.</div>
 
         <div class="composer-body">
             <label class="composer-field">
                 <span class="eyebrow">Chat input</span>
-                <textarea rows="7" placeholder="Ask about the repository, request a change, or continue the current line of reasoning."></textarea>
+                <textarea rows="7" data-run-message placeholder="Ask about the repository, request a change, or continue the current line of reasoning."></textarea>
             </label>
         </div>
 
         <div class="button-row button-row-end">
-            <button type="button" class="button button-primary">Send</button>
+            <button type="submit" class="button button-primary" data-run-submit>Send</button>
         </div>
-    </div>
+    </form>
 </section>
 {% endblock %}

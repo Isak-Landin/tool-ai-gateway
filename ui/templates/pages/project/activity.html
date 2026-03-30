@@ -1,5 +1,17 @@
 {% extends "layouts/project_base.html" %}
 {% block page_css %}{{ super() }}<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/project/secondary.css') }}">{% endblock %}
 {% block project_content %}
-<section class="panel page-intro"><p class="eyebrow">Project</p><h2>Activity</h2><p class="lede">Secondary page placeholder for project activity and timeline surfaces.</p></section>
+<section class="panel secondary-page" data-project-page="activity" data-project-id="{{ project_id }}">
+    <div class="secondary-page-header">
+        <div>
+            <p class="eyebrow">Project Activity</p>
+            <h2>Ordered project history</h2>
+            <p class="lede">This page keeps message history readable outside the combined workspace view.</p>
+        </div>
+    </div>
+
+    <div class="panel-status panel-status-loading" data-activity-status>Loading project history...</div>
+    <div class="panel empty-state" data-activity-empty hidden>No project history exists yet.</div>
+    <div class="chat-history-stack" data-activity-history hidden></div>
+</section>
 {% endblock %}

@@ -1,14 +1,48 @@
+.projects-page {
+    display: grid;
+    gap: var(--space-5);
+}
+
 .page-header-row {
     display: flex;
     gap: var(--space-4);
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    margin-bottom: var(--space-5);
 }
 
 .card-grid {
     display: grid;
     gap: var(--space-4);
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.project-card {
+    display: grid;
+    gap: var(--space-3);
+    min-height: 12rem;
+}
+
+.panel-status {
+    padding: 0.95rem 1rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-muted);
+}
+
+.panel-status-success {
+    border-color: rgba(79, 209, 197, 0.28);
+    color: var(--text);
+}
+
+.panel-status-error {
+    border-color: rgba(255, 107, 107, 0.32);
+    color: #ffd1d1;
+}
+
+.empty-state {
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+    display: grid;
+    gap: var(--space-3);
 }

@@ -1,10 +1,46 @@
 {% extends "layouts/app_base.html" %}
 {% block title %}Bootstrap Complete · {{ app_name }}{% endblock %}
 {% block page_css %}{{ super() }}<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/projects/collection_detail.css') }}">{% endblock %}
+{% block page_js %}{{ super() }}<script src="{{ url_for('static', filename='js/projects.js') }}"></script>{% endblock %}
 {% block app_content %}
-<section class="panel panel-form form-limit">
+<section class="panel panel-form form-limit bootstrap-complete-page" data-bootstrap-complete-page>
     <p class="eyebrow">Bootstrap</p>
     <h1>Project Bootstrap Complete</h1>
-    <p class="lede">Placeholder page for post-bootstrap guidance such as showing the generated public key and next-step instructions.</p>
+    <p class="lede">The backend returned the project deploy key. Add it to the remote repository before relying on repository-backed workspace features.</p>
+
+    <div class="panel-status panel-status-loading" data-bootstrap-status>Loading recent bootstrap result...</div>
+
+    <section class="bootstrap-detail" data-bootstrap-detail hidden>
+        <dl class="detail-grid">
+            <div>
+                <dt>Project ID</dt>
+                <dd data-bootstrap-project-id></dd>
+            </div>
+            <div>
+                <dt>Project name</dt>
+                <dd data-bootstrap-project-name></dd>
+            </div>
+            <div class="detail-grid-full">
+                <dt>Remote repository URL</dt>
+                <dd data-bootstrap-remote-repo-url></dd>
+            </div>
+            <div class="detail-grid-full">
+                <dt>Public key</dt>
+                <dd><pre class="bootstrap-key" data-bootstrap-public-key></pre></dd>
+            </div>
+        </dl>
+
+        <ol class="bootstrap-steps muted">
+            <li>Add the public key to the remote repository as a deploy/access key.</li>
+            <li>Return to the project workspace after repository access is ready.</li>
+            <li>Use project settings if you need to adjust the default branch first.</li>
+        </ol>
+
+        <div class="button-row">
+            <a class="button button-primary" href="#" data-bootstrap-workspace-link>Open workspace</a>
+            <a class="button button-secondary" href="#" data-bootstrap-settings-link>Project settings</a>
+            <a class="button button-secondary" href="{{ url_for('projects_pages.projects') }}">Back to projects</a>
+        </div>
+    </section>
 </section>
 {% endblock %}

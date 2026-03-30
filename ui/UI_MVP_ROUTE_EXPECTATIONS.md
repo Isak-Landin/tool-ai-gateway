@@ -2,7 +2,7 @@
 
 _This document maps the must-have MVP UI routes to the backend-backed data they should expect._
 
-_Backend models and lower-layer ownership are the primary anchors. Current UI placeholders are only secondary reference material._
+_Backend models and lower-layer ownership are the primary anchors. Older UI shells are not authoritative when they drift from the backend-backed route contract._
 
 ## Scope
 

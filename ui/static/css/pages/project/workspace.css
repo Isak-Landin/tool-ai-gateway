@@ -21,7 +21,8 @@
 
 .presenter-toolbar,
 .presenter-header-row,
-.composer-controls {
+.composer-controls,
+.sidebar-header {
     display: flex;
     gap: var(--space-4);
     align-items: center;
@@ -105,14 +106,39 @@
 }
 
 .presenter-subtle,
-.presenter-language {
+.presenter-language,
+.composer-label,
+.sidebar-subtitle {
     color: var(--text-muted);
     font-size: 0.9rem;
 }
 
+.panel-status {
+    padding: 0.95rem 1rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-muted);
+}
+
+.panel-status-success {
+    border-color: rgba(79, 209, 197, 0.28);
+    color: var(--text);
+}
+
+.panel-status-error {
+    border-color: rgba(255, 107, 107, 0.32);
+    color: #ffd1d1;
+}
+
+.empty-state,
+.compact-empty-state {
+    padding: 1rem;
+}
+
 .code-window {
     display: grid;
-    grid-template-columns: 3rem minmax(0, 1fr);
+    grid-template-columns: 3.75rem minmax(0, 1fr);
     min-height: 420px;
     overflow: hidden;
     border-radius: var(--radius-sm);
@@ -139,26 +165,18 @@
     overflow: auto;
     font-size: 0.94rem;
     line-height: 1.8;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 .code-line {
     display: block;
 }
 
-.token-comment {
-    color: #7c8aa8;
-}
-
-.token-keyword {
-    color: #8ab4ff;
-}
-
-.token-function {
-    color: #7fe4d6;
-}
-
-.token-string {
-    color: #f6c177;
+.code-line.is-focus-line,
+.code-gutter .is-focus-line {
+    background: rgba(124, 156, 255, 0.14);
+    color: #ffffff;
 }
 
 .chat-history-stack {
@@ -223,23 +241,22 @@
     color: var(--accent);
 }
 
+.message-detail-row {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    margin-top: var(--space-3);
+}
+
 .sidebar-section {
     min-height: 100%;
 }
 
 .sidebar-surface {
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
     gap: var(--space-3);
     min-height: 100%;
-}
-
-.sidebar-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    flex-wrap: wrap;
 }
 
 .sidebar-title {
@@ -250,13 +267,21 @@
 
 .sidebar-subtitle {
     margin: 0.25rem 0 0;
-    color: var(--text-muted);
     font-size: 0.86rem;
 }
 
-.tree-panel {
+.sidebar-header-tight {
+    margin-bottom: var(--space-2);
+}
+
+.sidebar-search-form {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.tree-panel,
+.selected-files-panel {
     min-height: 0;
-    height: 100%;
     overflow: auto;
     padding: 1rem;
     border-radius: var(--radius-md);
@@ -265,39 +290,73 @@
 }
 
 .repo-tree,
-.repo-tree-children {
+.search-results,
+.selected-files {
     list-style: none;
     margin: 0;
     padding: 0;
-}
-
-.repo-tree {
     display: grid;
     gap: var(--space-2);
 }
 
 .repo-tree-item {
-    padding: 0;
     color: var(--text-muted);
     min-width: 0;
 }
 
 .repo-tree-row {
     display: grid;
-    grid-template-columns: 1rem minmax(0, 1fr);
-    gap: 0.65rem;
+    grid-template-columns: calc(var(--tree-depth, 0) * 1rem) minmax(0, 1fr) auto;
+    gap: 0.5rem;
     align-items: center;
-    padding: 0.55rem 0.55rem;
-    border-radius: 0.85rem;
 }
 
-.repo-tree-row:hover {
+.repo-tree-indent {
+    display: block;
+    min-height: 1px;
+}
+
+.repo-tree-button,
+.search-result-button {
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text);
+    padding: 0.55rem 0.65rem;
+    border-radius: 0.85rem;
+    display: flex;
+    gap: 0.65rem;
+    align-items: center;
+    min-width: 0;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+}
+
+.repo-tree-button:hover,
+.search-result-button:hover,
+.repo-tree-item.is-current .repo-tree-button {
     background: rgba(124, 156, 255, 0.08);
+    border-color: rgba(124, 156, 255, 0.16);
+}
+
+.repo-tree-context-toggle {
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-muted);
+    padding: 0.4rem 0.7rem;
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.repo-tree-context-toggle.is-selected {
+    border-color: rgba(79, 209, 197, 0.28);
+    color: var(--text);
 }
 
 .repo-tree-icon {
     color: rgba(147, 164, 191, 0.8);
     font-size: 0.78rem;
+    flex: 0 0 auto;
 }
 
 .repo-tree-label {
@@ -308,17 +367,46 @@
     white-space: nowrap;
 }
 
-.repo-tree-item-directory > .repo-tree-row .repo-tree-label {
-    color: var(--text);
+.search-result-button {
+    flex-direction: column;
+    align-items: flex-start;
 }
 
-.repo-tree-children {
-    margin-top: var(--space-2);
-    margin-left: 1rem;
-    display: grid;
-    gap: var(--space-2);
-    border-left: 1px solid var(--border);
-    padding-left: var(--space-3);
+.search-result-button strong,
+.search-result-button span {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.selected-file-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(124, 156, 255, 0.12);
+    color: var(--text);
+    width: fit-content;
+    max-width: 100%;
+}
+
+.selected-file-chip span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.selected-file-chip button {
+    border: none;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
 }
 
 .composer-panel {
@@ -330,20 +418,14 @@
         var(--panel);
 }
 
-.composer-select {
-    display: grid;
-    gap: var(--space-2);
-    min-width: 12rem;
-}
-
+.composer-select,
 .composer-field {
     display: grid;
     gap: var(--space-2);
 }
 
-.composer-label {
-    color: var(--text-muted);
-    font-size: 0.86rem;
+.composer-select {
+    min-width: 12rem;
 }
 
 .composer-select-shell {
@@ -381,12 +463,23 @@
     resize: vertical;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 960px) {
     .workspace-grid {
         min-height: auto;
     }
 
+    .repo-tree-row {
+        grid-template-columns: calc(var(--tree-depth, 0) * 0.65rem) minmax(0, 1fr);
+    }
+
+    .repo-tree-context-toggle {
+        grid-column: 2;
+        justify-self: start;
+    }
+}
+
+@media (max-width: 860px) {
     .code-window {
-        grid-template-columns: 2.5rem minmax(0, 1fr);
+        grid-template-columns: 2.75rem minmax(0, 1fr);
     }
 }
