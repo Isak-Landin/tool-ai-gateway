@@ -7,15 +7,27 @@ from errors import ResolutionPersistenceError
 
 
 class ResolutionPersistence:
+    """Persistence surface for narrow project resolution reads."""
+
     def __init__(self, db_connection=None):
+        """Create the resolution persistence helper.
+
+        Args:
+            db_connection: Optional SQLAlchemy session/connection supplied by a caller.
+
+        Returns:
+            None: The helper stores the DB dependency for later reads.
+        """
         self.db_connection = db_connection
 
     def get_project_resolution_fields(self, project_id: int) -> dict | None:
-        """
-        Expected usage:
-        - called by project resolution only
-        - resolve a project-scoped row by project_id
-        - return the fields project resolution intends to hand upward
+        """Load the minimal project fields needed by project resolution.
+
+        Args:
+            project_id: Persisted project identifier to resolve.
+
+        Returns:
+            dict | None: Resolution-shaped project data, or `None` when no project exists.
         """
         session = self.db_connection or SessionLocal()
         try:

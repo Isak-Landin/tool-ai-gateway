@@ -86,10 +86,9 @@ from ollama.ollama_client import parse_model_output, send_chat_envelope
 from ollama.prompts import merge_system_prompt_fragments
 from ollama.tool_registry import build_tool_prompt_fragment, build_tool_schemas
 from BoundProjectRuntime import BoundProjectRuntime
+from errors import BoundProjectRuntimeError
 from tools import (
-    execute_list_repository_tree,
     execute_return_to_user,
-    execute_search_repository_text,
     execute_web_search,
 )
 
@@ -98,30 +97,79 @@ DEFAULT_RECENT_HISTORY_LIMIT = int(os.getenv("EXECUTION_RECENT_HISTORY_LIMIT", "
 
 
 class WorkflowExecutionError(Exception):
+    """Raised when workflow execution cannot complete successfully."""
+
     pass
 
 
 class WorkflowOrchestrator:
+    """Own project-scoped execution ordering for one chat run."""
+
     def _get_execution_model(self, ai_model_name: str | None = None) -> str:
+        """Resolve the model name that should be used for the current run.
+
+        Args:
+            ai_model_name: Optional execution-time model override from the caller.
+
+        Returns:
+            str: Explicit override when present, otherwise the configured default model.
+        """
         if str(ai_model_name).strip():
             return str(ai_model_name).strip()
 
         return get_ollama_default_model()
 
-    def _require_execution_persistence(self, handle: BoundProjectRuntime):
-        execution_persistence = getattr(handle, "execution_persistence", None)
-        if execution_persistence is None:
-            raise WorkflowExecutionError("BoundProjectRuntime.execution_persistence is required")
+    def _require_message_runtime(self, handle: BoundProjectRuntime):
+        """Return the bound message runtime or translate access failures.
 
-        return execution_persistence
+        Args:
+            handle: Bound project runtime carrying the attached dependencies.
+
+        Returns:
+            Any: Bound message runtime for ordered history and artifact work.
+        """
+        try:
+            return handle.require_message_runtime()
+        except BoundProjectRuntimeError as e:
+            raise WorkflowExecutionError(str(e)) from e
+
+    def _require_file_runtime(self, handle: BoundProjectRuntime):
+        """Return the bound file runtime or translate access failures.
+
+        Args:
+            handle: Bound project runtime carrying the attached dependencies.
+
+        Returns:
+            Any: Bound file runtime for selected-context and repository operations.
+        """
+        try:
+            return handle.require_file_runtime()
+        except BoundProjectRuntimeError as e:
+            raise WorkflowExecutionError(str(e)) from e
 
     def _get_recent_history_limit(self) -> int:
+        """Return the configured bounded history limit for execution runs.
+
+        Args:
+            None.
+
+        Returns:
+            int: Positive recent-history limit configured for execution.
+        """
         if DEFAULT_RECENT_HISTORY_LIMIT < 1:
             raise WorkflowExecutionError("EXECUTION_RECENT_HISTORY_LIMIT must be >= 1")
 
         return DEFAULT_RECENT_HISTORY_LIMIT
 
     def _build_ollama_history_messages(self, history_rows: list[dict]) -> list[dict]:
+        """Convert stored history rows into Ollama chat-message payloads.
+
+        Args:
+            history_rows: Serialized persisted message rows from message runtime.
+
+        Returns:
+            list[dict]: Ollama-compatible chat-message payloads in order.
+        """
         history_messages: list[dict] = []
 
         for row in history_rows:
@@ -139,6 +187,14 @@ class WorkflowOrchestrator:
         return history_messages
 
     def _build_selected_context_block(self, selected_context_rows: list[dict]) -> str | None:
+        """Render selected file context into one user-message supplement block.
+
+        Args:
+            selected_context_rows: Minimal file-context rows with path and content.
+
+        Returns:
+            str | None: Rendered context block when content exists, otherwise `None`.
+        """
         selected_context_sections: list[str] = []
 
         for selected_context_row in selected_context_rows:
@@ -155,25 +211,20 @@ class WorkflowOrchestrator:
         return "Selected file context for this run:\n\n" + "\n\n".join(selected_context_sections)
 
     def _build_user_turn_content(self, user_message: str, selected_context_rows: list[dict]) -> str:
+        """Build the final user-turn content sent to the model.
+
+        Args:
+            user_message: Raw user message for the current run.
+            selected_context_rows: Minimal file-context rows chosen for the run.
+
+        Returns:
+            str: User-turn content with selected file context appended when present.
+        """
         selected_context_block = self._build_selected_context_block(selected_context_rows)
         if selected_context_block is None:
             return user_message
 
         return user_message + "\n\n" + selected_context_block
-
-    def _require_repo_path(self, handle: BoundProjectRuntime) -> str:
-        repo_path = getattr(handle, "repo_path", None)
-        if not str(repo_path).strip():
-            raise WorkflowExecutionError("BoundProjectRuntime.repo_path is required for repository tools")
-
-        return repo_path
-
-    def _require_repository_runtime(self, handle: BoundProjectRuntime):
-        repository_runtime = getattr(handle, "repository_runtime", None)
-        if repository_runtime is None:
-            raise WorkflowExecutionError("BoundProjectRuntime.repository_runtime is required for shell-backed tools")
-
-        return repository_runtime
 
     def _run_repository_text_search(
         self,
@@ -183,10 +234,20 @@ class WorkflowOrchestrator:
         case_sensitive: bool = False,
         max_results: int = 100,
     ) -> list[dict]:
-        repository_runtime = self._require_repository_runtime(handle)
-        return execute_search_repository_text(
-            shell_executor=repository_runtime.shell,
-            repo_path=repository_runtime.repo_path,
+        """Execute repository text search through the bound file runtime.
+
+        Args:
+            handle: Bound project runtime carrying the attached dependencies.
+            query: Search query text to match in repository files.
+            relative_repo_path: Optional repo-relative path to limit search scope.
+            case_sensitive: Whether the search should preserve letter case.
+            max_results: Maximum number of matches to return.
+
+        Returns:
+            list[dict]: Repository search matches returned by file runtime.
+        """
+        file_runtime = self._require_file_runtime(handle)
+        return file_runtime.search_text(
             query=query,
             relative_repo_path=relative_repo_path,
             case_sensitive=case_sensitive,
@@ -198,14 +259,27 @@ class WorkflowOrchestrator:
         handle: BoundProjectRuntime,
         relative_repo_path: str | None = None,
     ) -> list[dict]:
-        repository_runtime = self._require_repository_runtime(handle)
-        return execute_list_repository_tree(
-            shell_executor=repository_runtime.shell,
-            repo_path=repository_runtime.repo_path,
-            relative_repo_path=relative_repo_path,
-        )
+        """Execute repository tree listing through the bound file runtime.
+
+        Args:
+            handle: Bound project runtime carrying the attached dependencies.
+            relative_repo_path: Optional repo-relative directory path to list from.
+
+        Returns:
+            list[dict]: Repository tree entries returned by file runtime.
+        """
+        file_runtime = self._require_file_runtime(handle)
+        return file_runtime.list_tree(relative_repo_path=relative_repo_path)
 
     def _get_tool_executors(self, handle: BoundProjectRuntime) -> dict[str, Callable[..., Any]]:
+        """Build the available tool-executor map for the current run.
+
+        Args:
+            handle: Bound project runtime carrying project-scoped dependencies.
+
+        Returns:
+            dict[str, Callable[..., Any]]: Tool names mapped to callable executors.
+        """
         return {
             "return_to_user": execute_return_to_user,
             "web_search": execute_web_search,
@@ -214,9 +288,25 @@ class WorkflowOrchestrator:
         }
 
     def _select_chat_tool_names(self, handle: BoundProjectRuntime) -> list[str]:
+        """Select the tool names that should be exposed to the current run.
+
+        Args:
+            handle: Bound project runtime carrying project-scoped dependencies.
+
+        Returns:
+            list[str]: Ordered tool names exposed to the model.
+        """
         return list(self._get_tool_executors(handle).keys())
 
     def _parse_ollama_created_at(self, created_at_value: str | None) -> datetime | None:
+        """Parse the optional Ollama timestamp string into a datetime value.
+
+        Args:
+            created_at_value: Optional ISO-like timestamp string from Ollama output.
+
+        Returns:
+            datetime | None: Parsed timestamp when present, otherwise `None`.
+        """
         if created_at_value is None:
             return None
 
@@ -227,6 +317,15 @@ class WorkflowOrchestrator:
             raise WorkflowExecutionError(f"Invalid Ollama created_at value: {created_at_value}") from e
 
     def _build_assistant_artifact_data(self, sequence_no: int, parsed_output: dict) -> dict:
+        """Build the persisted assistant-artifact payload from model output.
+
+        Args:
+            sequence_no: Ordered sequence number to assign to the artifact.
+            parsed_output: Parsed Ollama model output for the assistant turn.
+
+        Returns:
+            dict: Message-artifact payload ready for message persistence.
+        """
         return {
             "sequence_no": sequence_no,
             "role": "assistant",
@@ -250,6 +349,14 @@ class WorkflowOrchestrator:
         }
 
     def _serialize_tool_result_content(self, tool_result: Any) -> str:
+        """Serialize tool output into the stored tool-message content shape.
+
+        Args:
+            tool_result: Tool result object returned by a tool executor.
+
+        Returns:
+            str: Plain string result or JSON-serialized tool output.
+        """
         if isinstance(tool_result, str):
             return tool_result
 
@@ -259,6 +366,15 @@ class WorkflowOrchestrator:
             raise WorkflowExecutionError("Tool result is not JSON serializable") from e
 
     def _execute_tool_call(self, handle: BoundProjectRuntime, tool_call: dict) -> tuple[str, Any]:
+        """Execute one model-requested tool call against the tool registry.
+
+        Args:
+            handle: Bound project runtime carrying project-scoped dependencies.
+            tool_call: Parsed Ollama tool-call payload for one function invocation.
+
+        Returns:
+            tuple[str, Any]: Executed tool name and its returned result object.
+        """
         function_data = tool_call.get("function") or {}
         tool_name = function_data.get("name") or ""
         arguments = function_data.get("arguments") or {}
@@ -281,6 +397,14 @@ class WorkflowOrchestrator:
             raise WorkflowExecutionError(f"Invalid arguments for tool '{tool_name}'") from e
 
     def _extract_return_to_user_call(self, assistant_tool_calls: list[dict]) -> dict | None:
+        """Extract and validate a terminal `return_to_user` tool call.
+
+        Args:
+            assistant_tool_calls: Tool-call payloads returned in the assistant turn.
+
+        Returns:
+            dict | None: The validated `return_to_user` call when present, otherwise `None`.
+        """
         return_calls = [
             tool_call
             for tool_call in assistant_tool_calls
@@ -303,6 +427,17 @@ class WorkflowOrchestrator:
         tool_names: list[str],
         execution_model_name: str,
     ) -> dict:
+        """Build the Ollama chat envelope for the current run state.
+
+        Args:
+            history_messages: Prior chat messages already converted for Ollama.
+            user_turn_content: Final user-turn content for the current run.
+            tool_names: Tool names that should be exposed to the model.
+            execution_model_name: Model identifier chosen for the current run.
+
+        Returns:
+            dict: Ollama chat envelope ready for model execution.
+        """
         chat_envelope = create_chat_envelope(model=execution_model_name)
 
         tool_prompt_fragment = build_tool_prompt_fragment(tool_names)
@@ -332,19 +467,31 @@ class WorkflowOrchestrator:
         selected_files: list[str] | None = None,
         ai_model_name: str | None = None,
     ) -> dict:
+        """Execute one bounded project-scoped chat workflow.
+
+        Args:
+            handle: Fully bound project runtime used during execution.
+            message: User message text for the current run.
+            selected_files: Optional repo-relative selected-file paths for context loading.
+            ai_model_name: Optional execution-time model override for the run.
+
+        Returns:
+            dict: Execution result payload including answer, model name, and return-to-user data.
+        """
         if handle is None:
             raise WorkflowExecutionError("BoundProjectRuntime is required")
 
         if not str(message).strip():
             raise WorkflowExecutionError("message is required")
 
-        execution_persistence = self._require_execution_persistence(handle)
+        message_runtime = self._require_message_runtime(handle)
+        file_runtime = self._require_file_runtime(handle)
         selected_file_names = selected_files or []
 
-        history_rows = execution_persistence.load_recent_history(limit=self._get_recent_history_limit())
+        history_rows = message_runtime.load_recent_history(limit=self._get_recent_history_limit())
         history_messages = self._build_ollama_history_messages(history_rows)
 
-        selected_context_rows = execution_persistence.load_selected_context(selected_file_names)
+        selected_context_rows = file_runtime.load_selected_context(selected_file_names)
         user_turn_content = self._build_user_turn_content(message, selected_context_rows)
 
         tool_names = self._select_chat_tool_names(handle)
@@ -356,8 +503,8 @@ class WorkflowOrchestrator:
             execution_model_name=execution_model_name,
         )
 
-        sequence_no = execution_persistence.load_next_sequence_no()
-        execution_persistence.store_artifact(
+        sequence_no = message_runtime.load_next_sequence_no()
+        message_runtime.store_artifact(
             {
                 "sequence_no": sequence_no,
                 "role": "user",
@@ -375,7 +522,7 @@ class WorkflowOrchestrator:
             assistant_tool_calls = parsed_output.get("tool_calls") or []
             assistant_images = parsed_output.get("images")
 
-            execution_persistence.store_artifact(
+            message_runtime.store_artifact(
                 self._build_assistant_artifact_data(sequence_no=sequence_no, parsed_output=parsed_output)
             )
             sequence_no += 1
@@ -385,7 +532,7 @@ class WorkflowOrchestrator:
                 tool_name, tool_result = self._execute_tool_call(handle, return_to_user_tool_call)
                 tool_result_content = self._serialize_tool_result_content(tool_result)
 
-                execution_persistence.store_artifact(
+                message_runtime.store_artifact(
                     {
                         "sequence_no": sequence_no,
                         "role": "tool",
@@ -425,7 +572,7 @@ class WorkflowOrchestrator:
                 tool_name, tool_result = self._execute_tool_call(handle, tool_call)
                 tool_result_content = self._serialize_tool_result_content(tool_result)
 
-                execution_persistence.store_artifact(
+                message_runtime.store_artifact(
                     {
                         "sequence_no": sequence_no,
                         "role": "tool",

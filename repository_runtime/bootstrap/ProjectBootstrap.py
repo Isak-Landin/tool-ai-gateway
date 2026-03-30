@@ -8,14 +8,43 @@ from repository_runtime.shell import ProjectShell
 
 
 class ProjectBootstrap:
+    """Own filesystem and key-generation bootstrap work for new projects."""
+
     def __init__(self, shell: ProjectShell | None = None):
+        """Create the project bootstrap helper.
+
+        Args:
+            shell: Optional prebuilt shell dependency for bootstrap commands.
+
+        Returns:
+            None: The helper stores the shell and shell-ownership state.
+        """
         self.shell = shell or ProjectShell()
         self._owns_shell = shell is None
 
     def _quote_args(self, args: list[str]) -> str:
+        """Quote command arguments for safe shell execution.
+
+        Args:
+            args: Command argument list to join into one shell-safe string.
+
+        Returns:
+            str: Shell-quoted command string.
+        """
         return " ".join(shlex.quote(str(arg)) for arg in args)
 
     def _run_command(self, args: list[str], failure_message: str, field: str, error_type: str) -> str:
+        """Run one bootstrap command and translate failures into bootstrap errors.
+
+        Args:
+            args: Command argument list to execute.
+            failure_message: Fallback message when command output is empty.
+            field: Related field/configuration name for error reporting.
+            error_type: Stable error category for bootstrap failure reporting.
+
+        Returns:
+            str: Trimmed command output when the command succeeds.
+        """
         code, output = self.shell.run(self._quote_args(args))
         if code != 0:
             raise ProjectBootstrapError(
@@ -28,6 +57,14 @@ class ProjectBootstrap:
         return output.strip()
 
     def create_project_storage(self, project_paths: dict[str, Path]) -> None:
+        """Create the on-disk directory structure required for a new project.
+
+        Args:
+            project_paths: Precomputed project storage paths keyed by storage role.
+
+        Returns:
+            None: Required directories are created in place or a bootstrap error is raised.
+        """
         projects_root = project_paths["projects_root"]
         project_root = project_paths["project_root"]
         repo_path = project_paths["repo_path"]
@@ -101,6 +138,16 @@ class ProjectBootstrap:
         public_key_path: Path,
         project_id: int,
     ) -> str:
+        """Generate and read back the SSH keypair for a new project.
+
+        Args:
+            private_key_path: Destination path for the generated private key.
+            public_key_path: Destination path for the generated public key.
+            project_id: Persisted project identifier used in the key comment.
+
+        Returns:
+            str: Generated public-key text to return to the caller.
+        """
         ssh_keygen_path = self._run_command(
             ["command", "-v", "ssh-keygen"],
             failure_message="ssh-keygen is required for project bootstrap",
@@ -163,11 +210,27 @@ class ProjectBootstrap:
         return public_key
 
     def cleanup_project_storage(self, project_root: Path | None) -> None:
+        """Best-effort cleanup for partially created project storage.
+
+        Args:
+            project_root: Root directory to remove when bootstrap needs rollback.
+
+        Returns:
+            None: Cleanup is attempted in place and skipped when nothing exists.
+        """
         if project_root is None or not project_root.exists():
             return
 
         shutil.rmtree(project_root, ignore_errors=True)
 
     def close(self) -> None:
+        """Close owned shell resources when bootstrap created them internally.
+
+        Args:
+            None.
+
+        Returns:
+            None: Owned shell resources are released in place.
+        """
         if self._owns_shell and self.shell and hasattr(self.shell, "close"):
             self.shell.close()

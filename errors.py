@@ -23,6 +23,11 @@ class MessageRuntimeError(Exception):
     pass
 
 
+class BoundProjectRuntimeError(Exception):
+    """Bound project runtime dependency error"""
+    pass
+
+
 class GitHubError(Exception):
     """Git operation error"""
     def __init__(self, message: str):
@@ -64,13 +69,6 @@ class RuntimeBindingPersistenceError(PersistenceError):
 
 class BoundProjectRuntimePersistenceError(PersistenceError):
     """Bound project runtime persistence error"""
-    def __init__(self, message: str, field: str = None, error_type: str = None, file_id: str = None):
-        super().__init__(message=message, field=field, error_type=error_type)
-        self.file_id = file_id
-
-
-class ExecutionPersistenceError(PersistenceError):
-    """Execution persistence error"""
     def __init__(self, message: str, field: str = None, error_type: str = None, file_id: str = None):
         super().__init__(message=message, field=field, error_type=error_type)
         self.file_id = file_id

@@ -7,15 +7,27 @@ from errors import BoundProjectRuntimePersistenceError
 
 
 class BoundProjectRuntimePersistence:
+    """Persistence surface for loading bound-runtime construction fields."""
+
     def __init__(self, db_connection=None):
+        """Create the bound-runtime persistence helper.
+
+        Args:
+            db_connection: Optional SQLAlchemy session/connection supplied by a caller.
+
+        Returns:
+            None: The helper stores the DB dependency for later reads.
+        """
         self.db_connection = db_connection
 
     def get_bound_project_runtime_fields(self, project_id: int) -> dict | None:
-        """
-        Expected usage:
-        - called by runtime binding / bound-runtime construction only
-        - return the fields needed to construct a usable project runtime object
-        - may later replace or extend the current bound-runtime persistence helper
+        """Load the project fields needed to construct a bound runtime.
+
+        Args:
+            project_id: Persisted project identifier to load runtime fields for.
+
+        Returns:
+            dict | None: Runtime-binding project data, or `None` when no project exists.
         """
         session = self.db_connection or SessionLocal()
         try:

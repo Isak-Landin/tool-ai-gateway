@@ -37,7 +37,7 @@ The first version should stay narrow.
 - accept a bound runtime and validated chat input
 - accept an optional execution-time `ai_model_name` override for the run
 - load a bounded recent project message window
-- load selected project context from the current local repository state
+- load selected project context from an intentional bound project-scoped file owner
 - choose context deterministically inside execution
 - prepare one model-ready run
 - persist the user turn
@@ -64,25 +64,27 @@ The MVP goal is a reliable, ordered project-scoped run with bounded context.
 - execution must load recent project messages as bounded run context
 - execution must persist user, assistant, and tool artifacts in ordered sequence
 - persisted message artifacts must retain the actual `ai_model_name` used for the run so model choice remains historically visible even if later runs use a different model
-- execution keeps ownership of bounded recent-history limits, next-sequence loading, and ordered artifact writes through `ExecutionPersistence`
-- a future bound message surface should not take over execution's context-limit policy
+- execution now uses the bound `MessageRuntime` surface for bounded recent-history loading, next-sequence loading, and ordered artifact writes
+- execution still keeps the policy decision for bounded recent-history limits
 
 ### Current MVP Selected Context Rule
 
 - `selected_files` is treated as a list of repo-relative paths
-- execution loads selected context from the current local repository state
+- selected context must ultimately come from a bound project-scoped file owner rather than self-managed execution/persistence file reads
 - execution does not rely on persisted file snapshot rows for selected context
-- selected context should remain project-scoped and branch-aware because it comes from the bound local repo
+- selected context should remain project-scoped and branch-aware
 - shell-backed tools should run from one bound repo-root shell with repo-relative paths
 - branch switching is not part of the current MVP execution tool set
 - execution returns control to the user only when the model calls `return_to_user`
 
 ### Architectural drift to resolve before broader file-route work
 
-- execution currently reaches repository tree/search behavior through execution-owned runtime helpers
-- that remains valid for execution/tool behavior
-- but it should now be treated as architecturally deprecated for general file/tree serving once the dedicated bound file surface exists
-- route-facing or shared project file/tree reads should move toward the bound file-responsible surface instead of expanding direct execution ownership
+- execution now depends on the bound `FileRuntime` surface for selected-context loading and file/tree/search tool behavior
+- execution now depends on the bound `MessageRuntime` surface for message reads and writes
+- `FilesRepository` and `RepositoryRuntime` are no longer plausible fallback seams for live file/tree access; they now fail explicitly for that usage
+- `MessagesRepository` is no longer a plausible fallback seam for shared message/history access; it now fails explicitly for that usage
+- persistence-facing naming has been tightened toward explicit storage semantics so execution and future shared consumers are less likely to harden around the wrong owner
+- route-facing runtime helpers should expose only `FileRuntime` and `MessageRuntime`, while the full bound runtime remains the execution-facing surface
 
 ## Intention
 

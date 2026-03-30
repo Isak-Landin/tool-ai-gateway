@@ -1,23 +1,48 @@
 from BoundProjectRuntime import BoundProjectRuntime
 from FileRuntime import FileRuntime
 from MessageRuntime import MessageRuntime
-from errors import RuntimeBindingPersistenceError
+from errors import BoundProjectRuntimeError, RuntimeBindingPersistenceError
 from persistence import RuntimeBindingPersistence
 from repository_runtime import RepositoryRuntime
 
 
 class ProjectRuntimeBindingError(Exception):
+    """Raised when runtime binding cannot produce a usable bound runtime."""
+
     pass
 
 
 class ProjectRuntimeBinder:
+    """Turn a resolved project row into a usable bound runtime.
+
+    The binder owns dependency attachment only. It does not resolve projects or
+    execute workflow logic.
+    """
+
     def __init__(self, db_connection=None, runtime_binding_persistence: RuntimeBindingPersistence | None = None):
+        """Create a runtime binder with optional shared persistence dependencies.
+
+        Args:
+            db_connection: Optional SQLAlchemy session/connection supplied by a caller.
+            runtime_binding_persistence: Optional specialized persistence surface for binding work.
+
+        Returns:
+            None: The binder stores the persistence dependency for later binding.
+        """
         self.db_connection = db_connection
         self.runtime_binding_persistence = runtime_binding_persistence or RuntimeBindingPersistence(
             db_connection=db_connection
         )
 
     def _require_project_id(self, resolved_project: dict) -> int:
+        """Extract the resolved project id or fail when it is missing.
+
+        Args:
+            resolved_project: Resolution-shaped project data from the resolver.
+
+        Returns:
+            int: Persisted project identifier needed for runtime binding.
+        """
         project_id = resolved_project.get("project_id")
         if project_id is None:
             raise ProjectRuntimeBindingError("project_id is required for runtime binding")
@@ -25,6 +50,14 @@ class ProjectRuntimeBinder:
         return project_id
 
     def _require_repo_path(self, project_row: dict) -> str:
+        """Extract the repository path required for runtime binding.
+
+        Args:
+            project_row: Runtime-binding project data loaded from persistence.
+
+        Returns:
+            str: Normalized repository path for the bound runtime.
+        """
         repo_path = project_row.get("repo_path")
         if not str(repo_path).strip():
             raise ProjectRuntimeBindingError("repo_path is required for runtime binding")
@@ -32,31 +65,51 @@ class ProjectRuntimeBinder:
         return str(repo_path).strip()
 
     def _resolve_effective_branch(self, project_row: dict, branch_override: str | None = None) -> str:
+        """Choose the branch that the bound runtime should use.
+
+        Args:
+            project_row: Runtime-binding project data containing the stored branch.
+            branch_override: Optional branch override requested by the caller.
+
+        Returns:
+            str: Effective branch value for the bound runtime.
+        """
         if branch_override is not None and str(branch_override).strip():
             return str(branch_override).strip()
 
         return str(project_row.get("branch") or "main").strip()
 
     def _require_bound_runtime_preconditions(self, bound_project_runtime: BoundProjectRuntime) -> None:
+        """Verify that the bound runtime contains all required dependencies.
+
+        Args:
+            bound_project_runtime: Newly built runtime to validate before returning.
+
+        Returns:
+            None: Validation succeeds silently or raises a binding error.
+        """
         if bound_project_runtime.project_id is None:
             raise ProjectRuntimeBindingError("BoundProjectRuntime.project_id is required")
 
         if not str(bound_project_runtime.repo_path).strip():
             raise ProjectRuntimeBindingError("BoundProjectRuntime.repo_path is required")
 
-        if not bound_project_runtime.is_execution_persistence_bound():
-            raise ProjectRuntimeBindingError("BoundProjectRuntime.execution_persistence must be bound")
-
-        if not bound_project_runtime.is_repository_runtime_bound():
-            raise ProjectRuntimeBindingError("BoundProjectRuntime.repository_runtime must be bound")
-
-        if not bound_project_runtime.is_file_runtime_bound():
-            raise ProjectRuntimeBindingError("BoundProjectRuntime.file_runtime must be bound")
-
-        if not bound_project_runtime.is_message_runtime_bound():
-            raise ProjectRuntimeBindingError("BoundProjectRuntime.message_runtime must be bound")
+        try:
+            bound_project_runtime.require_repository_runtime()
+            bound_project_runtime.require_file_runtime()
+            bound_project_runtime.require_message_runtime()
+        except BoundProjectRuntimeError as e:
+            raise ProjectRuntimeBindingError(str(e)) from e
 
     def _load_runtime_binding_fields(self, project_id: int) -> dict:
+        """Load the persistence fields required to construct a bound runtime.
+
+        Args:
+            project_id: Persisted project identifier to load binding fields for.
+
+        Returns:
+            dict: Runtime-binding project data used to attach dependencies.
+        """
         try:
             project_row = self.runtime_binding_persistence.get_runtime_binding_fields(project_id)
         except RuntimeBindingPersistenceError as e:
@@ -68,6 +121,15 @@ class ProjectRuntimeBinder:
         return project_row
 
     def bind(self, resolved_project: dict, branch_override: str | None = None) -> BoundProjectRuntime:
+        """Bind project-scoped dependencies onto a new runtime holder.
+
+        Args:
+            resolved_project: Resolution-shaped project data from the resolver.
+            branch_override: Optional branch value to use instead of the stored branch.
+
+        Returns:
+            BoundProjectRuntime: Fully bound runtime holder with attached dependencies.
+        """
         if not resolved_project:
             raise ProjectRuntimeBindingError("resolved_project is required")
 
@@ -88,22 +150,14 @@ class ProjectRuntimeBinder:
             )
         )
 
-        bound_project_runtime.bind_execution_persistence(
-            self.runtime_binding_persistence.build_execution_persistence(
-                project_id=project_id,
-                repo_path=repo_path,
-            )
-        )
-
         bound_project_runtime.bind_file_runtime(
             FileRuntime(
                 project_id=project_id,
                 repo_path=repo_path,
                 branch=effective_branch,
-                repository_runtime=bound_project_runtime.repository_runtime,
-                files_repository=self.runtime_binding_persistence.build_files_repository(
+                repository_runtime=bound_project_runtime.require_repository_runtime(),
+                files_repository=self.runtime_binding_persistence.build_file_persistence_repository(
                     project_id=project_id,
-                    repo_path=repo_path,
                 ),
             )
         )
@@ -111,7 +165,7 @@ class ProjectRuntimeBinder:
         bound_project_runtime.bind_message_runtime(
             MessageRuntime(
                 project_id=project_id,
-                messages_repository=self.runtime_binding_persistence.build_messages_repository(
+                messages_repository=self.runtime_binding_persistence.build_message_persistence_repository(
                     project_id=project_id,
                 ),
             )

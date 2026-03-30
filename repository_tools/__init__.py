@@ -4,6 +4,7 @@ from repository_tools.common import (
     get_repository_relative_path,
     get_repository_shell_target_argument,
     is_ignored_repository_path,
+    normalize_repository_relative_path,
     quote_shell_args,
     resolve_repository_target,
 )
@@ -14,6 +15,7 @@ __all__ = [
     "get_repository_relative_path",
     "get_repository_shell_target_argument",
     "is_ignored_repository_path",
+    "normalize_repository_relative_path",
     "quote_shell_args",
     "resolve_repository_target",
 ]

@@ -23,6 +23,34 @@ def get_repository_ignore_patterns() -> list[str]:
     return ignore_patterns
 
 
+def normalize_repository_relative_path(
+    relative_repo_path: str | None = None,
+    *,
+    allow_root: bool = True,
+) -> str:
+    normalized_relative_path = str(relative_repo_path or "").strip()
+    if normalized_relative_path in {"", ".", "/"}:
+        if allow_root:
+            return "/"
+        raise ValueError("relative_repo_path must not point to the repository root")
+
+    normalized_relative_path = normalized_relative_path.lstrip("/")
+    normalized_parts: list[str] = []
+    for path_part in PurePosixPath(normalized_relative_path).parts:
+        if path_part in {"", "."}:
+            continue
+        if path_part == "..":
+            raise ValueError(f"Path escapes repository root: {relative_repo_path}")
+        normalized_parts.append(path_part)
+
+    if not normalized_parts:
+        if allow_root:
+            return "/"
+        raise ValueError("relative_repo_path must not point to the repository root")
+
+    return "/" + "/".join(normalized_parts)
+
+
 def resolve_repository_target(repo_path: str, relative_repo_path: str | None = None) -> tuple[Path, Path]:
     if not str(repo_path).strip():
         raise ValueError("repo_path is required")
@@ -33,8 +61,8 @@ def resolve_repository_target(repo_path: str, relative_repo_path: str | None = N
     if not repo_root.is_dir():
         raise ValueError(f"Repository path is not a directory: {repo_root}")
 
-    normalized_relative_path = (relative_repo_path or "").strip()
-    if normalized_relative_path in {"", ".", "/"}:
+    normalized_relative_path = normalize_repository_relative_path(relative_repo_path, allow_root=True)
+    if normalized_relative_path == "/":
         target_path = repo_root
     else:
         target_path = (repo_root / normalized_relative_path.lstrip("/")).resolve()

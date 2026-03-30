@@ -56,6 +56,7 @@ It answers the question:
 - resolving the project in the first place
 - storing business logic about the run itself
 - shaping user-facing responses
+- acting as the live lower-layer owner for project file/tree/search reads outside intentional bound objects such as `FileRuntime`
 
 ### Why it exists as its own layer
 
@@ -189,6 +190,32 @@ Execution should decide how to use state.
 
 If persistence starts deciding runtime behavior, the architecture becomes blurred and debugging becomes much harder.
 
+Current file-side clarification:
+
+- `FilesRepository` is persistence-shaped DB storage/retrieval only
+- `FileRuntime` is the lower live owner for project-scoped file reads, tree reads, ignore-path enforcement, and branch-aware repository access
+- `RepositoryRuntime` remains shell/git transport only and is not a live file/tree owner
+- callers should not unwrap `FileRuntime` back into `RepositoryRuntime`; direct `FileRuntime.repository_runtime` access is deprecated
+- older direct inspection or self-managed file-loading seams have been removed from the live dependency path and should not be reintroduced as alternative lower owners
+- `FilesRepository` and `RepositoryRuntime` now fail explicitly if called like live file/tree owners instead of persistence/transport surfaces
+- explicit storage-shaped names such as file-row access and persistence-repository builders should be preferred over generic names that blur live-serving ownership
+
+Current message-side clarification:
+
+- `MessagesRepository` is persistence-shaped DB storage/retrieval only
+- `MessageRuntime` is the lower live owner for project-scoped history reads and execution-reused ordered message access
+- callers should keep message/history reads on `MessageRuntime` instead of reaching sideways for lower persistence or other runtime dependencies
+- older caller-shaped history seams have been removed from the live dependency path and should not be reintroduced as alternative lower owners
+- `MessagesRepository` now fails explicitly if called like a shared message/history owner instead of a persistence surface
+- explicit storage-shaped names should be preferred over generic names that blur live-serving ownership
+
+Current bound-runtime clarification:
+
+- `BoundProjectRuntime` is a holder, not a broad dependency bag for ad hoc caller behavior
+- direct `BoundProjectRuntime.repository_runtime`, `BoundProjectRuntime.file_runtime`, and `BoundProjectRuntime.message_runtime` access is deprecated
+- callers should use the explicit `require_*_runtime()` accessors so code states which lower surface it actually intends to consume
+- route-facing helpers should prefer a narrowed route runtime that exposes only the bound `FileRuntime` and `MessageRuntime` surfaces needed for live reads
+
 ## Clarification 1: Layers are ownership boundaries, not always a single chain
 
 It is easy to imagine layers as if every request must always pass through all five in a perfectly straight line.
@@ -291,6 +318,9 @@ The goal is not to build rigid caller policing everywhere.
 
 The goal is to make layer ownership visible in structure so that:
 
+- intentionally reachable entrypoints stay import-safe and structurally stable
+- bootstrap/config validation does not get confused with normal application entrypoint behavior
+
 - the intended usage is intuitive
 - growth does not collapse back into one oversized object
 - privileged behavior can be grouped intentionally instead of leaking across the full layer
@@ -383,8 +413,9 @@ That may include:
 
 In the intended split:
 
-- execution keeps bounded recent-history loading and ordered artifact persistence through `ExecutionPersistence`
-- bound project-scoped message surfaces reuse persistence for route/shared reads
+- execution now performs bounded recent-history loading and ordered artifact persistence through `MessageRuntime`
+- `MessageRuntime` is the bound project-scoped message surface for route/shared reads and execution-owned ordered message work
+- route-style history access belongs on the bound `MessageRuntime`
 
 Persistence does not decide the workflow.  
 It serves the workflow.

@@ -5,17 +5,17 @@ from ollama.tool_registry import register_tool
 SEARCH_REPOSITORY_TEXT_TOOL = OllamaToolModule(
     name="search_repository_text",
     prompt_fragment=(
-        "Use the search_repository_text tool when you need to find matching text in the bound local "
-        "repository. The tool supports an optional relative repository path and always applies the "
-        "configured ignore paths."
+        "Use the search_repository_text tool when you need to find matching text in the bound project "
+        "repository. The tool is served by the bound FileRuntime surface, supports an optional relative "
+        "repository path, and applies the configured ignore paths against the active branch."
     ),
     schema={
         "type": "function",
         "function": {
             "name": "search_repository_text",
             "description": (
-                "Search the bound local repository for matching text using ripgrep. Supports an optional "
-                "relative repository path and always applies the configured ignore paths."
+                "Search the bound project repository for matching text using the active branch and "
+                "configured ignore paths. Supports an optional relative repository path."
             ),
             "parameters": {
                 "type": "object",

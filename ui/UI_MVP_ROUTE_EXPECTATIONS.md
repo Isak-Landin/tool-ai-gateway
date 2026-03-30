@@ -28,11 +28,9 @@ The main backend anchors for current UI expectation are:
 - `ProjectRuntimeBinder`
 - `BoundProjectRuntime`
 - `MessageRuntime`
-- `ExecutionPersistence`
 - `MessagesRepository`
 - `FileRuntime`
 - `FilesRepository`
-- repository inspection helpers
 
 ## Current Backend Data Available
 
@@ -83,8 +81,11 @@ Message data currently appears to support:
 
 Message ownership expectation:
 
-- execution still uses `ExecutionPersistence` for bounded recent-history loading and ordered artifact writes during runs
-- route/shared history reads should move toward a bound project-scoped message surface that reuses `MessagesRepository`
+- execution now uses `MessageRuntime` for bounded recent-history loading and ordered artifact writes during runs
+- route/shared history reads should use the bound `MessageRuntime` surface, which reuses `MessagesRepository` as persistence only
+- `MessagesRepository` is persistence-shaped storage/retrieval only and must not be treated as a shared history owner
+- `MessagesRepository` should be expected to fail if used as a route/shared history reader instead of `MessageRuntime`
+- persistence-layer naming should be read as storage-only support for `MessageRuntime`, not as an alternative live-serving owner
 
 ### Repository/file data
 
@@ -107,6 +108,15 @@ Repository/file surfaces currently appear to support:
   - `path`
   - `line_number`
   - `line_text`
+
+File ownership expectation:
+
+- `FileRuntime` is the lower live owner for project-scoped tree reads, file reads, ignore-path enforcement, and branch-aware repository access
+- `FilesRepository` is persistence-shaped storage/retrieval only
+- `RepositoryRuntime` is shell/git transport only and must not be treated as a live file/tree owner
+- `FilesRepository` and `RepositoryRuntime` should be expected to fail if used as route-facing live file/tree readers instead of `FileRuntime`
+- persistence-layer naming should be read as storage-only support for `FileRuntime`, not as an alternative live-serving owner
+- routes should treat `FileRuntime` and `MessageRuntime` as the backend contract anchors for live workspace reads
 
 ## Must MVP UI Routes
 
@@ -208,10 +218,11 @@ The old assumption that the list should display a project-owned selected model i
 This route depends on composed backend data from:
 
 - `GET /projects/{project_id}`
-- `GET /projects/{project_id}/messages` expected route
-- `GET /projects/{project_id}/repository/tree` expected route
-- `GET /projects/{project_id}/repository/file` expected route
+- `GET /projects/{project_id}/messages`
+- `GET /projects/{project_id}/repository/tree`
+- `GET /projects/{project_id}/repository/file`
 - `POST /projects/{project_id}/run`
+- `GET /projects/{project_id}/repository/search` standalone route available for later JS-driven workspace search
 
 ### Required project shell data
 
@@ -291,11 +302,7 @@ That route is documented direction only, not a current implementation requiremen
 
 Enough to support the workspace direction:
 
-- mostly yes
-
-Primary gap:
-
-- dedicated API exposure for history, repository tree, and repository file reads
+- yes
 
 ## 5. Project Settings
 
@@ -310,7 +317,7 @@ Primary gap:
 ### Backend route alignment
 
 - `GET /projects/{project_id}`
-- `PATCH /projects/{project_id}` expected route
+- `PATCH /projects/{project_id}`
 
 ### Required backend data
 
@@ -342,7 +349,7 @@ That older assumption is deprecated.
 
 ### Backend route alignment
 
-- `GET /projects/{project_id}/messages` expected route
+- `GET /projects/{project_id}/messages`
 
 ### Required backend data
 
@@ -390,9 +397,6 @@ Reasonable MVP route:
 
 ### Real gaps
 
-- dedicated message-history API route
-- dedicated repository tree API route
-- dedicated repository file-read API route
 - explicit branch-option sourcing if the UI needs a real dropdown
 
 ### Deprecated assumptions
