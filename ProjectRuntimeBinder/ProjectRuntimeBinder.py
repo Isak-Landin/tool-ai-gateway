@@ -1,4 +1,5 @@
 from BoundProjectRuntime import BoundProjectRuntime
+from FileRuntime import FileRuntime
 from errors import RuntimeBindingPersistenceError
 from persistence import RuntimeBindingPersistence
 from repository_runtime import RepositoryRuntime
@@ -48,6 +49,9 @@ class ProjectRuntimeBinder:
         if not bound_project_runtime.is_repository_runtime_bound():
             raise ProjectRuntimeBindingError("BoundProjectRuntime.repository_runtime must be bound")
 
+        if not bound_project_runtime.is_file_runtime_bound():
+            raise ProjectRuntimeBindingError("BoundProjectRuntime.file_runtime must be bound")
+
     def _load_runtime_binding_fields(self, project_id: int) -> dict:
         try:
             project_row = self.runtime_binding_persistence.get_runtime_binding_fields(project_id)
@@ -84,6 +88,19 @@ class ProjectRuntimeBinder:
             self.runtime_binding_persistence.build_execution_persistence(
                 project_id=project_id,
                 repo_path=repo_path,
+            )
+        )
+
+        bound_project_runtime.bind_file_runtime(
+            FileRuntime(
+                project_id=project_id,
+                repo_path=repo_path,
+                branch=effective_branch,
+                repository_runtime=bound_project_runtime.repository_runtime,
+                files_repository=self.runtime_binding_persistence.build_files_repository(
+                    project_id=project_id,
+                    repo_path=repo_path,
+                ),
             )
         )
 

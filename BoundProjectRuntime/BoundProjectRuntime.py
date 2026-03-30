@@ -18,6 +18,7 @@ class BoundProjectRuntime:
 
         self.execution_persistence = None
         self.repository_runtime = None
+        self.file_runtime = None
 
         # Reserved for future project-scoped context management.
         self.model_context = None
@@ -28,6 +29,9 @@ class BoundProjectRuntime:
     def bind_repository_runtime(self, repository_runtime):
         self.repository_runtime = repository_runtime
 
+    def bind_file_runtime(self, file_runtime):
+        self.file_runtime = file_runtime
+
     def bind_model_context(self, model_context_builder):
         self.model_context = model_context_builder
 
@@ -37,6 +41,11 @@ class BoundProjectRuntime:
     def is_repository_runtime_bound(self) -> bool:
         return self.repository_runtime is not None
 
+    def is_file_runtime_bound(self) -> bool:
+        return self.file_runtime is not None
+
     def close(self):
+        if self.file_runtime and hasattr(self.file_runtime, "close"):
+            self.file_runtime.close()
         if self.repository_runtime and hasattr(self.repository_runtime, "close"):
             self.repository_runtime.close()
