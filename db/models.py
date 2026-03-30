@@ -100,11 +100,16 @@ class Message(Base):
 
 class File(Base):
     __tablename__ = "files"
+    __table_args__ = (
+        UniqueConstraint("project_id", "path", name="uq_files_project_path"),
+    )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
 
+    path: Mapped[str] = mapped_column(String(2048), nullable=False)
     name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     content: Mapped[str | None] = mapped_column(Text, nullable=True)
+    total_lines: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     project_id: Mapped[int | None] = mapped_column(
         BigInteger,
