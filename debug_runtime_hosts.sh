@@ -5,7 +5,7 @@ UI_CONTAINER="${UI_CONTAINER:-ui-tool-gateway}"
 API_CONTAINER="${API_CONTAINER:-ai-tool-gateway}"
 DB_CONTAINER="${DB_CONTAINER:-ai-tool-gateway-db}"
 
-UI_HOST_HEADER="${UI_HOST_HEADER:-tool_ui.isaklandin.com}"
+UI_HOST_HEADER="${UI_HOST_HEADER:-tool-ui.isaklandin.com}"
 UI_URL="${UI_URL:-http://127.0.0.1:4000/}"
 API_MODELS_URL="${API_MODELS_URL:-http://127.0.0.1:4100/models}"
 API_PROJECTS_URL="${API_PROJECTS_URL:-http://127.0.0.1:4100/projects}"
@@ -39,7 +39,7 @@ run_or_warn docker exec "$UI_CONTAINER" sh -lc \
 
 print_section "backend env"
 run_or_warn docker exec "$API_CONTAINER" sh -lc \
-  "env | grep -E '^(DATABASE_URL|LOCAL_SERVER_URL|GATEWAY_PORT|PROJECTS_ROOT|OLLAMA_MODEL|OLLAMA_BASE_URL|PYTHONUNBUFFERED)=' | sort"
+  "env | grep -E '^(DATABASE_URL|CORS_ALLOWED_ORIGINS|LOCAL_SERVER_URL|GATEWAY_PORT|PROJECTS_ROOT|OLLAMA_MODEL|OLLAMA_BASE_URL|PYTHONUNBUFFERED)=' | sort"
 
 print_section "ui deployed config files"
 run_or_warn docker exec "$UI_CONTAINER" sh -lc \
@@ -77,4 +77,4 @@ run_or_warn docker compose -f docker-compose.yml config | sed -n '1,160p'
 
 print_section "done"
 printf 'If needed, override defaults like:\n'
-printf '  UI_HOST_HEADER=tool_ui.isaklandin.com bash ./debug_runtime_hosts.sh\n'
+printf '  UI_HOST_HEADER=tool-ui.isaklandin.com bash ./debug_runtime_hosts.sh\n'

@@ -8,15 +8,15 @@ from api_routes.common import register_exception_handlers
 
 
 def _get_allowed_origins() -> list[str]:
-    """Load normalized CORS origins from environment configuration.
+    """Load normalized browser origins for backend CORS.
 
     Args:
         None.
 
     Returns:
-        list[str]: Comma-separated `LOCAL_SERVER_URL` values, trimmed and filtered.
+        list[str]: Comma-separated `CORS_ALLOWED_ORIGINS` values, trimmed and filtered.
     """
-    configured_origins = str(os.getenv("LOCAL_SERVER_URL", "")).strip()
+    configured_origins = str(os.getenv("CORS_ALLOWED_ORIGINS", "")).strip()
     if not configured_origins:
         return []
 
