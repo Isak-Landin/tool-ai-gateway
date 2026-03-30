@@ -155,7 +155,7 @@ That responsibility should not leak upward into request handling or downward int
 
 ### What it is
 
-Persistence is the serving layer for stored state and scoped repository/file state.
+Persistence is the serving layer for stored state and persistence-backed project artifacts.
 
 It answers the question:
 
@@ -166,7 +166,7 @@ It answers the question:
 - reading stored entities
 - writing stored entities
 - storing and serving project message/history artifacts needed by MVP execution
-- exposing lower-level repository/file access surfaces
+- storing persistence-backed file/archive artifacts where needed
 - serving execution-facing storage needs
 - serving runtime-binding-facing storage needs
 
@@ -176,6 +176,7 @@ It answers the question:
 - deciding what context should be chosen
 - binding runtime behavior
 - interpreting the user's goal
+- acting as the intended livetime route-serving owner for project tree/file reads
 
 ### Why it exists as its own layer
 

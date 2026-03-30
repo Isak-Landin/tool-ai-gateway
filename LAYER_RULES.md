@@ -46,8 +46,8 @@ Return flow is the reverse direction:
 | **Project Resolver** | Read project-scoped rows from persistence | Build runtime, bind services, execute workflow |
 | **Project Runtime Binder** | Construct `BoundProjectRuntime`, bind dependencies, read runtime-needed persistence fields | Resolve projects, run workflow logic, shape route responses |
 | **Bound Project Runtime** | Store project-scoped runtime state and bound dependencies | Resolve, bind, persist, or execute by itself |
-| **Execution** | Use `BoundProjectRuntime`, load/persist execution state, process ordered project messages, assemble bounded recent project context, load selected context from the bound local repo, choose context deterministically, call one execution model and runtime/tool surfaces | Resolve projects, construct runtime, shape HTTP/API responses |
-| **Persistence** | Serve storage and repo/file access needs for higher layers, including required MVP message/history persistence | Orchestrate workflow, bind runtime, call back upward |
+| **Execution** | Use `BoundProjectRuntime`, load/persist execution state, process ordered project messages, assemble bounded recent project context, load selected context from the bound local repo, choose context deterministically, call one execution model and execution-scoped runtime/tool surfaces | Resolve projects, construct runtime, shape HTTP/API responses |
+| **Persistence** | Serve storage needs for higher layers, including required MVP message/history persistence and any persistence-backed file/archive storage | Orchestrate workflow, bind runtime, act as the livetime route-serving owner for project tree/file reads, call back upward |
 
 ## Layer Details
 
@@ -117,6 +117,7 @@ Return flow is the reverse direction:
 - model/tool/runtime sequencing
 - execution-owned persistence ordering
 - one execution-model run flow for MVP
+- execution-scoped use of repository runtime tools where the behavior is truly execution/tool-only
 
 **May communicate with**
 
@@ -128,13 +129,17 @@ Return flow is the reverse direction:
 - **Project Resolver**
 - **Project Runtime Binder**
 
+**Architectural deprecation to remember**
+
+- direct execution use of repository tree/search helpers should not remain the general owner for non-execution file/tree consumers once the dedicated bound file surface exists
+
 ### **Persistence**
 
 **Owns**
 
 - database-backed reads and writes
 - execution/history/file storage surfaces
-- scoped repository file access
+- persistence-backed file/archive storage surfaces
 
 **May communicate with**
 
@@ -157,6 +162,7 @@ Return flow is the reverse direction:
 - **Project Runtime Binder may prepare runtime dependencies, but must not perform execution work.**
 - **Project Resolver stays narrow.** It resolves; it does not enrich into runtime behavior.
 - **Shell-backed tools run from one bound project shell.** Binder binds it, execution uses it.
+- **A dedicated bound file/message surface may sit on BoundProjectRuntime without making execution or persistence the general owner of route-serving project reads.**
 
 ## Surface Shape Guidance
 

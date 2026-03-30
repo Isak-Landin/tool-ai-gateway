@@ -1,56 +1,285 @@
 # Architectural Mismatches and Concerns
 
-_This document summarizes currently identified architectural mismatches and concerns around MVP project-page support._
+_This document maps MVP blockers, mismatches, and deprecations using the **documented intended solutions** as the source of truth._
 
-_It is focused on lower-layer support and ownership, not on UI placeholder implementation._
+_It does not treat current code shape as the authority for what the architecture should be._
 
 ## Purpose
 
-This document exists to capture:
+This document exists to keep four things explicit:
 
-- what is already supported well enough by the current lower layers
-- where architectural support exists but ownership is split or unclear
-- where future routes can likely be added safely
-- where route addition alone would be premature because lower-layer meaning is still ambiguous
+- active MVP blockers
+- newly introduced deprecations caused by intended architecture
+- remaining unsolved gaps and inconsistencies
+- the documented solution baseline those mappings are derived from
 
-## Scope
+## Source-of-Truth Rule For This Document
 
-Focused surfaces:
-- project message history
-- project execution as persisted history
-- live repository tree representation
-- live repository file-content representation
-- route-facing ownership concerns for those surfaces
+For this document:
 
-Excluded:
+- the documented intended message/file/tree solutions are the source of truth
+- current code is evidence of where deprecations and gaps still exist
+- current code is **not** the authority for what the ownership model should be
 
-- auth and account flows
-- UI styling/theming concerns
-- MaaS provider design beyond noting model-selection direction
+This matters because the current stage is still mapping-first.
 
-## High-Level Summary
+We are documenting:
 
-The current lower layers are **closer to ready than broken**.
+- what should own responsibility
+- what is now deprecated because of that intended ownership
+- what still remains unsolved before implementation
 
-The main issue is **not** that message history, repo tree, or file content are impossible to support.
+## MVP-Critical Active Mismatches and Deprecations
 
-The more accurate concern is:
+These are the most important current concerns to keep at the top.
 
-- message history already has a reasonable lower-layer path
-- project file/tree route support does **not** yet have the right lower-layer owner
-- MVP still requires both of those to work together end-to-end so a user can move from project entry to actual workspace use
+### 1. Route-facing file/tree ownership is now partially aligned, but not yet converged across all layers
 
-This is not best described as two equally valid long-term owners competing.
+The intended direction is now:
 
-It is better described as:
+- one **project-bound, route-serving repository/file surface**
 
-- one legacy persistence-shaped file surface that no longer matches intended direction
-- one runtime/execution inspection surface that exists for model/tool workflow, not for route-facing project reads
-- one missing replacement surface for route-serving, project-bound repository reading
+This is now partially implemented through:
 
-## What Already Appears Strong Enough
+- `FileRuntime/FileRuntime.py`
+- binding in `ProjectRuntimeBinder`
+- holding the bound file surface on `BoundProjectRuntime`
 
-## 1. Message history support
+That means the following remain architecturally deprecated as the general owner for route-facing or shared file/tree reads:
+
+- execution-owned repository inspection as the effective general file/tree owner
+- case-by-case consumer choice between the bound file surface and execution/tool inspection
+- any new route/shared consumer that skips the bound file surface and reads from older seams directly
+
+Current MVP risk:
+
+- execution and any future route/shared consumer can still harden around the wrong owner before the new bound file surface becomes the default seam everywhere
+
+### 2. Message-history ownership is structurally present, but not yet converged onto the intended shape
+
+The intended direction is now:
+
+- `MessagesRepository` refactored into the intentional persistence owner for message reads, writes, and route-usable history shaping
+- `ExecutionPersistence` kept focused on execution-owned ordering, bounded recent-history loading, and run artifact persistence
+- one bound project-scoped message/history dependency attached during runtime binding
+
+That means the following are now architecturally deprecated:
+
+- letting `ExecutionPersistence` drift into the general route-facing history owner
+- duplicating route-facing message/history shaping outside the intended bound message surface
+- leaving message ownership split only by caller habit rather than by intended boundary
+
+Current MVP risk:
+
+- message history can still be exposed through the wrong seam even though the lower data support is already strong
+
+### 3. Execution-owned repository tree/search access is now execution-only by intent
+
+The intended direction is now:
+
+- execution-owned repository tree/search usage remains valid for execution/tool behavior
+- it should not remain the general owner for route-facing or shared project file/tree reads
+
+That creates explicit new deprecation across existing execution-facing surfaces such as:
+
+- `repository_runtime/inspection/list_tree.py`
+- `repository_runtime/inspection/search_text.py`
+- `tools/repository/inspection/*`
+- execution wiring in `execution/workflow_orchestrator.py`
+- tool exposure through `ollama/tool_modules/*`
+
+Current MVP risk:
+
+- these surfaces can still look like the natural lower-layer owner even though the intended architecture now says otherwise
+
+### 4. `BoundProjectRuntime` and `ProjectRuntimeBinder` are now partially aligned, but only on the file side
+
+The intended direction is now:
+
+- one bound file-responsible project surface
+- one bound message-responsible project surface
+- `BoundProjectRuntime` as holder, not logic owner
+
+The file side of that alignment is now implemented:
+
+- `ProjectRuntimeBinder` binds `FileRuntime`
+- `BoundProjectRuntime` holds `file_runtime`
+
+The runtime/binding shape remains incomplete overall because:
+
+This incompleteness is itself a mapped concern because it can hide deprecations in surrounding layers:
+
+- the message side still has no equivalent bound message surface
+- execution still uses older direct repository inspection paths instead of the new bound file surface
+- routes still do not yet depend on the implemented bound file surface
+
+### 5. Persistence wording and ownership expectations had drifted too broad
+
+The intended direction is now:
+
+- persistence owns persistence-backed artifacts and persistence seams
+- persistence does **not** own the general livetime route-serving boundary for project file/tree reads
+- `FilesRepository` and `MessagesRepository` should be refactored toward intentional persistence roles
+
+That means the following are now deprecated at the documentation/architecture level:
+
+- broad wording that persistence generically owns live route-facing repository/file access
+- treating persistence-shaped objects as the default route-serving lower layer
+
+### 6. Ignore-path and branch-aware semantics are still unattached to the intended file owner
+
+The intended file owner is now known in direction.
+
+But:
+
+- ignore-path behavior is still split between current lower surfaces
+- branch-aware route semantics are still not fully attached to one intended route-serving owner
+
+Current MVP risk:
+
+- even with the intended owner mapped, the behavior contract is still incomplete until these semantics are attached to that owner
+
+### 7. MVP usability still depends on converging file and message ownership into one coherent route-facing project flow
+
+The MVP still needs:
+
+- create project
+- enter workspace
+- load live tree
+- load live file content
+- load persisted message history
+- submit prompt
+- persist result
+- re-read history and repository state coherently
+
+The current blocker is not missing raw capability.
+
+The blocker is that route work, runtime binding, and shared internal consumers can still drift around the intended message/file ownership model unless the mapped deprecations stay visible.
+
+## Remaining Unsolved Gaps
+
+These remain unsolved even with the intended direction already documented.
+
+### File/tree gaps
+
+- the new file-responsible project-bound surface is not yet documented everywhere else with enough consistency
+- other internal consumers that need project tree/file reads do not yet have one obvious intended dependency surface
+- ignore-path behavior is still split across current lower surfaces
+- branch-aware route semantics are still not fully anchored to the intended file owner
+- execution still does not consume the bound file surface
+- routes still do not consume the bound file surface
+
+### Message gaps
+
+- the new message-responsible project-bound surface is not yet consistently reflected as the expected route/runtime dependency
+- `MessagesRepository` refactor intent still needs to stay explicit so the message side does not fall back to usage-style ownership
+- route-facing history shaping still needs to be clearly mapped onto the bound message surface rather than ad hoc querying
+
+### Runtime/binding gaps
+
+- `ProjectRuntimeBinder` is now the binder of the intended project-bound file surface, but not yet the intended message surface
+- `BoundProjectRuntime` is now the holder of the intended project-bound file surface, but not yet the intended message surface
+- existing layers still visibly reflect the older dependency shape more strongly than the intended one, especially outside binding/runtime
+
+### Cross-layer deprecation gaps
+
+- execution still uses direct `repository_runtime` inspection paths for tool-facing tree/search behavior
+- that direct execution-owned access is not wrong for execution/tool behavior, but it is now architecturally deprecated as the general owner for route-facing or shared file/tree reads
+- route-level or caller-level duplication is still too easy because the intended bound file/message surfaces are not yet the easiest conceptual seam
+
+## Suggested Solution Mapping
+
+These are the intended solutions that should drive architecture decisions.
+
+They are intentionally placed **below** blockers and deprecations because they are the basis for the mapping, not proof of implementation.
+
+### 1. Introduce one file-responsible project-bound surface
+
+This file-specific object should:
+
+- serve route-facing tree reads
+- serve route-facing file-content reads
+- serve shared internal project-scoped file/tree consumers
+- stay passive
+- stay project-scoped
+- be bound during project/runtime binding
+- be held by `BoundProjectRuntime` or equivalent
+- make use of existing runtime repo functions where appropriate
+- avoid turning execution/tool wrappers into the ownership boundary
+
+Current implementation note:
+
+- this is now implemented on the file side through `FileRuntime`
+- it is bound by `ProjectRuntimeBinder` and held on `BoundProjectRuntime`
+- remaining work is adoption across execution/routes and behavior-semantic alignment
+
+### 2. Introduce one message-responsible project-bound surface
+
+This message-specific object should:
+
+- serve ordered route-facing project history reads
+- serve shared internal project-scoped message/history reads
+- stay passive
+- stay project-scoped
+- be bound during project/runtime binding
+- be held by `BoundProjectRuntime` or equivalent
+- reuse persistence-backed message behavior rather than creating route-level duplication
+
+### 3. Refactor `FilesRepository` into an intentional persistence-facing role
+
+`FilesRepository` should no longer define the live route-serving ownership boundary.
+
+Its persistence-facing role should align with persistence concerns rather than live route-serving ownership.
+
+Current implementation note:
+
+- `FilesRepository` has now been narrowed toward DB-shaped file storage/retrieval for MVP
+- live repository tree/file serving has moved to the new bound `FileRuntime` surface instead
+
+### 4. Refactor `MessagesRepository` into the intentional persistence owner for message history
+
+`MessagesRepository` should become the persistence owner for:
+
+- message storage
+- full ordered history retrieval
+- route-usable history shaping
+
+At the same time:
+
+- `ExecutionPersistence` stays execution-owned
+- bounded recent-history loading stays execution-owned
+- ordered run artifact persistence stays execution-owned
+
+### 5. Keep execution-owned repository access execution-owned
+
+Execution may still use repository runtime behavior for:
+
+- tool calls
+- search during execution
+- tree inspection during execution
+- git/runtime workflow concerns
+
+But that use should stay explicitly execution-scoped.
+
+### 6. Move route expectations onto the intended bound project surfaces
+
+Future route-facing behavior should read from:
+
+- the bound file-responsible project surface
+- the bound message-responsible project surface
+
+That keeps routes from:
+
+- duplicating shaping logic
+- depending directly on execution internals
+- depending directly on persistence internals
+- hardening accidental ownership decisions
+
+## Source-of-Truth Context For The Mapping
+
+The following documented solution context is the baseline this file now uses when listing blockers, deprecations, and remaining gaps.
+
+### 1. Message history support
 
 Current support is structurally present.
 
@@ -72,7 +301,7 @@ What is already supported:
 
 Conclusion:
 
-- message history is **not** the main architectural blocker
+- message history is not the main architectural blocker
 - a project activity/history route can be supported from existing lower-layer data
 
 Suggested solution:
@@ -84,345 +313,113 @@ Suggested solution:
 - let execution orchestrate ordered message use
 - let route-facing history reads reuse the bound/history-facing message surface instead of duplicating DB logic
 
-## 2. Live repository file-content behavior exists, but in the wrong shape
+### 2. Live repository file-content behavior now has a bound runtime owner
 
-Current code does include file-read behavior.
+Current implementation now includes a dedicated runtime file surface.
 
 Evidence:
 
+- `FileRuntime/FileRuntime.py`
+- `BoundProjectRuntime.file_runtime`
+- `ProjectRuntimeBinder` binding of `FileRuntime`
 - `persistence/FilesRepository/FilesRepository.py`
 
-What exists there:
+What is now supported:
 
-- repo-root path scoping
-- path escape protection
-- single-file reads
-- ranged line reads
-- total line counts
+- project-bound live file reads through `FileRuntime`
+- file-content reads delegated through repository-runtime inspection logic
+- optional persistence-backed file storage/retrieval through `FilesRepository`
+- binding of the file surface during project/runtime binding
 
 Conclusion:
 
 - the behavior exists
-- but it exists on a persistence-shaped object that no longer fits the intended architecture for route-facing project file access
+- and the intended file-serving owner now exists for the updated binding/runtime layers
 
-## 3. Live repository tree behavior exists, but only in an execution/tool-facing path
+Suggested solution:
 
-Current code does include live tree listing behavior.
+- keep `FileRuntime` as the live project-bound owner for file-content reads
+- keep `FilesRepository` persistence-shaped for DB storage/retrieval rather than live route-serving ownership
+- move future route/shared file consumers onto the bound `file_runtime` surface
+- avoid turning execution/tool inspection back into the ownership boundary
+
+### 3. Live repository tree behavior now has a bound runtime owner, but execution deprecation remains
+
+Current implementation now includes a dedicated runtime file/tree surface.
 
 Evidence:
 
+- `FileRuntime/FileRuntime.py`
+- `BoundProjectRuntime.file_runtime`
+- `ProjectRuntimeBinder` binding of `FileRuntime`
 - `repository_runtime/inspection/list_tree.py`
-- tool wrapper usage from execution
+- execution/tool wrapper usage from execution
 
 What is already supported there:
 
 - live tree traversal from the current local repository
 - repo-relative paths
 - ignore-pattern filtering
+- project-bound tree access through `FileRuntime`
 
 Conclusion:
 
 - the behavior exists
-- but it should not be treated as a ready route-facing lower layer because its current purpose is runtime/tool support
-
-## Main Mismatches and Concerns
-
-## 1. The route-serving project repository reader surface is still missing
-
-This is the clearest architectural concern.
-
-There are currently two relevant code paths:
-
-### Legacy persistence/file path
-
-- `FilesRepository`
-
-Current problem:
-
-- it is shaped like a persistence-facing object
-- even where it reads live repo state, it still communicates the wrong ownership model for MVP route-serving project reads
-- it should not be treated as the livetime server for project tree/file route expectations
-
-### Runtime/execution inspection path
-
-- `repository_runtime/inspection/list_tree.py`
-- `repository_runtime/inspection/search_text.py`
-- exposed through execution-owned tool behavior
-
-Current problem:
-
-- this path exists to let runtime/tool workflow answer model requests
-- it should not automatically become route-facing project read infrastructure
-
-### Concern
-
-The true missing piece is a **project-bound, route-serving repository read surface** for:
-
-- tree listing
-- file content reads
-- possibly project-scoped repository search later
-
-That surface should be:
-
-- project-scoped
-- passive
-- bound during runtime binding or equivalent project binding
-- not an execution/orchestrator surface
-- not a route-shaping surface
-
-Suggested direction:
-
-- treat this as a missing replacement surface, not as a reason to promote either legacy `FilesRepository` or execution/tool inspection into route ownership
-- consider attaching that surface onto `BoundProjectRuntime` or an equivalent bound project dependency holder so route-serving project reads stay project-scoped without turning runtime itself into an orchestrator
-
-## 2. Ignore-path handling is still a real concern
-
-This is a concrete mismatch, not only a theoretical one.
-
-### Runtime inspection surface
-
-- respects configured ignore patterns from `repository_tools/ignored_paths.json`
-
-### FilesRepository surface
-
-- does **not** apply the same ignore-path filtering for `list_tree(...)` or `read_file(...)`
-
-### Why this matters
-
-If future project routes are built on top of `FilesRepository` behavior before the replacement surface exists, the UI may get:
-
-- different visibility rules than execution/tool behavior
-- different file availability rules
-- weaker safety guarantees than intended route-serving project reads should have
-
-Conclusion:
-
-- current lower-layer behavior is **not yet unified**
-- any future replacement project-bound repository reader should adopt one intentional ignore-path policy
-
-## 3. Route-facing live repo reads do not yet have the right ownership model
-
-There is still a missing ownership boundary for route-serving project file/tree access.
-
-### Why this matters
-
-For MVP project workspace routes, the UI wants:
-
-- live repo tree
-- live file content
-- consistent behavior relative to the active project runtime
-
-But right now the available code paths are both wrong for route ownership:
-
-- `FilesRepository` is the wrong shape
-- runtime inspection is the wrong purpose
-
-Conclusion:
-
-- support behavior exists
-- the intended route-serving owner is still missing
-
-## 4. Branch-aware repo representation is not yet fully guaranteed for future standalone routes
-
-The system currently supports:
-
-- stored project default branch
-- runtime branch override
-- bound runtime construction with an effective branch value
-
-But that does **not** automatically mean all future route-facing repo reads are truly branch-aware.
-
-### Why
-
-The current legacy file path reads directly from `repo_path` on disk.
-
-That means:
-
-- it reads whatever the working tree currently is
-- it does not itself bind through runtime
-- it does not itself enforce branch override semantics
-
-Meanwhile:
-
-- runtime-bound repo behavior exists separately for execution/tool work
-
-Conclusion:
-
-- branch-aware route expectations are **not fully architecturally guaranteed** yet for standalone repo routes
-- this is especially relevant if future UI routes expect branch dropdown changes to affect repo tree/file responses immediately
-
-## 5. Message-history ownership is available, but split by usage style
-
-There are currently two meaningful message surfaces:
-
-### `MessagesRepository`
-
-Strength:
-
-- good fit for full ordered project history
-
-### `ExecutionPersistence`
-
-Strength:
-
-- good fit for execution-owned bounded recent history and ordered artifact persistence
-
-### Concern
-
-These are compatible, but they represent slightly different use cases:
-
-- full project history for activity/history page
-- bounded recent context for execution
-
-Conclusion:
-
-- history support exists
-- route-facing ownership still needs one clear decision:
-  - full-history route should likely align to a dedicated history-facing persistence seam
-  - execution should keep owning bounded recent-history loading for runtime behavior
+- and the intended tree/file owner now exists in the updated binding/runtime layers
+- but execution still uses direct repository inspection paths for tool behavior and remains the main file/tree deprecation to carry forward
 
 Suggested solution:
 
-- use a refactored `MessagesRepository` as the persistence owner for message storage/retrieval and route-usable history structuring
-- keep execution-oriented message behavior in `ExecutionPersistence` where ordered run persistence and bounded context still belong
-- have runtime binding attach the project-scoped message/history component onto the bound project runtime as a dependency
-- let routes consume that bound/history-facing surface rather than building separate message queries or shaping logic ad hoc
+- keep tree and file-content ownership together on `FileRuntime`
+- let `FileRuntime` keep using existing runtime repo functions without making execution/tool wrappers the ownership boundary
+- keep direct execution-owned tree/listing usage scoped to execution/tool behavior rather than treating it as the general file-serving layer
+- move future route/shared file-tree consumers onto the bound `file_runtime` surface
 
-## 6. MVP end-to-end usability still depends on joining these concerns correctly
+Remaining gaps and new deprecations to map:
 
-Even with the ownership correction above, the MVP still needs a coherent start-to-end project flow:
+- execution still uses direct `repository_runtime` inspection paths for tool-facing tree/search behavior
+- that direct execution-owned access is not wrong for execution/tool behavior, but it is now architecturally deprecated as the general owner for route-facing or shared file/tree reads
+- the new file-responsible project-bound surface is not yet documented everywhere else with enough consistency
+- routes and other internal consumers still need to adopt the same bound file surface consistently
 
-- create project
-- enter project workspace
-- load live tree
-- load live file content
-- load persisted message history
-- submit a prompt
-- persist and later re-read resulting history
+## Current MVP Impact
 
-That means the documentation should keep both truths visible:
-
-- message/history support is already relatively strong
-- route-serving project repository reads still need the correct lower-layer owner
-
-The concern is not only architectural neatness.
-
-It is also whether MVP can support a coherent usable workspace without later route rewrites.
-
-## 7. Route absence is not the same as lower-layer absence
-
-This is important enough to state explicitly.
-
-Missing routes do **not** mean missing core behavior for:
-
-- project message history
-- live repo tree
-- live file-content reading
-
-The more accurate reading is:
-
-- message-history lower support mostly exists
-- file/tree behavior exists in partial or wrong-shaped places
-- route-serving ownership decisions are the missing pieces
-
-## Current Impact on MVP UI/API Integration
-
-## Project activity/history page
+### Project activity/history page
 
 Risk level: **low to medium**
 
-Why:
-
-- data exists
-- message persistence exists
-- sequence ordering exists
-
 Main remaining concern:
 
-- choosing the intended lower-layer history surface for route exposure
+- route-facing history should align to the intended bound message surface rather than fallback seams
 
-## Project workspace tree/file region
+### Project workspace tree/file region
 
-Risk level: **medium**
-
-Why:
-
-- data exists
-- live reads exist
+Risk level: **medium to high**
 
 Main remaining concerns:
 
-- the proper route-serving project-bound repository read surface does not yet exist
-- `FilesRepository` should not silently become that livetime route-serving surface by accident
-- runtime inspection should not silently become that livetime route-serving surface by accident
-- ignore handling and branch semantics still need to be designed onto the replacement surface
-- the eventual replacement surface must still return the exact kinds of tree/file data the workspace needs, not only satisfy ownership purity
+- the intended bound file surface is still missing
+- current deprecations are easy to harden if route work starts too early
+- ignore and branch semantics still need one intended owner
 
-## Chat history inside workspace presenter
+### Chat history inside workspace presenter
 
 Risk level: **low**
 
-Why:
-
-- message data is structurally strong
-- execution already persists the needed artifacts
-
 Main remaining concern:
 
-- exposing the right route shape rather than inventing data locally in UI
-
-## Recommended Reading of the Situation
-
-The correct interpretation is:
-
-- **message history:** architecturally supported
-- **live file/tree behavior:** present, but not yet housed in the right route-serving lower-layer owner
-- **route-layer support:** incomplete
-- **replacement project-bound repository read surface:** still missing
-- **MVP concern:** both history support and repository-read support must converge into one coherent route-facing project experience
-
-So the next architectural risk is not “we lack the data.”
-
-It is:
-
-- “we may expose routes on top of legacy or wrong-purpose lower-layer behavior unless we define the correct project-bound reader surface first”
-
-## Concrete Concerns to Carry Forward
-
-1. Define a dedicated project-bound repository read surface for route-serving tree/file access.
-
-2. Keep that surface passive:
-
-- no route shaping
-- no orchestration
-- no model/tool workflow ownership
-
-3. Unify ignore-path behavior on that replacement surface.
-
-4. Clarify whether standalone repo tree/file routes must honor runtime branch override semantics.
-
-5. Keep full project history and bounded execution history conceptually separate, even if they share the same underlying `messages` table.
-
-6. Make sure the eventual replacement surface returns the real workspace-needed data shape:
-
-- tree entries
-- file content
-- line ranges / counts where needed
-- repo-relative identities
-
-7. Avoid treating current UI placeholders or current execution/tool helpers as proof that route ownership is already solved.
+- the route/lower-layer seam must match intended message ownership rather than local duplication
 
 ## Bottom Line
 
-The system is **not missing fundamental architectural support** for MVP project-page needs.
+The correct reading is:
 
-The real issues are:
+- lower capability exists
+- documented intended ownership is now clear enough to map against
+- deprecations must be recorded from that intended ownership, not inferred from current code as if current code were authoritative
 
-- the intended route-serving project-bound repository reader surface does not exist yet
-- `FilesRepository` is the wrong shape for that **livetime route-serving** responsibility
-- runtime inspection is the wrong purpose for that responsibility
-- ignore behavior and branch-aware semantics still need to be designed onto the replacement surface
-- MVP still requires those concerns to be solved in a way that supports real workspace loading, history re-reading, and prompt continuation
-- explicit route exposure should happen only after that ownership is made clear
+The main remaining work in documentation is:
 
-That is a better problem than missing core capability, but it still needs to be recorded clearly so future route work does not harden the wrong ownership boundary.
+- keep blockers, deprecations, and remaining gaps visible at the top
+- keep the message/file/tree solution context preserved lower as the source-of-truth baseline
+- keep mapping all new cross-layer deprecations caused by the intended file/message ownership model before implementation starts
