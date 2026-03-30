@@ -1,8 +1,10 @@
 from flask import Flask
+from werkzeug.debug import DebuggedApplication
 
 from webapp.config import Config
 from webapp.navigation import build_navigation_context
 from webapp.routes import register_blueprints
+from webapp.trusted_hosts import TrustedHostMiddleware
 
 
 def create_app() -> Flask:
@@ -13,6 +15,16 @@ def create_app() -> Flask:
         static_url_path="/static",
     )
     app.config.from_object(Config)
+    trusted_hosts = list(app.config["UI_TRUSTED_HOSTS"])
+
+    app.wsgi_app = TrustedHostMiddleware(app.wsgi_app, trusted_hosts)
+
+    if app.config["DEBUG"]:
+        debug_app = DebuggedApplication(app.wsgi_app, evalex=True)
+        for trusted_host in trusted_hosts:
+            if trusted_host not in debug_app.trusted_hosts:
+                debug_app.trusted_hosts.append(trusted_host)
+        app.wsgi_app = debug_app
 
     register_blueprints(app)
 

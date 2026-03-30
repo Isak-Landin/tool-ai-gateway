@@ -8,6 +8,7 @@ services:
       GATEWAY_BASE_URL: ${GATEWAY_BASE_URL:-http://host.docker.internal:4100}
       UI_HOST: 0.0.0.0
       UI_PORT: 4000
+      UI_TRUSTED_HOSTS: ${UI_TRUSTED_HOSTS:-localhost,127.0.0.1}
       FLASK_DEBUG: "true"
       PYTHONUNBUFFERED: "1"
     ports:
