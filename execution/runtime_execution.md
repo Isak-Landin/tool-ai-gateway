@@ -75,6 +75,13 @@ The MVP goal is a reliable, ordered project-scoped run with bounded context.
 - branch switching is not part of the current MVP execution tool set
 - execution returns control to the user only when the model calls `return_to_user`
 
+### Architectural drift to resolve before broader file-route work
+
+- execution currently reaches repository tree/search behavior through execution-owned runtime helpers
+- that remains valid for execution/tool behavior
+- but it should now be treated as architecturally deprecated for general file/tree serving once the dedicated bound file surface exists
+- route-facing or shared project file/tree reads should move toward the bound file-responsible surface instead of expanding direct execution ownership
+
 ## Intention
 
 The longer-term intention is broader than a single linear chat run.
@@ -117,6 +124,7 @@ Execution does not own:
 - runtime binding
 - raw persistence policy
 - HTTP response shaping
+- the general lower-layer ownership boundary for route-facing project file/tree reads
 
 ## Practical Reading
 
