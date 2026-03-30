@@ -5,17 +5,22 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/layouts/project.css') }}">
 {% endblock %}
 
+{% block page_js %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/project.js') }}"></script>
+{% endblock %}
+
 {% block app_content %}
 <section class="project-shell">
-    <header class="project-shell-header panel">
+    <header class="project-shell-header panel" data-project-shell data-project-id="{{ project_id }}">
         <div>
-            <p class="eyebrow">Project Workspace</p>
-            <h1>{{ project.name }}</h1>
+            <p class="eyebrow">{{ project_page_label }}</p>
+            <h1 data-project-name>Loading project...</h1>
+            <p class="muted" data-project-description>{{ project_page_description }}</p>
         </div>
         <div class="project-shell-meta">
-            <span class="meta-pill">Project #{{ project.project_id }}</span>
-            <span class="meta-pill">Branch {{ project.active_branch }}</span>
-            <span class="meta-pill">Model {{ project.active_model }}</span>
+            <span class="meta-pill">Project #{{ project_id }}</span>
+            <span class="meta-pill" data-project-branch-pill>Branch loading...</span>
         </div>
     </header>
 
@@ -23,7 +28,7 @@
         <aside class="project-sidebar panel">
             <nav class="project-nav" aria-label="Project navigation">
                 {% for item in project_nav %}
-                    <a href="{{ url_for(item.endpoint, project_id=project.project_id) }}">{{ item.label }}</a>
+                    <a href="{{ url_for(item.endpoint, project_id=project_id) }}">{{ item.label }}</a>
                 {% endfor %}
             </nav>
             {% block project_sidebar %}{% endblock %}

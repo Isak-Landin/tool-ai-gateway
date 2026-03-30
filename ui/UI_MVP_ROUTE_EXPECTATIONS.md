@@ -11,6 +11,7 @@ Included:
 - landing page as MVP entry
 - project collection routes
 - project workspace routes
+- post-create bootstrap guidance route
 
 Excluded for now:
 
@@ -31,6 +32,15 @@ The main backend anchors for current UI expectation are:
 - `MessagesRepository`
 - `FileRuntime`
 - `FilesRepository`
+
+## UI Implementation Direction
+
+The current intended UI implementation is:
+
+- Flask routes provide stable page shells and navigation only
+- browser-side JavaScript loads live project data from the backend API
+- page templates must not hardcode sample project, tree, file, history, model, or branch data as if it were backend truth
+- loading, empty, and error states are valid UI states; fake domain data is not
 
 ## Current Backend Data Available
 
@@ -203,6 +213,20 @@ The old assumption that the list should display a project-owned selected model i
 - `remote_repo_url`
 - `public_key`
 
+### Post-create UI expectation
+
+The UI should surface:
+
+- the returned `public_key`
+- guidance that this key belongs to project bootstrap/setup
+- a path back into project routes after creation succeeds
+
+One reasonable UI route for this is:
+
+- `/projects/bootstrap-complete`
+
+That route is a UI continuation route. It does not require a separate backend API route.
+
 ## 4. Project Workspace
 
 ### UI route
@@ -291,6 +315,7 @@ Current intended behavior:
 For MVP simplicity right now:
 
 - the UI may provide a static model-option list locally
+- those options should be treated as UI-owned run controls, not backend-backed project metadata
 
 Longer-term intended direction:
 
@@ -381,6 +406,7 @@ Must MVP routes:
 
 - `/projects`
 - `/projects/new`
+- `/projects/bootstrap-complete`
 
 ### `ui/webapp/routes/project/`
 
