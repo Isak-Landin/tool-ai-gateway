@@ -64,6 +64,8 @@ The MVP goal is a reliable, ordered project-scoped run with bounded context.
 - execution must load recent project messages as bounded run context
 - execution must persist user, assistant, and tool artifacts in ordered sequence
 - persisted message artifacts must retain the actual `ai_model_name` used for the run so model choice remains historically visible even if later runs use a different model
+- execution keeps ownership of bounded recent-history limits, next-sequence loading, and ordered artifact writes through `ExecutionPersistence`
+- a future bound message surface should not take over execution's context-limit policy
 
 ### Current MVP Selected Context Rule
 
