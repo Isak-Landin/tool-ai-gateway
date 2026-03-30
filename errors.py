@@ -13,6 +13,11 @@ class FileProcessingError(Exception):
     pass
 
 
+class FileRuntimeError(Exception):
+    """Project-bound file runtime error"""
+    pass
+
+
 class GitHubError(Exception):
     """Git operation error"""
     def __init__(self, message: str):
