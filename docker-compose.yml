@@ -8,11 +8,11 @@ services:
       - ./.env
     environment:
       PYTHONUNBUFFERED: "1"
-      PROJECTS_ROOT: ${PROJECTS_ROOT}
+      PROJECTS_ROOT: ${PROJECTS_ROOT:-/srv/tool-ai-gateway/projects}
     ports:
       - "${GATEWAY_PORT}:${GATEWAY_PORT}"
     volumes:
-      - ${PROJECTS_ROOT}:${PROJECTS_ROOT}
+      - ${PROJECTS_HOST_ROOT:-/mnt/tool-ai-gateway/projects}:${PROJECTS_ROOT:-/srv/tool-ai-gateway/projects}
     restart: unless-stopped
     depends_on:
       - gateway-db
