@@ -27,8 +27,10 @@ The main backend anchors for current UI expectation are:
 - `ProjectResolver`
 - `ProjectRuntimeBinder`
 - `BoundProjectRuntime`
+- `MessageRuntime`
 - `ExecutionPersistence`
 - `MessagesRepository`
+- `FileRuntime`
 - `FilesRepository`
 - repository inspection helpers
 
@@ -78,6 +80,11 @@ Message data currently appears to support:
 - `raw_message_json`
 - `raw_response_json`
 - `created_at`
+
+Message ownership expectation:
+
+- execution still uses `ExecutionPersistence` for bounded recent-history loading and ordered artifact writes during runs
+- route/shared history reads should move toward a bound project-scoped message surface that reuses `MessagesRepository`
 
 ### Repository/file data
 

@@ -262,6 +262,8 @@ The UI should assume:
 - message persistence matters
 - assistant outputs and tool artifacts form an ordered project history
 - the actual `ai_model_name` used for a response belongs in message history
+- execution owns bounded recent-history use during runs
+- route/shared history views should rely on a project-scoped message-serving surface rather than execution-only persistence paths
 
 This supports:
 
