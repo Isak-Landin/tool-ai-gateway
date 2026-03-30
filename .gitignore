@@ -1,3 +1,6 @@
+# Local temporary documententation
+ARCHITECTURAL_MISMATCHES_AND_CONCERNS.md
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
