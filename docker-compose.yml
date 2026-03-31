@@ -27,7 +27,7 @@ services:
     env_file:
       - ./.env
     environment:
-      GATEWAY_BASE_URL: ${GATEWAY_BASE_URL}
+      GATEWAY_URL: ${GATEWAY_URL}
       UI_HOST: ${UI_HOST}
       UI_PORT: ${UI_PORT}
       UI_TRUSTED_HOSTS: ${UI_TRUSTED_HOSTS:-localhost,127.0.0.1}
