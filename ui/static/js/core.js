@@ -22,6 +22,7 @@ document.documentElement.classList.add('js');
         requestOptions.headers = headers;
 
         const response = await fetch(buildApiUrl(path), requestOptions);
+        console.log(response)
         const rawText = await response.text();
         let payload = null;
 
