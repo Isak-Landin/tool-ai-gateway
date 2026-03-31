@@ -20,7 +20,16 @@ def _get_allowed_origins() -> list[str]:
     if not configured_origins:
         return []
 
-    return [origin.strip() for origin in configured_origins.split(",") if origin.strip()]
+    origin_list = []
+    for origin in configured_origins.split(","):
+        origin_str = origin.strip()
+        origin_list = origin_str.split(",")
+
+        origin_all_routes_list = [_origin + "/*" for _origin in origin_list]
+        for _origin in origin_all_routes_list:
+            origin_list.append(_origin.strip())
+
+    return origin_list
 
 
 def create_app() -> FastAPI:
