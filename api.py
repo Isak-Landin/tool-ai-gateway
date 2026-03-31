@@ -18,18 +18,10 @@ def _get_allowed_origins() -> list[str]:
     """
     configured_origins = str(os.getenv("CORS_ALLOWED_ORIGINS", "")).strip()
     if not configured_origins:
+        print("Did not properly configure CORS_ALLOWED_ORIGINS")
         return []
 
-    origin_list = []
-    for origin in configured_origins.split(","):
-        origin_str = origin.strip()
-        origin_list = origin_str.split(",")
-
-        origin_all_routes_list = [_origin + "/*" for _origin in origin_list]
-        for _origin in origin_all_routes_list:
-            origin_list.append(_origin.strip())
-
-    return origin_list
+    return [origin.strip() for origin in configured_origins.split(",") if origin.strip()]
 
 
 def create_app() -> FastAPI:
@@ -41,11 +33,11 @@ def create_app() -> FastAPI:
     Returns:
         FastAPI: Configured API application with routes, handlers, and CORS middleware.
     """
-    app = FastAPI(title="AI Tool Gateway API")
+    _app = FastAPI(title="AI Tool Gateway API")
     register_exception_handlers(app)
-    app.include_router(api_router)
+    _app.include_router(api_router)
 
-    app.add_middleware(
+    _app.add_middleware(
         CORSMiddleware,
         allow_origins=_get_allowed_origins(),
         allow_credentials=True,
@@ -53,7 +45,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    return app
+    return _app
 
 
 app = create_app()
