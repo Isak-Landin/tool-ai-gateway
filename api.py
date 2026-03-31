@@ -21,7 +21,9 @@ def _get_allowed_origins() -> list[str]:
         print("Did not properly configure CORS_ALLOWED_ORIGINS")
         return []
 
-    return [origin.strip() for origin in configured_origins.split(",") if origin.strip()]
+    list_of_origins = [origin.strip() for origin in configured_origins.split(",") if origin.strip()]
+    print("Origins: ", list_of_origins)
+    return list_of_origins
 
 
 def create_app() -> FastAPI:
@@ -34,7 +36,7 @@ def create_app() -> FastAPI:
         FastAPI: Configured API application with routes, handlers, and CORS middleware.
     """
     _app = FastAPI(title="AI Tool Gateway API")
-    register_exception_handlers(app)
+    register_exception_handlers(_app)
     _app.include_router(api_router)
 
     _app.add_middleware(
