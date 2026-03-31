@@ -312,6 +312,7 @@ main() {
   log "Ollama API: http://$(hostname -I | awk '{print $1}'):${OLLAMA_PORT}"
   log "Model installed: ${OLLAMA_MODEL}"
 
+  docker container restart portainer
   print_github_public_key_last
 }
 
