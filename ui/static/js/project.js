@@ -25,6 +25,11 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     initializeProjectPage(ui, page, state).catch((error) => {
+        if (redirectForMissingProject(error)) {
+            return;
+        }
+
+        renderProjectLoadFailure(page, error);
         console.error(error);
     });
 });
@@ -47,6 +52,41 @@ async function initializeProjectPage(ui, page, state) {
     if (pageType === "settings") {
         await initializeSettingsPage(ui, page, state);
     }
+}
+
+function redirectForMissingProject(error) {
+    if (error?.status !== 404) {
+        return false;
+    }
+
+    window.location.replace("/404");
+    return true;
+}
+
+function renderProjectLoadFailure(page, error) {
+    const message = getErrorMessage(error, "Failed to load project.");
+
+    document.querySelectorAll("[data-project-name]").forEach((node) => {
+        node.textContent = "Project unavailable";
+    });
+
+    document.querySelectorAll("[data-project-branch-pill]").forEach((node) => {
+        node.textContent = "Unavailable";
+    });
+
+    [
+        "[data-run-status]",
+        "[data-tree-status]",
+        "[data-file-status]",
+        "[data-chat-status]",
+        "[data-activity-status]",
+        "[data-project-settings-status]",
+    ].forEach((selector) => {
+        const node = page.querySelector(selector);
+        if (node) {
+            setStatus(node, "error", message);
+        }
+    });
 }
 
 async function loadProjectShell(ui, state) {
