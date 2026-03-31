@@ -10,25 +10,25 @@
         </div>
     </div>
 
-    <div class="panel-status panel-status-loading" data-project-settings-status>Loading project settings...</div>
+    <div class="panel-status panel-status-success" data-project-settings-status>Project settings loaded.</div>
 
     <form class="form-grid settings-form" data-project-settings-form>
         <label>
             <span>Project name</span>
-            <input type="text" data-project-name-input name="name" autocomplete="off" required>
+            <input type="text" data-project-name-input name="name" value="{{ project.name or '' }}" autocomplete="off" required>
         </label>
         <label>
             <span>Default branch</span>
-            <input type="text" data-project-branch-input name="branch" autocomplete="off" required>
+            <input type="text" data-project-branch-input name="branch" value="{{ project.branch or 'main' }}" autocomplete="off" required>
         </label>
         <div class="settings-meta-grid">
             <div class="panel settings-meta-card">
                 <p class="eyebrow">Created</p>
-                <p data-project-created-at>Loading...</p>
+                <p data-project-created-at>{{ project.created_at|datetime }}</p>
             </div>
             <div class="panel settings-meta-card">
                 <p class="eyebrow">Updated</p>
-                <p data-project-updated-at>Loading...</p>
+                <p data-project-updated-at>{% if project.updated_at %}{{ project.updated_at|datetime }}{% else %}Not updated yet{% endif %}</p>
             </div>
         </div>
         <div class="button-row">

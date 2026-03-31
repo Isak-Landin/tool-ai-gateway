@@ -1,12 +1,22 @@
 document.documentElement.classList.add('js');
 
 (() => {
-    const rawConfig = window.__AI_TOOL_GATEWAY_UI_CONFIG__ || {};
-    const gatewayBaseUrl = String(rawConfig.gatewayBaseUrl || '').replace(/\/+$/, '');
+    function readPageData() {
+        const node = document.getElementById("ai-tool-gateway-page-data");
+        if (!node) {
+            return {};
+        }
 
-    function buildApiUrl(path) {
+        try {
+            return JSON.parse(node.textContent || "{}");
+        } catch (_error) {
+            return {};
+        }
+    }
+
+    function buildUiApiUrl(path) {
         const normalizedPath = String(path || '').startsWith("/") ? String(path || "") : `/${String(path || "")}`;
-        return `${gatewayBaseUrl}${normalizedPath}`;
+        return `/ui/api${normalizedPath}`;
     }
 
     async function requestJson(path, options = {}) {
@@ -21,8 +31,7 @@ document.documentElement.classList.add('js');
 
         requestOptions.headers = headers;
 
-        const response = await fetch(buildApiUrl(path), requestOptions);
-        console.log(response)
+        const response = await fetch(buildUiApiUrl(path), requestOptions);
         const rawText = await response.text();
         let payload = null;
 
@@ -66,9 +75,10 @@ document.documentElement.classList.add('js');
 
     window.AIToolGatewayUI = {
         config: {
-            gatewayBaseUrl,
+            uiApiBaseUrl: "/ui/api",
         },
-        buildApiUrl,
+        pageData: readPageData(),
+        buildUiApiUrl,
         requestJson,
         formatDate,
     };

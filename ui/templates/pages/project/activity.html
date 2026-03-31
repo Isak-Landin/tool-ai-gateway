@@ -10,8 +10,42 @@
         </div>
     </div>
 
-    <div class="panel-status panel-status-loading" data-activity-status>Loading project history...</div>
-    <div class="panel empty-state" data-activity-empty hidden>No project history exists yet.</div>
-    <div class="chat-history-stack" data-activity-history hidden></div>
+    {% if chat_error_message %}
+    <div class="panel-status panel-status-error" data-activity-status>{{ chat_error_message }}</div>
+    {% elif chat_messages %}
+    <div class="panel-status panel-status-success" data-activity-status>{{ chat_messages|length }} message{{ "" if chat_messages|length == 1 else "s" }} loaded.</div>
+    {% else %}
+    <div class="panel-status panel-status-empty" data-activity-status>No project history exists yet.</div>
+    {% endif %}
+
+    <div class="panel empty-state" data-activity-empty {% if chat_messages %}hidden{% endif %}>No project history exists yet.</div>
+    <div class="chat-history-stack" data-activity-history {% if not chat_messages %}hidden{% endif %}>
+        {% for message in chat_messages %}
+        <article class="chat-entry chat-entry-{{ message.role or 'message' }}">
+            <header class="chat-entry-header">
+                <div class="chat-entry-meta">
+                    <strong>{{ (message.role or "message") ~ " #" ~ message.sequence_no }}</strong>
+                    <span class="muted">{{ message.created_at|datetime }}</span>
+                </div>
+                <span class="chat-entry-state">
+                    {% if message.ai_model_name %}Model {{ message.ai_model_name }}{% else %}Project history{% endif %}
+                </span>
+            </header>
+            <p class="chat-entry-content">{{ message.content or "(No text content)" }}</p>
+            {% if message.thinking %}
+            <div class="thought-block">
+                <p class="thought-label">Model thought</p>
+                <p class="thought-content">{{ message.thinking }}</p>
+            </div>
+            {% endif %}
+            {% if message.tool_name or message.done_reason %}
+            <div class="message-detail-row">
+                {% if message.tool_name %}<span class="meta-pill">Tool {{ message.tool_name }}</span>{% endif %}
+                {% if message.done_reason %}<span class="meta-pill">Done {{ message.done_reason }}</span>{% endif %}
+            </div>
+            {% endif %}
+        </article>
+        {% endfor %}
+    </div>
 </section>
 {% endblock %}

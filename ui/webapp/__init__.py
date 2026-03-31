@@ -2,6 +2,7 @@ from flask import Flask
 from werkzeug.debug import DebuggedApplication
 
 from webapp.config import Config
+from webapp.formatting import format_timestamp
 from webapp.navigation import build_navigation_context
 from webapp.routes import register_blueprints
 from webapp.trusted_hosts import TrustedHostMiddleware
@@ -15,6 +16,7 @@ def create_app() -> Flask:
         static_url_path="/static",
     )
     app.config.from_object(Config)
+    app.jinja_env.filters["datetime"] = format_timestamp
     trusted_hosts = list(app.config["UI_TRUSTED_HOSTS"])
 
     app.wsgi_app = TrustedHostMiddleware(app.wsgi_app, trusted_hosts)
@@ -32,7 +34,6 @@ def create_app() -> Flask:
     def inject_shell_context():
         context = build_navigation_context()
         context["app_name"] = app.config["APP_NAME"]
-        context["gateway_base_url"] = app.config["GATEWAY_BASE_URL"]
         return context
 
     return app

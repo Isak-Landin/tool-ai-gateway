@@ -15,12 +15,12 @@
     <header class="project-shell-header panel" data-project-shell data-project-id="{{ project_id }}">
         <div>
             <p class="eyebrow">{{ project_page_label }}</p>
-            <h1 data-project-name>Loading project...</h1>
+            <h1 data-project-name>{{ project.name or ("Project #" ~ project_id) }}</h1>
             <p class="muted" data-project-description>{{ project_page_description }}</p>
         </div>
         <div class="project-shell-meta">
             <span class="meta-pill">Project #{{ project_id }}</span>
-            <span class="meta-pill" data-project-branch-pill>Branch loading...</span>
+            <span class="meta-pill" data-project-branch-pill>Branch {{ project.branch or "main" }}</span>
         </div>
     </header>
 

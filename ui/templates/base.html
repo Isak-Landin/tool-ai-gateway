@@ -13,9 +13,9 @@
 </head>
     <body class="{% block body_class %}theme-shell{% endblock %}">
         {% block shell %}{% endblock %}
-    <script>
-        window.__AI_TOOL_GATEWAY_UI_CONFIG__ = {{ {"gatewayBaseUrl": gateway_base_url}|tojson }};
-    </script>
+    {% if ui_page_data is defined %}
+    <script id="ai-tool-gateway-page-data" type="application/json">{{ ui_page_data|tojson }}</script>
+    {% endif %}
     <script src="{{ url_for('static', filename='js/core.js') }}"></script>
     {% block page_js %}{% endblock %}
 </body>

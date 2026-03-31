@@ -11,17 +11,23 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
+    const pageData = ui.pageData || {};
+    const initialProject = pageData.project || null;
+    if (!initialProject) {
+        return;
+    }
+
     const state = {
         projectId,
-        project: null,
-        branch: "",
-        models: [],
-        defaultModel: "",
-        defaultSelection: "auto",
-        treeEntries: [],
+        project: initialProject,
+        branch: initialProject.branch || "main",
+        models: Array.isArray(pageData.models) ? pageData.models : [],
+        defaultModel: String(pageData.defaultModel || "").trim(),
+        defaultSelection: String(pageData.defaultSelection || "auto").trim() || "auto",
+        treeEntries: Array.isArray(pageData.treeEntries) ? pageData.treeEntries : [],
         collapsedDirs: new Set(),
         selectedFiles: new Set(),
-        currentFilePath: null,
+        currentFilePath: pageData.currentFilePath || null,
     };
 
     initializeProjectPage(ui, page, state).catch((error) => {
@@ -36,8 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function initializeProjectPage(ui, page, state) {
     const pageType = page.dataset.projectPage;
-
-    await loadProjectShell(ui, state);
+    applyProjectShell(state.project);
 
     if (pageType === "workspace") {
         await initializeWorkspacePage(ui, page, state);
@@ -89,14 +94,6 @@ function renderProjectLoadFailure(page, error) {
     });
 }
 
-async function loadProjectShell(ui, state) {
-    const project = await ui.requestJson(`/projects/${state.projectId}`);
-    state.project = project;
-    state.branch = project.branch || "main";
-    applyProjectShell(project);
-    return project;
-}
-
 function applyProjectShell(project) {
     document.querySelectorAll("[data-project-name]").forEach((node) => {
         node.textContent = project.name || `Project #${project.project_id}`;
@@ -119,7 +116,7 @@ async function initializeWorkspacePage(ui, page, state) {
         branchInput.value = state.branch;
     }
     setActivePresenter(page, "file");
-    await loadModelOptions(ui, page, state, modelSelect);
+    hydrateModelOptions(page, state, modelSelect);
 
     presenterButtons.forEach((button) => {
         button.addEventListener("click", () => {
@@ -195,22 +192,10 @@ async function initializeWorkspacePage(ui, page, state) {
         });
     }
 
-    await Promise.all([
-        loadWorkspaceTree(ui, page, state),
-        loadMessages(ui, page, state, {
-            containerSelector: "[data-chat-history]",
-            statusSelector: "[data-chat-status]",
-            emptySelector: "[data-chat-empty]",
-        }),
-    ]);
 }
 
 async function initializeActivityPage(ui, page, state) {
-    await loadMessages(ui, page, state, {
-        containerSelector: "[data-activity-history]",
-        statusSelector: "[data-activity-status]",
-        emptySelector: "[data-activity-empty]",
-    });
+    applyProjectShell(state.project);
 }
 
 async function initializeSettingsPage(ui, page, state) {
@@ -221,8 +206,7 @@ async function initializeSettingsPage(ui, page, state) {
     const createdAtNode = page.querySelector("[data-project-created-at]");
     const updatedAtNode = page.querySelector("[data-project-updated-at]");
 
-    fillSettingsPage(ui, state.project, nameInput, branchInput, createdAtNode, updatedAtNode);
-    setStatus(statusNode, "success", "Project settings loaded.");
+    applyProjectShell(state.project);
 
     if (!form) {
         return;
@@ -247,6 +231,9 @@ async function initializeSettingsPage(ui, page, state) {
             fillSettingsPage(ui, payload, nameInput, branchInput, createdAtNode, updatedAtNode);
             setStatus(statusNode, "success", "Project settings saved.");
         } catch (error) {
+            if (redirectForMissingProject(error)) {
+                return;
+            }
             setStatus(statusNode, "error", getErrorMessage(error, "Failed to save project settings."));
         }
     });
@@ -267,33 +254,21 @@ function fillSettingsPage(ui, project, nameInput, branchInput, createdAtNode, up
     }
 }
 
-async function loadModelOptions(ui, page, state, selectNode) {
+function hydrateModelOptions(page, state, selectNode) {
     const statusNode = page.querySelector("[data-run-status]");
     if (!selectNode) {
         return;
     }
 
-    try {
-        const payload = await ui.requestJson("/models");
-        state.models = Array.isArray(payload?.models) ? payload.models : [];
-        state.defaultModel = String(payload?.default_model || "").trim();
-        state.defaultSelection = String(payload?.default_selection || "auto").trim() || "auto";
-
-        if (!state.models.length) {
-            throw new Error("Backend returned no model options.");
-        }
-
+    if (state.models.length) {
         selectNode.disabled = false;
         populateModelOptions(selectNode, state.models, state.defaultSelection);
         setStatus(statusNode, "muted", `Using backend model catalog. Auto resolves to ${state.defaultModel}.`);
-    } catch (error) {
-        state.models = [];
-        state.defaultModel = "";
-        state.defaultSelection = "auto";
-        selectNode.disabled = true;
-        selectNode.replaceChildren(buildUnavailableModelOption());
-        setStatus(statusNode, "error", getErrorMessage(error, "Failed to load backend model options."));
+        return;
     }
+
+    selectNode.disabled = true;
+    selectNode.replaceChildren(buildUnavailableModelOption());
 }
 
 function buildUnavailableModelOption() {
@@ -349,6 +324,9 @@ async function loadWorkspaceTree(ui, page, state) {
             setStatus(statusNode, "empty", "No repository entries are available for this branch yet.");
         }
     } catch (error) {
+        if (redirectForMissingProject(error)) {
+            return;
+        }
         state.treeEntries = [];
         renderTree(page, state);
         clearFileView(page);
@@ -455,6 +433,9 @@ async function loadFile(ui, page, state, filePath, focusLine) {
         renderFileView(page, payload, focusLine);
         setStatus(statusNode, "success", `Loaded ${payload.path}.`);
     } catch (error) {
+        if (redirectForMissingProject(error)) {
+            return;
+        }
         clearFileView(page);
         setStatus(statusNode, "error", getErrorMessage(error, "Failed to load file content."));
     }
@@ -566,6 +547,9 @@ async function runRepositorySearch(ui, page, state) {
             matches.length ? `${matches.length} search result${matches.length === 1 ? "" : "s"} loaded.` : "No repository matches found."
         );
     } catch (error) {
+        if (redirectForMissingProject(error)) {
+            return;
+        }
         resultsNode.replaceChildren();
         resultsNode.hidden = true;
         emptyNode.hidden = false;
@@ -619,6 +603,9 @@ async function loadMessages(ui, page, state, options) {
             messages.length ? `${messages.length} message${messages.length === 1 ? "" : "s"} loaded.` : "No project history exists yet."
         );
     } catch (error) {
+        if (redirectForMissingProject(error)) {
+            return;
+        }
         containerNode.replaceChildren();
         containerNode.hidden = true;
         emptyNode.hidden = false;
@@ -767,6 +754,9 @@ async function runProjectChat(ui, page, state) {
         });
         setStatus(statusNode, "success", "Project chat run completed.");
     } catch (error) {
+        if (redirectForMissingProject(error)) {
+            return;
+        }
         setStatus(statusNode, "error", getErrorMessage(error, "Project chat run failed."));
     } finally {
         if (submitButton) {
@@ -786,7 +776,7 @@ function setStatus(node, tone, message) {
     }
 
     node.hidden = false;
-    node.className = tone === "muted" ? "panel-status" : `panel-status panel-status-${tone}`;
+    node.className = tone === "muted" ? "panel-status panel-status-muted" : `panel-status panel-status-${tone}`;
     node.textContent = message;
 }
 

@@ -6,8 +6,10 @@ from webapp.routes.project import project_bp
 from webapp.routes.projects import projects_bp
 from webapp.routes.public import public_bp
 from webapp.routes.support import support_bp
+from webapp.routes.ui_api import ui_api_bp
 
 BLUEPRINTS = (
+    ui_api_bp,
     public_bp,
     app_pages_bp,
     projects_bp,
