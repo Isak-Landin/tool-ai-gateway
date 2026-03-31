@@ -38,7 +38,7 @@ def create_app() -> FastAPI:
     _app = FastAPI(title="AI Tool Gateway API")
     register_exception_handlers(_app)
     _app.include_router(api_router)
-
+    """
     _app.add_middleware(
         CORSMiddleware,
         allow_origins=_get_allowed_origins(),
@@ -46,7 +46,15 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-
+    """
+    # ---- Debugging cause behind forbidden cors for /project/new
+    _app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     return _app
 
 
