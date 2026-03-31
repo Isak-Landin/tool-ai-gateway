@@ -47,7 +47,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     """
-    # ---- Debugging cause behind forbidden cors for /project/new
+    # ---- Debugging cause behind forbidden cors for /project/new ---- #
     _app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
