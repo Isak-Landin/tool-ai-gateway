@@ -17,7 +17,7 @@ OLLAMA_CONTAINER_NAME="ollama"
 OLLAMA_IMAGE="ollama/ollama:latest"
 OLLAMA_VOLUME="ollama"
 OLLAMA_PORT="11434"
-OLLAMA_MODEL="qwen3:8b"
+OLLAMA_MODEL="qwen3.5:9b"
 
 GITHUB_REPO_SSH_URL="git@github.com:Isak-Landin/tool-ai-gateway.git"
 GITHUB_CLONE_DIR="/opt/tool-ai-gateway"
