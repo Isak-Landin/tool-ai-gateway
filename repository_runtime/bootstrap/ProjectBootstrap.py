@@ -9,6 +9,9 @@ from repository_runtime.shell import ProjectShell
 
 class ProjectBootstrap:
     """Own filesystem and key-generation bootstrap work for new projects."""
+    # TODO: Is currently missing the post key generation bootstrap logic.
+    #  The follow-up logic should be run when the user is finished adding the ssh-key to
+    #  their corresponding GitHub repo.
 
     def __init__(self, shell: ProjectShell | None = None):
         """Create the project bootstrap helper.
@@ -208,6 +211,9 @@ class ProjectBootstrap:
             )
 
         return public_key
+
+    def clone_repo_into_project_root(self, project_root: Path, ) -> None:
+
 
     def cleanup_project_storage(self, project_root: Path | None) -> None:
         """Best-effort cleanup for partially created project storage.
