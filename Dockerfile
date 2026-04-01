@@ -18,6 +18,8 @@ COPY requirements.txt /app/requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir -r /app/requirements.txt
 
+ARG SOURCE_EPOCH=0
+
 COPY api.py /app/api.py
 COPY api_routes /app/api_routes
 COPY ProjectResolver /app/ProjectResolver
