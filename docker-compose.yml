@@ -1,4 +1,18 @@
 services:
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: tool-gateway-nginx
+    depends_on:
+      - tool-gateway
+      - tool-gateway-ui
+    ports:
+      - "3000:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    restart: unless-stopped
+    networks:
+      - web_network
+
   tool-gateway:
     build:
       context: .
@@ -9,8 +23,6 @@ services:
     environment:
       PYTHONUNBUFFERED: "1"
       PROJECTS_ROOT: ${PROJECTS_ROOT:-/srv/tool-ai-gateway/projects}
-    ports:
-      - "${GATEWAY_PORT}:${GATEWAY_PORT}"
     volumes:
       - ${PROJECTS_HOST_ROOT:-/mnt/tool-ai-gateway/projects}:${PROJECTS_ROOT:-/srv/tool-ai-gateway/projects}
     restart: unless-stopped
@@ -32,8 +44,6 @@ services:
       UI_PORT: ${UI_PORT}
       UI_TRUSTED_HOSTS: ${UI_TRUSTED_HOSTS:-localhost,127.0.0.1}
       PYTHONUNBUFFERED: "1"
-    ports:
-      - "${UI_PORT}:${UI_PORT}"
     restart: unless-stopped
     depends_on:
       - tool-gateway
