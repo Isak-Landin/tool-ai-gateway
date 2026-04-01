@@ -56,7 +56,16 @@ def _build_project_storage_paths(project_id: int, project_name: str) -> dict[str
         project_name: Human-readable project name used in the storage slug.
 
     Returns:
-        dict[str, Path]: Named filesystem paths required for project bootstrap.
+        dict[str, Path]: Named filesystem paths required for project bootstrap. Referenced internally as project_path:
+        {
+            "projects_root": projects_root,
+            "project_root": project_root,
+            "repo_path": project_root / "repo",
+            "ssh_directory": ssh_directory,
+            "private_key_path": ssh_directory / "id_ed25519",
+            "public_key_path": ssh_directory / "id_ed25519.pub",
+        }
+
     """
     if project_id is None:
         raise ProjectPersistenceError(
