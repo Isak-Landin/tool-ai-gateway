@@ -64,6 +64,14 @@ class ProjectBootstrap:
 
         Args:
             project_paths: Precomputed project storage paths keyed by storage role.
+            {
+                "projects_root": projects_root,
+                "project_root": project_root,
+                "repo_path": project_root / "repo",
+                "ssh_directory": ssh_directory,
+                "private_key_path": ssh_directory / "id_ed25519",
+                "public_key_path": ssh_directory / "id_ed25519.pub",
+            }
 
         Returns:
             None: Required directories are created in place or a bootstrap error is raised.
@@ -213,7 +221,18 @@ class ProjectBootstrap:
         return public_key
 
     def clone_repo_into_project_root(self, project_root: Path, ) -> None:
+        """
+        Dev documentation:
+        The intention of this method is to be used once the user has completed the creation process.
+        This is intended to be called on once the user clicks to continue to workspace and have confirmed that they
+        have registered their ssh key in the repo they have linked. To achieve this simple, we make some mental notes below:
 
+        Must have:
+        Git relevant object - does git require any other layer as a middle man?
+        
+        :param project_root:
+        :return:
+        """
 
     def cleanup_project_storage(self, project_root: Path | None) -> None:
         """Best-effort cleanup for partially created project storage.
