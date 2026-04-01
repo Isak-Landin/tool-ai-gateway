@@ -78,7 +78,15 @@ def create_project(req: ProjectCreateRequest) -> ProjectCreateResponse | JSONRes
             name=req.name,
             remote_repo_url=req.remote_repo_url,
         )
-        print(new_project)
+        """
+        new_project contains:
+        {
+            "project_id": new_project.project_id,
+            "name": new_project.name,
+            "remote_repo_url": new_project.remote_repo_url,
+            "public_key": public_key,
+        }
+        """
         return ProjectCreateResponse(ok=True, **new_project)
     except ProjectPersistenceError as error:
         return persistence_error_response("POST /projects", error)
