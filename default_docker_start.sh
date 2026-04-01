@@ -1,0 +1,1 @@
+git pull origin && docker compose down && docker comopose build --no-cache && docker compose up -d
