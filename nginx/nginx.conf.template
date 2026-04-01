@@ -11,7 +11,7 @@ http {
 
     server {
         listen 80;
-        server_name tool-ui.isaklandin.com www.tool-ui.isaklandin.com;
+        server_name ${UI_PUBLIC_HOST} www.${UI_PUBLIC_HOST};
 
         location / {
             proxy_pass http://tool_gateway_ui;
@@ -25,7 +25,7 @@ http {
 
     server {
         listen 80;
-        server_name tool-api.isaklandin.com www.tool-api.isaklandin.com;
+        server_name ${API_PUBLIC_HOST} www.${API_PUBLIC_HOST};
 
         location / {
             proxy_pass http://tool_gateway_api;
