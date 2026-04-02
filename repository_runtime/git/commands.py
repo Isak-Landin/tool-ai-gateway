@@ -1,3 +1,45 @@
+"""
+Internal rules for git command helpers.
+
+Ownership:
+- This file owns git-specific validation, command assembly, and git-shaped error
+  translation for shell-backed repository transport work.
+- This file does not own shell creation, shell lifetime, cwd ownership, or repo
+  path resolution.
+
+Rule-set split:
+- Internal helper rules apply to low-level shared helpers such as `run_git(...)`.
+- Encapsulated/public helper rules apply to exposed git use-case helpers such as
+  `git_pull(...)`, `git_push(...)`, `git_add(...)`, `git_commit(...)`,
+  `git_switch_branch(...)`, and `clone_repo(...)`.
+- Encapsulated/public helpers must explicitly follow and compose the relevant
+  internal helper rule set. They may add use-case-specific validation or staged
+  fallback behavior, but they must not bypass the declared internal helper order.
+
+Internal helper rules:
+- Keep dependency validation, transport preparation, command building, command
+  execution, and error translation as separate visible steps.
+- Do not compact required stages into chained expressions.
+- Shell-backed git execution must use this order:
+  1. `_require_shell(...)`
+  2. `shell.ensure_working_directory()`
+  3. optional use-case validation owned by the current helper
+  4. optional `_require_key_path(...)` for remote transport
+  5. optional `shell.ensure_ssh_key_loaded(...)` for remote transport
+  6. `_quote_args(["git", ...])`
+  7. `shell.run(...)`
+  8. translate non-zero exit to `GitHubError`
+
+Encapsulated/public helper rules:
+- Normal git command helpers should delegate to `run_git(...)` instead of
+  restaging the shared internal flow.
+- Encapsulated helpers may stage extra logic before/after `run_git(...)` only
+  when that behavior is part of the use case, for example branch-name
+  normalization, fallback checkout behavior, or result shaping.
+- If an encapsulated helper cannot use `run_git(...)`, it must restage the same
+  internal rule order inline instead of inventing a different execution flow.
+"""
+
 import shlex
 
 from errors import GitHubError
@@ -25,6 +67,7 @@ def _require_key_path(key_path: str | None) -> str:
 def run_git(shell_executor, args, require_key: bool = False, key_path: str | None = None):
     try:
         shell = _require_shell(shell_executor)
+        shell.ensure_working_directory()
 
         if require_key:
             required_key_path = _require_key_path(key_path)
@@ -121,6 +164,7 @@ def git_commit(shell_executor, message="+"):
 def clone_repo(shell_executor, remote_repo_url: str, target_path: str, key_path: str | None = None):
     try:
         shell = _require_shell(shell_executor)
+        shell.ensure_working_directory()
         required_key_path = _require_key_path(key_path)
         shell.ensure_ssh_key_loaded(required_key_path)
 

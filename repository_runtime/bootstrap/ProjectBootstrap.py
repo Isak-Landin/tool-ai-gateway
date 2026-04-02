@@ -1,3 +1,49 @@
+"""
+Internal rules for bootstrap stage helpers.
+
+Ownership:
+- This file owns reusable bootstrap-stage helpers that operate on caller-resolved
+  paths and caller-owned shell dependencies.
+- This file owns stage-local filesystem preparation, stage-local shell-backed
+  work, and stage-local cleanup for bootstrap failures.
+- This file does not own project-row persistence, project-path derivation, shell
+  creation, or route/UI progression decisions.
+
+Rule-set split:
+- Internal helper rules apply to shared bootstrap primitives such as command
+  execution, stage-local storage preparation, stage-local key generation, and
+  stage-local cleanup.
+- Encapsulated/public helper rules apply to bootstrap stage entrypoints such as
+  `bootstrap_project_step_one(...)` and other stage entrypoints defined in this
+  file.
+
+Internal helper rules:
+- Shell-backed helpers must use this order:
+  1. `_require_shell(...)`
+  2. `shell.ensure_working_directory()`
+  3. `_quote_args(...)`
+  4. `shell.run(...)`
+  5. translate failures to `ProjectBootstrapError`
+- Filesystem helpers should create and verify only the stage-owned paths required
+  by the current bootstrap work.
+- Cleanup helpers should remove only the stage-owned filesystem state that the
+  current stage created.
+- Internal helpers must stay reusable across bootstrap stage entrypoints and must
+  not derive caller-owned values such as resolved project paths or shell
+  instances.
+
+Encapsulated/public helper rules:
+- Each bootstrap stage entrypoint should compose only the internal helpers
+  required for that stage's use case.
+- Each bootstrap stage entrypoint should accept caller-owned dependencies and
+  resolved values explicitly rather than deriving them internally.
+- Each bootstrap stage entrypoint owns stage-level cleanup and error propagation
+  for the internal helpers it composes.
+- Entry points for remote-repository interaction stages should compose the
+  corresponding shell/key-preparation internal helpers instead of introducing a
+  different execution order.
+"""
+
 import os
 import shlex
 import shutil
@@ -32,6 +78,7 @@ def _run_command(
     error_type: str,
 ) -> str:
     required_shell = _require_shell(shell)
+    required_shell.ensure_working_directory()
     command = _quote_args(args)
     code, output = required_shell.run(command)
     if code != 0:

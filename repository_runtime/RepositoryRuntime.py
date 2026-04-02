@@ -1,3 +1,69 @@
+"""
+Internal rules for the bound repository transport runtime.
+
+Ownership:
+- This object owns project-bound repository transport context: repo path, branch,
+  remote metadata, key-path metadata, and the bound `ProjectShell`.
+- This object does not own live file/tree/search serving or message/history
+  behavior.
+
+Rule-set split:
+- Internal method rules apply to transport-state ownership and deprecation
+  enforcement helpers.
+- Encapsulated/public method rules apply to the exposed runtime lifecycle and
+  compatibility surface.
+
+Internal method rules:
+- Transport-state helpers in this file should operate only on repository
+  transport concerns and should fail explicitly when callers attempt to treat
+  this object as a live file owner.
+- Deprecation helpers should translate misuse into `FileRuntimeError` instead of
+  silently forwarding or adding fallback behavior.
+
+Encapsulated/public method rules:
+- `__init__(...)` must store transport metadata and create one bound
+  `ProjectShell` rooted at `repo_path`.
+- `close()` is the runtime lifecycle exit and should release the owned shell if
+  it exists.
+- Exposed compatibility methods such as `load_selected_context(...)`,
+- `list_tree(...)`, `read_file(...)`, and `search_text(...)` should continue to
+  fail through the internal deprecation helper instead of growing alternative
+  live-serving behavior in this file.
+"""
+
+"""
+Internal rules for the bound repository transport runtime.
+
+Ownership:
+- This object owns project-bound repository transport context: repo path, branch,
+  remote metadata, key-path metadata, and the bound `ProjectShell`.
+- This object does not own live file/tree/search serving or message/history
+  behavior.
+
+Rule-set split:
+- Internal method rules apply to transport-state ownership and deprecation
+  enforcement helpers.
+- Encapsulated/public method rules apply to the exposed runtime lifecycle and
+  compatibility surface.
+
+Internal method rules:
+- Transport-state helpers in this file should operate only on repository
+  transport concerns and should fail explicitly when callers attempt to treat
+  this object as a live file owner.
+- Deprecation helpers should translate misuse into `FileRuntimeError` instead of
+  silently forwarding or adding fallback behavior.
+
+Encapsulated/public method rules:
+- `__init__(...)` must store transport metadata and create one bound
+  `ProjectShell` rooted at `repo_path`.
+- `close()` is the runtime lifecycle exit and should release the owned shell if
+  it exists.
+- Exposed compatibility methods such as `load_selected_context(...)`,
+  `list_tree(...)`, `read_file(...)`, and `search_text(...)` should continue to
+  fail through the internal deprecation helper instead of growing alternative
+  live-serving behavior in this file.
+"""
+
 from errors import FileRuntimeError
 from repository_runtime.shell import ProjectShell
 
