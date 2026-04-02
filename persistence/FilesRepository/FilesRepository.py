@@ -1,3 +1,33 @@
+"""
+Internal rules for file-row persistence.
+
+Ownership:
+- This object owns DB-backed file-row reads, writes, normalization, and storage-
+  shaped error translation for one project scope.
+- This object does not own live repository tree/file/search serving.
+
+Rule-set split:
+- Internal method rules apply to project-scope validation, path normalization,
+  row serialization, and deprecation/error helpers.
+- Encapsulated/public method rules apply to the exposed storage-shaped file-row
+  methods and deprecated compatibility methods.
+
+Internal method rules:
+- Storage methods must resolve project scope through `_require_project_id()`
+  before issuing persistence reads/writes.
+- Repo-relative path inputs must be normalized through `_normalize_repo_path(...)`
+  before being used in storage queries or writes.
+- Deprecated live-serving or ambiguous methods must fail explicitly through the
+  internal deprecation helpers instead of silently forwarding to another owner.
+
+Encapsulated/public method rules:
+- Storage-shaped methods should keep explicit persistence naming such as
+  `list_file_rows(...)`, `get_file_row_by_path(...)`, `upsert_file_row(...)`, and
+  `delete_file_row_by_path(...)`.
+- Deprecated compatibility methods should continue to fail through the declared
+  internal deprecation helpers so callers do not harden around the wrong owner.
+"""
+
 from __future__ import annotations
 
 from sqlalchemy import select

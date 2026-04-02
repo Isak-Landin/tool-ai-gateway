@@ -1,3 +1,28 @@
+"""
+Internal rules for bound-runtime field persistence.
+
+Ownership:
+- This object owns the narrow persisted project fields required to construct a
+  bound project runtime.
+- This object does not own runtime construction, runtime dependency builders, or
+  broader project persistence behavior.
+
+Rule-set split:
+- Internal method rules apply to narrow project-row loading and runtime-shaped
+  field selection.
+- Encapsulated/public method rules apply to the exposed bound-runtime field read.
+
+Internal method rules:
+- Reads in this file should stay limited to the fields required for bound runtime
+  construction.
+- This file should return runtime-construction data only and should not shape
+  route responses or attach lower dependencies.
+
+Encapsulated/public method rules:
+- `get_bound_project_runtime_fields(...)` is the only bound-runtime field read
+  surface in this file and should remain narrow.
+"""
+
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 

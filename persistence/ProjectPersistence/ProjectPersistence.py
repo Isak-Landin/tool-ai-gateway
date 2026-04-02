@@ -1,3 +1,36 @@
+"""
+Internal rules for project persistence and bootstrap entry.
+
+Ownership:
+- This object owns project-row reads/writes and the persistence-layer entry into
+  bootstrap stage work.
+- This file owns project-path derivation and bootstrap-error translation for
+  project creation.
+- This file does not own bootstrap stage internals, repository transport
+  behavior, or execution/runtime binding behavior.
+
+Rule-set split:
+- Internal helper rules apply to path derivation, bootstrap-error translation,
+  and row serialization helpers.
+- Encapsulated/public method rules apply to exposed project persistence methods.
+
+Internal helper rules:
+- Project creation must keep persistence validation, project-row creation,
+  caller-owned bootstrap inputs, bootstrap invocation, persistence commit, and
+  persisted-value verification as distinct visible stages.
+- Bootstrap work must enter through the appropriate bootstrap stage entrypoint
+  with caller-supplied resolved values and caller-owned shell dependencies.
+- Bootstrap-layer errors must be translated through `_translate_bootstrap_error(...)`
+  before leaving this file as persistence-layer failures.
+
+Encapsulated/public method rules:
+- `create_project(...)` is the bootstrap-entry persistence method for the current
+  flow and should compose project-row creation with the relevant bootstrap stage
+  entrypoint.
+- Read/update methods should stay persistence-shaped and must not grow into
+  runtime binding, execution, or repository transport ownership.
+"""
+
 import os
 import re
 from pathlib import Path

@@ -1,3 +1,27 @@
+"""
+Internal rules for resolution persistence.
+
+Ownership:
+- This object owns the minimal persisted project fields required by project
+  resolution.
+- This object does not own runtime binding, bootstrap, or broader project-row
+  persistence behavior.
+
+Rule-set split:
+- Internal method rules apply to narrow resolution-field loading.
+- Encapsulated/public method rules apply to the exposed resolution read.
+
+Internal method rules:
+- Reads in this file should stay limited to the minimal fields required for
+  project resolution.
+- This file should not evolve into a general project repository or attach other
+  persistence/runtime dependencies.
+
+Encapsulated/public method rules:
+- `get_project_resolution_fields(...)` is the resolution read surface and should
+  remain a narrow resolver dependency only.
+"""
+
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 

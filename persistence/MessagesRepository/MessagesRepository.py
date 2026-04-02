@@ -1,3 +1,35 @@
+"""
+Internal rules for message-row persistence.
+
+Ownership:
+- This object owns DB-backed message-row reads, writes, ordering, and storage-
+  shaped error translation for one project scope.
+- This object does not own higher-level route/execution history behavior.
+
+Rule-set split:
+- Internal method rules apply to project-scope validation, sequence validation,
+  row serialization, and deprecation/error helpers.
+- Encapsulated/public method rules apply to the exposed storage-shaped
+  message-row methods and deprecated compatibility methods.
+
+Internal method rules:
+- Storage methods must resolve project scope through `_require_project_id()`
+  before issuing persistence reads/writes.
+- Sequence-sensitive methods must validate sequence numbers through
+  `_validate_sequence_no(...)` before query construction.
+- Deprecated shared-history or ambiguous methods must fail explicitly through
+  the internal deprecation helper instead of behaving like message-runtime
+  owners.
+
+Encapsulated/public method rules:
+- Storage-shaped methods should keep explicit persistence naming such as
+  `list_message_rows(...)`, `get_message_row_by_sequence_no(...)`,
+  `load_recent_message_rows(...)`, `load_next_message_sequence_no(...)`, and
+  `store_message_artifact(...)`.
+- Deprecated compatibility methods should continue to fail through the declared
+  internal deprecation helper so callers do not harden around the wrong owner.
+"""
+
 from __future__ import annotations
 
 from sqlalchemy import func, select
@@ -13,8 +45,8 @@ class MessagesRepository:
     Persistence-facing repository for project message rows.
 
     This surface is intentionally storage-shaped. It owns message-row reads and
-    writes, but it does not replace the bound MessageRuntime as the lower
-    route/shared history dependency.
+    writes, but it does not replace the MessageRuntime function surface used by
+    routes and execution for higher-level message/history behavior.
     """
 
     def __init__(self, db_connection=None, project_id: int | None = None):
@@ -103,7 +135,7 @@ class MessagesRepository:
             Never: This helper always raises a message history persistence error.
         """
         raise MessageHistoryPersistenceError(
-            f"MessagesRepository.{method_name} is deprecated for shared message/history access; use the bound MessageRuntime surface"
+            f"MessagesRepository.{method_name} is deprecated for shared message/history access; use MessageRuntime functions instead"
         )
 
     def list_history(
@@ -121,7 +153,7 @@ class MessagesRepository:
             after_sequence_no: Optional lower sequence boundary for newer rows.
 
         Returns:
-            Never: This method always raises to enforce MessageRuntime usage.
+            Never: This method always raises to enforce MessageRuntime-function usage.
         """
         self._raise_message_runtime_deprecation("list_history")
 
@@ -132,7 +164,7 @@ class MessagesRepository:
             sequence_no: Positive sequence number requested by the caller.
 
         Returns:
-            Never: This method always raises to enforce MessageRuntime usage.
+            Never: This method always raises to enforce MessageRuntime-function usage.
         """
         self._raise_message_runtime_deprecation("get_message_by_sequence_no")
 
@@ -149,7 +181,7 @@ class MessagesRepository:
             before_sequence_no: Optional sequence boundary to stop before.
 
         Returns:
-            Never: This method always raises to enforce MessageRuntime usage.
+            Never: This method always raises to enforce MessageRuntime-function usage.
         """
         self._raise_message_runtime_deprecation("load_recent_history")
 
@@ -160,7 +192,7 @@ class MessagesRepository:
             None.
 
         Returns:
-            Never: This method always raises to enforce MessageRuntime usage.
+            Never: This method always raises to enforce MessageRuntime-function usage.
         """
         self._raise_message_runtime_deprecation("load_next_sequence_no")
 
@@ -171,7 +203,7 @@ class MessagesRepository:
             artifact_data: Message-artifact payload requested by the caller.
 
         Returns:
-            Never: This method always raises to enforce MessageRuntime usage.
+            Never: This method always raises to enforce MessageRuntime-function usage.
         """
         self._raise_message_runtime_deprecation("store_artifact")
 

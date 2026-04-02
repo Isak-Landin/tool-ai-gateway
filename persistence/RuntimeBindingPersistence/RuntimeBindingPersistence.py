@@ -1,3 +1,34 @@
+"""
+Internal rules for runtime-binding persistence.
+
+Ownership:
+- This object owns the persistence-facing reads and builders required during
+  runtime binding.
+- This object does not own runtime construction, execution behavior, or message
+  history composition.
+
+Rule-set split:
+- Internal method rules apply to delegation into narrower persistence owners and
+  project-scope validation for repository builders.
+- Encapsulated/public method rules apply to the exposed runtime-binding
+  persistence methods.
+
+Internal method rules:
+- Runtime-binding field reads should delegate to
+  `BoundProjectRuntimePersistence` instead of duplicating project-row loading
+  logic here.
+- Repository builders must require an explicit effective project id before
+  returning a project-scoped persistence dependency.
+- This file should build only persistence-shaped dependencies needed during
+  runtime binding.
+
+Encapsulated/public method rules:
+- `get_runtime_binding_fields(...)` is the runtime-field read surface for binder
+  use.
+- `build_file_persistence_repository(...)` is the repository-builder surface for
+  binder-owned file dependency creation.
+"""
+
 from errors import RuntimeBindingPersistenceError
 from persistence.BoundProjectRuntimePersistence.BoundProjectRuntimePersistence import (
     BoundProjectRuntimePersistence,
