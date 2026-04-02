@@ -71,6 +71,11 @@ from datetime import datetime
 from functools import partial
 from typing import Any, Callable
 
+from MessageRuntime import (
+    load_next_message_sequence_no,
+    load_recent_messages,
+    store_message_artifact,
+)
 from ollama.builder import (
     append_assistant_message,
     append_chat_message,
@@ -86,7 +91,6 @@ from ollama.ollama_client import parse_model_output, send_chat_envelope
 from ollama.prompts import merge_system_prompt_fragments
 from ollama.tool_registry import build_tool_prompt_fragment, build_tool_schemas
 from BoundProjectRuntime import BoundProjectRuntime
-from errors import BoundProjectRuntimeError
 from tools import (
     execute_return_to_user,
     execute_web_search,
@@ -118,20 +122,6 @@ class WorkflowOrchestrator:
             return str(ai_model_name).strip()
 
         return get_ollama_default_model()
-
-    def _require_message_runtime(self, handle: BoundProjectRuntime):
-        """Return the bound message runtime or translate access failures.
-
-        Args:
-            handle: Bound project runtime carrying the attached dependencies.
-
-        Returns:
-            Any: Bound message runtime for ordered history and artifact work.
-        """
-        try:
-            return handle.require_message_runtime()
-        except BoundProjectRuntimeError as e:
-            raise WorkflowExecutionError(str(e)) from e
 
     def _require_file_runtime(self, handle: BoundProjectRuntime):
         """Return the bound file runtime or translate access failures.
@@ -463,6 +453,7 @@ class WorkflowOrchestrator:
     def run_chat(
         self,
         handle: BoundProjectRuntime,
+        messages_repository,
         message: str,
         selected_files: list[str] | None = None,
         ai_model_name: str | None = None,
@@ -484,11 +475,13 @@ class WorkflowOrchestrator:
         if not str(message).strip():
             raise WorkflowExecutionError("message is required")
 
-        message_runtime = self._require_message_runtime(handle)
         file_runtime = self._require_file_runtime(handle)
         selected_file_names = selected_files or []
 
-        history_rows = message_runtime.load_recent_history(limit=self._get_recent_history_limit())
+        history_rows = load_recent_messages(
+            messages_repository,
+            limit=self._get_recent_history_limit(),
+        )
         history_messages = self._build_ollama_history_messages(history_rows)
 
         selected_context_rows = file_runtime.load_selected_context(selected_file_names)
@@ -503,8 +496,9 @@ class WorkflowOrchestrator:
             execution_model_name=execution_model_name,
         )
 
-        sequence_no = message_runtime.load_next_sequence_no()
-        message_runtime.store_artifact(
+        sequence_no = load_next_message_sequence_no(messages_repository)
+        store_message_artifact(
+            messages_repository,
             {
                 "sequence_no": sequence_no,
                 "role": "user",
@@ -522,7 +516,8 @@ class WorkflowOrchestrator:
             assistant_tool_calls = parsed_output.get("tool_calls") or []
             assistant_images = parsed_output.get("images")
 
-            message_runtime.store_artifact(
+            store_message_artifact(
+                messages_repository,
                 self._build_assistant_artifact_data(sequence_no=sequence_no, parsed_output=parsed_output)
             )
             sequence_no += 1
@@ -532,7 +527,8 @@ class WorkflowOrchestrator:
                 tool_name, tool_result = self._execute_tool_call(handle, return_to_user_tool_call)
                 tool_result_content = self._serialize_tool_result_content(tool_result)
 
-                message_runtime.store_artifact(
+                store_message_artifact(
+                    messages_repository,
                     {
                         "sequence_no": sequence_no,
                         "role": "tool",
@@ -572,7 +568,8 @@ class WorkflowOrchestrator:
                 tool_name, tool_result = self._execute_tool_call(handle, tool_call)
                 tool_result_content = self._serialize_tool_result_content(tool_result)
 
-                message_runtime.store_artifact(
+                store_message_artifact(
+                    messages_repository,
                     {
                         "sequence_no": sequence_no,
                         "role": "tool",
