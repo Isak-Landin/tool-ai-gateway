@@ -1,6 +1,5 @@
 from BoundProjectRuntime import BoundProjectRuntime
 from FileRuntime import FileRuntime
-from MessageRuntime import MessageRuntime
 from errors import BoundProjectRuntimeError, RuntimeBindingPersistenceError
 from persistence import RuntimeBindingPersistence
 from repository_runtime import RepositoryRuntime
@@ -97,7 +96,6 @@ class ProjectRuntimeBinder:
         try:
             bound_project_runtime.require_repository_runtime()
             bound_project_runtime.require_file_runtime()
-            bound_project_runtime.require_message_runtime()
         except BoundProjectRuntimeError as e:
             raise ProjectRuntimeBindingError(str(e)) from e
 
@@ -157,15 +155,6 @@ class ProjectRuntimeBinder:
                 branch=effective_branch,
                 repository_runtime=bound_project_runtime.require_repository_runtime(),
                 files_repository=self.runtime_binding_persistence.build_file_persistence_repository(
-                    project_id=project_id,
-                ),
-            )
-        )
-
-        bound_project_runtime.bind_message_runtime(
-            MessageRuntime(
-                project_id=project_id,
-                messages_repository=self.runtime_binding_persistence.build_message_persistence_repository(
                     project_id=project_id,
                 ),
             )
