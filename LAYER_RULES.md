@@ -116,7 +116,7 @@ Return flow is the reverse direction:
 - model/tool/runtime sequencing
 - execution-owned persistence ordering
 - one execution-model run flow for MVP
-- direct use of `MessageRuntime` for bounded recent history, next-sequence loading, and ordered artifact writes
+- direct use of `MessageRuntime` functions for bounded recent history, next-sequence loading, and ordered artifact writes
 
 **May communicate with**
 
@@ -130,7 +130,7 @@ Return flow is the reverse direction:
 
 **Architectural deprecation to remember**
 
-- routes and other shared consumers should not bypass `FileRuntime` or `MessageRuntime` when reading live file/tree or message history data
+- routes and other shared consumers should not bypass `FileRuntime` or `MessageRuntime` functions when reading live file/tree or message history data
 
 ### **Persistence**
 
@@ -158,16 +158,16 @@ Return flow is the reverse direction:
 - **Execution is the first layer that may orchestrate.**
 - **Execution chooses bounded context for MVP.** Full project history may stay in DB, but execution should not send all of it by default.
 - **Execution must process persisted project messages for MVP.** Message loading and message persistence are part of the required MVP run flow.
-- **Execution keeps message-selection policy.** Bounded recent-history limits remain execution-owned even while the reads/writes themselves run through `MessageRuntime`.
+- **Execution keeps message-selection policy.** Bounded recent-history limits remain execution-owned even while the reads/writes themselves run through `MessageRuntime` functions.
 - **Persistence serves downward-only concerns.** It should not drive workflow.
 - **Project Runtime Binder may prepare runtime dependencies, but must not perform execution work.**
 - **Project Resolver stays narrow.** It resolves; it does not enrich into runtime behavior.
 - **Shell-backed tools run from one bound project shell.** Binder binds it, but direct file/tree/search ownership belongs to `FileRuntime`.
-- **A dedicated bound file/message surface sits on BoundProjectRuntime so execution and routes do not become the general owner of live project reads.**
-- **Direct `BoundProjectRuntime.*_runtime` attribute access is deprecated.** Callers should use `require_file_runtime()`, `require_message_runtime()`, or `require_repository_runtime()` so the intended surface stays explicit and narrow.
-- **Route-facing backend code should prefer a narrowed route runtime helper.** Route reads should receive file/message-serving access only, not the full bound execution/runtime surface.
+- **A dedicated bound file surface sits on BoundProjectRuntime so execution does not become the general owner of live file reads.**
+- **Direct `BoundProjectRuntime.*_runtime` attribute access is deprecated.** Callers should use `require_file_runtime()` or `require_repository_runtime()` so the intended surface stays explicit and narrow.
+- **Route-facing backend code should prefer a narrowed route runtime helper only for file-serving concerns.** Message history should be handled through `MessageRuntime` functions with explicit repository dependencies, not through bound runtime attachment.
 - **`FilesRepository` and `RepositoryRuntime` are not live file owners.** File/tree/search requests should fail there and be served by `FileRuntime` instead.
-- **`MessagesRepository` is not a shared history owner.** Shared message/history requests should fail there and be served by `MessageRuntime` instead.
+- **`MessagesRepository` is not a shared history owner.** Shared message/history requests should fail there and be served by `MessageRuntime` functions instead.
 - **Persistence APIs should stay storage-shaped.** Explicit row/persistence builders are preferred over generic names that blur live-serving ownership.
 
 ## Surface Shape Guidance

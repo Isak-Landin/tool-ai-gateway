@@ -203,8 +203,8 @@ Current file-side clarification:
 Current message-side clarification:
 
 - `MessagesRepository` is persistence-shaped DB storage/retrieval only
-- `MessageRuntime` is the lower live owner for project-scoped history reads and execution-reused ordered message access
-- callers should keep message/history reads on `MessageRuntime` instead of reaching sideways for lower persistence or other runtime dependencies
+- `MessageRuntime` is the function module used for project-scoped history reads and execution-reused ordered message access
+- callers should keep message/history reads on `MessageRuntime` functions instead of reaching sideways for lower persistence or unrelated runtime dependencies
 - older caller-shaped history seams have been removed from the live dependency path and should not be reintroduced as alternative lower owners
 - `MessagesRepository` now fails explicitly if called like a shared message/history owner instead of a persistence surface
 - explicit storage-shaped names should be preferred over generic names that blur live-serving ownership
@@ -212,9 +212,9 @@ Current message-side clarification:
 Current bound-runtime clarification:
 
 - `BoundProjectRuntime` is a holder, not a broad dependency bag for ad hoc caller behavior
-- direct `BoundProjectRuntime.repository_runtime`, `BoundProjectRuntime.file_runtime`, and `BoundProjectRuntime.message_runtime` access is deprecated
-- callers should use the explicit `require_*_runtime()` accessors so code states which lower surface it actually intends to consume
-- route-facing helpers should prefer a narrowed route runtime that exposes only the bound `FileRuntime` and `MessageRuntime` surfaces needed for live reads
+- direct `BoundProjectRuntime.repository_runtime` and `BoundProjectRuntime.file_runtime` access is deprecated
+- callers should use the explicit runtime accessors so code states which lower surface it actually intends to consume
+- route-facing helpers should prefer a narrowed route runtime that exposes only the bound `FileRuntime` surface needed for live file reads; message history should be served through `MessageRuntime` functions with an explicit `MessagesRepository`
 
 ## Clarification 1: Layers are ownership boundaries, not always a single chain
 
@@ -413,9 +413,9 @@ That may include:
 
 In the intended split:
 
-- execution now performs bounded recent-history loading and ordered artifact persistence through `MessageRuntime`
-- `MessageRuntime` is the bound project-scoped message surface for route/shared reads and execution-owned ordered message work
-- route-style history access belongs on the bound `MessageRuntime`
+- execution now performs bounded recent-history loading and ordered artifact persistence through `MessageRuntime` functions
+- `MessageRuntime` is the shared function surface for route/shared reads and execution-owned ordered message work
+- route-style history access belongs on `MessageRuntime` functions supplied with a route-owned `MessagesRepository(project_id=...)`
 
 Persistence does not decide the workflow.  
 It serves the workflow.
