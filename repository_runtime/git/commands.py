@@ -15,10 +15,11 @@ def _require_shell(shell_executor):
 
 
 def _require_key_path(key_path: str | None) -> str:
-    if not str(key_path).strip():
+    normalized_key_path = str(key_path).strip()
+    if not normalized_key_path:
         raise GitHubError(message="key_path is required for remote git operations")
 
-    return str(key_path).strip()
+    return normalized_key_path
 
 
 def run_git(shell_executor, args, require_key: bool = False, key_path: str | None = None):
@@ -26,7 +27,8 @@ def run_git(shell_executor, args, require_key: bool = False, key_path: str | Non
         shell = _require_shell(shell_executor)
 
         if require_key:
-            shell.ensure_ssh_key_loaded(_require_key_path(key_path))
+            required_key_path = _require_key_path(key_path)
+            shell.ensure_ssh_key_loaded(required_key_path)
 
         git_command = _quote_args(["git", *args])
         code, output = shell.run(git_command)
@@ -119,7 +121,8 @@ def git_commit(shell_executor, message="+"):
 def clone_repo(shell_executor, remote_repo_url: str, target_path: str, key_path: str | None = None):
     try:
         shell = _require_shell(shell_executor)
-        shell.ensure_ssh_key_loaded(_require_key_path(key_path))
+        required_key_path = _require_key_path(key_path)
+        shell.ensure_ssh_key_loaded(required_key_path)
 
         clone_command = _quote_args(["git", "clone", remote_repo_url, target_path])
         code, output = shell.run(clone_command)
