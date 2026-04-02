@@ -7,6 +7,8 @@ from ProjectResolver import ProjectNotFoundError, ProjectResolutionError
 from ProjectRuntimeBinder import ProjectRuntimeBindingError
 from errors import FileRuntimeError, MessageRuntimeError, ProjectPersistenceError
 from execution import WorkflowExecutionError
+from MessageRuntime import load_messages
+from persistence.MessagesRepository import MessagesRepository
 from persistence.ProjectPersistence import ProjectPersistence
 
 from api_routes.common import error_response, log_route_error, persistence_error_response
@@ -187,7 +189,9 @@ def list_project_messages(
     route_label = f"GET /projects/{project_id}/messages"
     try:
         with bound_project_route_runtime(project_id, branch_override=branch) as handle:
-            history_rows = handle.require_message_runtime().list_history(
+            messages_repository = MessagesRepository(project_id=project_id)
+            history_rows = load_messages(
+                messages_repository,
                 limit=limit,
                 before_sequence_no=before_sequence_no,
                 after_sequence_no=after_sequence_no,
@@ -364,8 +368,10 @@ def run_project_chat(project_id: int, req: ChatRequest) -> ChatResponse | JSONRe
 
     try:
         with bound_project_execution_runtime(project_id, branch_override=req.branch) as handle:
+            messages_repository = MessagesRepository(project_id=project_id)
             result = build_workflow_orchestrator().run_chat(
                 handle=handle,
+                messages_repository=messages_repository,
                 message=req.message,
                 selected_files=req.selected_files,
                 ai_model_name=req.ai_model_name,

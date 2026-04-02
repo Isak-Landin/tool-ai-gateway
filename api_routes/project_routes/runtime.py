@@ -11,8 +11,8 @@ from execution import WorkflowOrchestrator
 class RouteProjectRuntime:
     """Expose only route-safe bound runtime surfaces.
 
-    This wrapper keeps route-facing code on the intended file/message owners
-    instead of exposing the broader execution/runtime dependency bag.
+    This wrapper keeps route-facing code on the intended file owner instead of
+    exposing the broader execution/runtime dependency bag.
     """
 
     def __init__(self, handle: BoundProjectRuntime):
@@ -27,7 +27,6 @@ class RouteProjectRuntime:
         self.project_id = handle.project_id
         self.branch = handle.branch
         self._file_runtime = handle.require_file_runtime()
-        self._message_runtime = handle.require_message_runtime()
 
     def require_file_runtime(self):
         """Return the bound file runtime for route-facing live file access.
@@ -39,18 +38,6 @@ class RouteProjectRuntime:
             Any: Bound file runtime used for tree, file, and search reads.
         """
         return self._file_runtime
-
-    def require_message_runtime(self):
-        """Return the bound message runtime for route-facing history access.
-
-        Args:
-            None.
-
-        Returns:
-            Any: Bound message runtime used for ordered history reads.
-        """
-        return self._message_runtime
-
 
 @contextmanager
 def bound_project_execution_runtime(project_id: int, *, branch_override: str | None = None):
