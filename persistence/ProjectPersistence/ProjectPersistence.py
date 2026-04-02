@@ -8,7 +8,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from db.session import SessionLocal
 from db.models import Project
 from errors import ProjectBootstrapError, ProjectPersistenceError
-from repository_runtime.bootstrap import ProjectBootstrap
+from repository_runtime.bootstrap import bootstrap_project_step_one
+from repository_runtime.shell import ProjectShell
 
 
 DEFAULT_PROJECTS_ROOT = "/srv/tool-ai-gateway/projects"
@@ -173,7 +174,7 @@ class ProjectPersistence:
         """
         session = self.db_connection or SessionLocal()
         project_root: Path | None = None
-        bootstrap = ProjectBootstrap()
+        shell: ProjectShell | None = None
         try:
             normalized_name = str(name).strip()
             if not normalized_name:
@@ -221,11 +222,11 @@ class ProjectPersistence:
                 project_name=new_project.name,
             )
             project_root = project_paths["project_root"]
-            bootstrap.create_project_storage(project_paths)
-            public_key = bootstrap.generate_project_keypair(
-                private_key_path=project_paths["private_key_path"],
-                public_key_path=project_paths["public_key_path"],
+            shell = ProjectShell()
+            public_key = bootstrap_project_step_one(
+                project_paths=project_paths,
                 project_id=new_project.project_id,
+                shell=shell,
             )
 
             new_project.repo_path = str(project_paths["repo_path"])
@@ -266,22 +267,20 @@ class ProjectPersistence:
             }
         except ProjectBootstrapError as e:
             session.rollback()
-            bootstrap.cleanup_project_storage(project_root)
             raise _translate_bootstrap_error(e) from e
         except ProjectPersistenceError:
             session.rollback()
-            bootstrap.cleanup_project_storage(project_root)
             raise
         except SQLAlchemyError as e:
             session.rollback()
-            bootstrap.cleanup_project_storage(project_root)
             raise ProjectPersistenceError(
                 str(e),
                 error_type="sql error",
                 file_id=__file__,
             ) from e
         finally:
-            bootstrap.close()
+            if shell is not None:
+                shell.close()
             if self.db_connection is None and session:
                 session.close()
 
