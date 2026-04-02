@@ -19,7 +19,7 @@ class FileRuntimeError(Exception):
 
 
 class MessageRuntimeError(Exception):
-    """Project-bound message runtime error"""
+    """Message function-surface error"""
     pass
 
 
