@@ -155,7 +155,7 @@ class WorkflowOrchestrator:
         """Convert stored history rows into Ollama chat-message payloads.
 
         Args:
-            history_rows: Serialized persisted message rows from message runtime.
+            history_rows: Serialized persisted message rows loaded through MessageRuntime functions.
 
         Returns:
             list[dict]: Ollama-compatible chat-message payloads in order.

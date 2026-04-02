@@ -64,7 +64,7 @@ The MVP goal is a reliable, ordered project-scoped run with bounded context.
 - execution must load recent project messages as bounded run context
 - execution must persist user, assistant, and tool artifacts in ordered sequence
 - persisted message artifacts must retain the actual `ai_model_name` used for the run so model choice remains historically visible even if later runs use a different model
-- execution now uses the bound `MessageRuntime` surface for bounded recent-history loading, next-sequence loading, and ordered artifact writes
+- execution now uses `MessageRuntime` functions for bounded recent-history loading, next-sequence loading, and ordered artifact writes
 - execution still keeps the policy decision for bounded recent-history limits
 
 ### Current MVP Selected Context Rule
@@ -80,11 +80,11 @@ The MVP goal is a reliable, ordered project-scoped run with bounded context.
 ### Architectural drift to resolve before broader file-route work
 
 - execution now depends on the bound `FileRuntime` surface for selected-context loading and file/tree/search tool behavior
-- execution now depends on the bound `MessageRuntime` surface for message reads and writes
+- execution now depends on `MessageRuntime` functions for message reads and writes
 - `FilesRepository` and `RepositoryRuntime` are no longer plausible fallback seams for live file/tree access; they now fail explicitly for that usage
 - `MessagesRepository` is no longer a plausible fallback seam for shared message/history access; it now fails explicitly for that usage
 - persistence-facing naming has been tightened toward explicit storage semantics so execution and future shared consumers are less likely to harden around the wrong owner
-- route-facing runtime helpers should expose only `FileRuntime` and `MessageRuntime`, while the full bound runtime remains the execution-facing surface
+- route-facing runtime helpers should expose only `FileRuntime` where needed; message history should be served through `MessageRuntime` functions with explicit repository dependencies, while the full bound runtime remains the execution-facing surface
 
 ## Intention
 
