@@ -91,11 +91,11 @@ Message data currently appears to support:
 
 Message ownership expectation:
 
-- execution now uses `MessageRuntime` for bounded recent-history loading and ordered artifact writes during runs
-- route/shared history reads should use the bound `MessageRuntime` surface, which reuses `MessagesRepository` as persistence only
+- execution now uses `MessageRuntime` functions for bounded recent-history loading and ordered artifact writes during runs
+- route/shared history reads should use `MessageRuntime` functions with a route-owned `MessagesRepository(project_id=...)`
 - `MessagesRepository` is persistence-shaped storage/retrieval only and must not be treated as a shared history owner
-- `MessagesRepository` should be expected to fail if used as a route/shared history reader instead of `MessageRuntime`
-- persistence-layer naming should be read as storage-only support for `MessageRuntime`, not as an alternative live-serving owner
+- `MessagesRepository` should be expected to fail if used as a route/shared history reader instead of `MessageRuntime` functions
+- persistence-layer naming should be read as storage-only support for `MessageRuntime` functions, not as an alternative live-serving owner
 
 ### Repository/file data
 
@@ -126,7 +126,7 @@ File ownership expectation:
 - `RepositoryRuntime` is shell/git transport only and must not be treated as a live file/tree owner
 - `FilesRepository` and `RepositoryRuntime` should be expected to fail if used as route-facing live file/tree readers instead of `FileRuntime`
 - persistence-layer naming should be read as storage-only support for `FileRuntime`, not as an alternative live-serving owner
-- routes should treat `FileRuntime` and `MessageRuntime` as the backend contract anchors for live workspace reads
+- routes should treat `FileRuntime` for live workspace file reads and `MessageRuntime` functions for history reads as the backend contract anchors
 
 ## Must MVP UI Routes
 
