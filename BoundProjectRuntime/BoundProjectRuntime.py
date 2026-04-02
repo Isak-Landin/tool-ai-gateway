@@ -35,8 +35,6 @@ class BoundProjectRuntime:
 
         self._repository_runtime = None
         self._file_runtime = None
-        self._message_runtime = None
-
         # Reserved for future project-scoped context management.
         self.model_context = None
 
@@ -61,17 +59,6 @@ class BoundProjectRuntime:
             None: The dependency is stored on the bound runtime.
         """
         self._file_runtime = file_runtime
-
-    def bind_message_runtime(self, message_runtime):
-        """Attach the live message runtime to this bound runtime.
-
-        Args:
-            message_runtime: Project-bound message-serving dependency to store.
-
-        Returns:
-            None: The dependency is stored on the bound runtime.
-        """
-        self._message_runtime = message_runtime
 
     def bind_model_context(self, model_context_builder):
         """Attach future model-context state to the bound runtime.
@@ -112,20 +99,6 @@ class BoundProjectRuntime:
             "Direct BoundProjectRuntime.file_runtime access is deprecated; use require_file_runtime()"
         )
 
-    @property
-    def message_runtime(self):
-        """Reject direct message runtime access from callers.
-
-        Args:
-            None.
-
-        Returns:
-            Never: This property always raises to enforce explicit accessor usage.
-        """
-        raise BoundProjectRuntimeError(
-            "Direct BoundProjectRuntime.message_runtime access is deprecated; use require_message_runtime()"
-        )
-
     def require_repository_runtime(self):
         """Return the bound repository runtime or fail if it is missing.
 
@@ -154,20 +127,6 @@ class BoundProjectRuntime:
 
         return self._file_runtime
 
-    def require_message_runtime(self):
-        """Return the bound message runtime or fail if it is missing.
-
-        Args:
-            None.
-
-        Returns:
-            Any: Bound message runtime used for history and artifact work.
-        """
-        if self._message_runtime is None:
-            raise BoundProjectRuntimeError("BoundProjectRuntime.message_runtime is required")
-
-        return self._message_runtime
-
     def is_repository_runtime_bound(self) -> bool:
         """Report whether the repository runtime has been attached.
 
@@ -189,17 +148,6 @@ class BoundProjectRuntime:
             bool: `True` when a file runtime is present, otherwise `False`.
         """
         return self._file_runtime is not None
-
-    def is_message_runtime_bound(self) -> bool:
-        """Report whether the message runtime has been attached.
-
-        Args:
-            None.
-
-        Returns:
-            bool: `True` when a message runtime is present, otherwise `False`.
-        """
-        return self._message_runtime is not None
 
     def close(self):
         """Close bound runtime resources that expose cleanup hooks.
