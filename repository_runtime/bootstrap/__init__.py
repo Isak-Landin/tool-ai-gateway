@@ -1,3 +1,9 @@
-from repository_runtime.bootstrap.ProjectBootstrap import bootstrap_project_step_one
+from repository_runtime.bootstrap.ProjectBootstrap import (
+    bs1,
+    verify_bs_all
+)
 
-__all__ = ["bootstrap_project_step_one"]
+__all__ = [
+    "bs1",
+    "verify_bs_all"
+]

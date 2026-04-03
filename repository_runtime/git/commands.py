@@ -64,10 +64,17 @@ def _require_key_path(key_path: str | None) -> str:
     return normalized_key_path
 
 
-def run_git(shell_executor, args, require_key: bool = False, key_path: str | None = None):
+def run_git(
+    shell_executor,
+    args,
+    require_key: bool = False,
+    key_path: str | None = None,
+    allowed_return_codes: set[int] | None = None,
+):
     try:
         shell = _require_shell(shell_executor)
         shell.ensure_working_directory()
+        effective_allowed_return_codes = allowed_return_codes or {0}
 
         if require_key:
             required_key_path = _require_key_path(key_path)
@@ -75,7 +82,7 @@ def run_git(shell_executor, args, require_key: bool = False, key_path: str | Non
 
         git_command = _quote_args(["git", *args])
         code, output = shell.run(git_command)
-        if code != 0:
+        if code not in effective_allowed_return_codes:
             raise GitHubError(message=output.strip() or f"Git command failed with code {code}")
 
         return output.strip()
