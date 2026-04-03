@@ -20,7 +20,8 @@ Internal helper rules:
   persisted-value verification as distinct visible stages.
 - Bootstrap work must enter through the appropriate bootstrap stage entrypoint
   with caller-supplied resolved values and caller-owned shell dependencies.
-- Bootstrap-layer errors must be translated through `_translate_bootstrap_error(...)`
+- Bootstrap-layer errors must be translated through
+  `_translate_project_bootstrap_error_for_persistence(...)`
   before leaving this file as persistence-layer failures.
 
 Encapsulated/public method rules:
@@ -41,14 +42,14 @@ from sqlalchemy.exc import SQLAlchemyError
 from db.session import SessionLocal
 from db.models import Project
 from errors import ProjectBootstrapError, ProjectPersistenceError
-from repository_runtime.bootstrap import bootstrap_project_step_one
+from repository_runtime.bootstrap import bs1
 from repository_runtime.shell import ProjectShell
 
 
 DEFAULT_PROJECTS_ROOT = "/srv/tool-ai-gateway/projects"
 
 
-def _slugify_project_name(name: str) -> str:
+def _derive_project_name_for_storage_path(name: str) -> str:
     """Normalize a project name into a filesystem-safe slug.
 
     Args:
@@ -61,7 +62,7 @@ def _slugify_project_name(name: str) -> str:
     return normalized_name or "project"
 
 
-def _get_projects_root() -> Path:
+def _require_projects_root_for_bootstrap() -> Path:
     """Load the configured projects root directory from environment settings.
 
     Args:
@@ -82,7 +83,10 @@ def _get_projects_root() -> Path:
     return Path(configured_root).expanduser()
 
 
-def _build_project_storage_paths(project_id: int, project_name: str) -> dict[str, Path]:
+def _derive_project_storage_paths_for_bootstrap(
+    project_id: int,
+    project_name: str,
+) -> dict[str, Path]:
     """Build the filesystem paths used during project bootstrap.
 
     Args:
@@ -92,12 +96,12 @@ def _build_project_storage_paths(project_id: int, project_name: str) -> dict[str
     Returns:
         dict[str, Path]: Named filesystem paths required for project bootstrap. Referenced internally as project_path:
         {
-            "projects_root": projects_root,
-            "project_root": project_root,
-            "repo_path": project_root / "repo",
-            "ssh_directory": ssh_directory,
-            "private_key_path": ssh_directory / "id_ed25519",
-            "public_key_path": ssh_directory / "id_ed25519.pub",
+            "projects_base_directory": projects_base_directory,
+            "project_directory": project_directory,
+            "project_repo_directory": project_directory / "repo",
+            "project_ssh_directory": project_ssh_directory,
+            "private_key_path": project_ssh_directory / "id_ed25519",
+            "public_key_path": project_ssh_directory / "id_ed25519.pub",
         }
 
     """
@@ -109,20 +113,22 @@ def _build_project_storage_paths(project_id: int, project_name: str) -> dict[str
             file_id=__file__,
         )
 
-    projects_root = _get_projects_root()
-    project_root = projects_root / f"{_slugify_project_name(project_name)}-{project_id}"
-    ssh_directory = project_root / "ssh"
+    projects_base_directory = _require_projects_root_for_bootstrap()
+    project_directory = projects_base_directory / f"{_derive_project_name_for_storage_path(project_name)}-{project_id}"
+    project_ssh_directory = project_directory / "ssh"
     return {
-        "projects_root": projects_root,
-        "project_root": project_root,
-        "repo_path": project_root / "repo",
-        "ssh_directory": ssh_directory,
-        "private_key_path": ssh_directory / "id_ed25519",
-        "public_key_path": ssh_directory / "id_ed25519.pub",
+        "projects_base_directory": projects_base_directory,
+        "project_directory": project_directory,
+        "project_repo_directory": project_directory / "repo",
+        "project_ssh_directory": project_ssh_directory,
+        "private_key_path": project_ssh_directory / "id_ed25519",
+        "public_key_path": project_ssh_directory / "id_ed25519.pub",
     }
 
 
-def _translate_bootstrap_error(error: ProjectBootstrapError) -> ProjectPersistenceError:
+def _translate_project_bootstrap_error_for_persistence(
+    error: ProjectBootstrapError,
+) -> ProjectPersistenceError:
     """Translate bootstrap-layer errors into project-persistence errors.
 
     Args:
@@ -135,7 +141,7 @@ def _translate_bootstrap_error(error: ProjectBootstrapError) -> ProjectPersisten
         str(error),
         field=getattr(error, "field", None),
         error_type=getattr(error, "error_type", None),
-        file_id=getattr(error, "file_id", __file__),
+        file_id=str(getattr(error, "file_id", __file__)),
     )
 
 
@@ -153,7 +159,7 @@ class ProjectPersistence:
         """
         self.db_connection = db_connection
 
-    def _serialize_project_row(self, row: Project) -> dict:
+    def _serialize_project_for_route_response(self, row: Project) -> dict:
         """Serialize one project ORM row into the route-facing return shape.
 
         Args:
@@ -188,7 +194,7 @@ class ProjectPersistence:
             if result is None:
                 return None
 
-            return self._serialize_project_row(result)
+            return self._serialize_project_for_route_response(result)
         except SQLAlchemyError as e:
             raise ProjectPersistenceError(str(e), file_id=__file__) from e
         finally:
@@ -206,7 +212,6 @@ class ProjectPersistence:
             dict: Created project payload including the generated public key.
         """
         session = self.db_connection or SessionLocal()
-        project_root: Path | None = None
         shell: ProjectShell | None = None
         try:
             normalized_name = str(name).strip()
@@ -242,53 +247,37 @@ class ProjectPersistence:
             session.add(new_project)
             session.flush()
 
-            if new_project.project_id is None:
-                raise ProjectPersistenceError(
-                    "Project row did not receive a project_id during bootstrap",
-                    field="project_id",
-                    error_type="missing project id",
-                    file_id=__file__,
-                )
-
-            project_paths = _build_project_storage_paths(
+            project_paths = _derive_project_storage_paths_for_bootstrap(
                 project_id=new_project.project_id,
                 project_name=new_project.name,
             )
-            project_root = project_paths["project_root"]
             shell = ProjectShell()
-            public_key = bootstrap_project_step_one(
+            bs1(
                 project_paths=project_paths,
                 project_id=new_project.project_id,
                 shell=shell,
             )
 
-            new_project.repo_path = str(project_paths["repo_path"])
+            new_project.repo_path = str(project_paths["project_repo_directory"])
             new_project.ssh_key = str(project_paths["private_key_path"])
             new_project.public_key_path = str(project_paths["public_key_path"])
             session.commit()
-            session.refresh(new_project)
 
-            if new_project.repo_path != str(project_paths["repo_path"]):
+            try:
+                public_key = project_paths["public_key_path"].read_text(encoding="utf-8").strip()
+            except OSError as e:
                 raise ProjectPersistenceError(
-                    "Persisted repo_path does not match the bootstrapped repository path",
-                    field="repo_path",
-                    error_type="persist verification failed",
-                    file_id=__file__,
-                )
-
-            if new_project.ssh_key != str(project_paths["private_key_path"]):
-                raise ProjectPersistenceError(
-                    "Persisted ssh_key does not match the bootstrapped private key path",
-                    field="ssh_key",
-                    error_type="persist verification failed",
-                    file_id=__file__,
-                )
-
-            if new_project.public_key_path != str(project_paths["public_key_path"]):
-                raise ProjectPersistenceError(
-                    "Persisted public_key_path does not match the bootstrapped public key path",
+                    f"Failed to read generated public key: {e}",
                     field="public_key_path",
-                    error_type="persist verification failed",
+                    error_type="key read failed",
+                    file_id=__file__,
+                ) from e
+
+            if not public_key:
+                raise ProjectPersistenceError(
+                    "Generated public key is empty",
+                    field="public_key_path",
+                    error_type="key generation failed",
                     file_id=__file__,
                 )
 
@@ -300,7 +289,7 @@ class ProjectPersistence:
             }
         except ProjectBootstrapError as e:
             session.rollback()
-            raise _translate_bootstrap_error(e) from e
+            raise _translate_project_bootstrap_error_for_persistence(e) from e
         except ProjectPersistenceError:
             session.rollback()
             raise
@@ -330,7 +319,7 @@ class ProjectPersistence:
         try:
             stmt = select(Project).order_by(Project.created_at.desc())
             results = session.execute(stmt).scalars().all()
-            return [self._serialize_project_row(result) for result in results]
+            return [self._serialize_project_for_route_response(result) for result in results]
         except SQLAlchemyError as e:
             raise ProjectPersistenceError(str(e), file_id=__file__) from e
         finally:
@@ -402,7 +391,7 @@ class ProjectPersistence:
                 session.commit()
 
             session.refresh(project_row)
-            return self._serialize_project_row(project_row)
+            return self._serialize_project_for_route_response(project_row)
         except SQLAlchemyError as e:
             if self.db_connection is None:
                 session.rollback()
