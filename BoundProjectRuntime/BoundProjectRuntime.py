@@ -34,7 +34,6 @@ class BoundProjectRuntime:
         self.key_path = project_row.get("key_path") or project_row.get("ssh_key")
 
         self._repository_runtime = None
-        self._file_runtime = None
         # Reserved for future project-scoped context management.
         self.model_context = None
 
@@ -48,17 +47,6 @@ class BoundProjectRuntime:
             None: The dependency is stored on the bound runtime.
         """
         self._repository_runtime = repository_runtime
-
-    def bind_file_runtime(self, file_runtime):
-        """Attach the live file runtime to this bound runtime.
-
-        Args:
-            file_runtime: Project-bound file-serving dependency to store.
-
-        Returns:
-            None: The dependency is stored on the bound runtime.
-        """
-        self._file_runtime = file_runtime
 
     def bind_model_context(self, model_context_builder):
         """Attach future model-context state to the bound runtime.
@@ -85,20 +73,6 @@ class BoundProjectRuntime:
             "Direct BoundProjectRuntime.repository_runtime access is deprecated; use require_repository_runtime()"
         )
 
-    @property
-    def file_runtime(self):
-        """Reject direct file runtime access from callers.
-
-        Args:
-            None.
-
-        Returns:
-            Never: This property always raises to enforce explicit accessor usage.
-        """
-        raise BoundProjectRuntimeError(
-            "Direct BoundProjectRuntime.file_runtime access is deprecated; use require_file_runtime()"
-        )
-
     def require_repository_runtime(self):
         """Return the bound repository runtime or fail if it is missing.
 
@@ -113,20 +87,6 @@ class BoundProjectRuntime:
 
         return self._repository_runtime
 
-    def require_file_runtime(self):
-        """Return the bound file runtime or fail if it is missing.
-
-        Args:
-            None.
-
-        Returns:
-            Any: Bound file runtime used for live project file/tree access.
-        """
-        if self._file_runtime is None:
-            raise BoundProjectRuntimeError("BoundProjectRuntime.file_runtime is required")
-
-        return self._file_runtime
-
     def is_repository_runtime_bound(self) -> bool:
         """Report whether the repository runtime has been attached.
 
@@ -138,17 +98,6 @@ class BoundProjectRuntime:
         """
         return self._repository_runtime is not None
 
-    def is_file_runtime_bound(self) -> bool:
-        """Report whether the file runtime has been attached.
-
-        Args:
-            None.
-
-        Returns:
-            bool: `True` when a file runtime is present, otherwise `False`.
-        """
-        return self._file_runtime is not None
-
     def close(self):
         """Close bound runtime resources that expose cleanup hooks.
 
@@ -158,7 +107,5 @@ class BoundProjectRuntime:
         Returns:
             None: Bound runtime resources are closed in place when available.
         """
-        if self._file_runtime and hasattr(self._file_runtime, "close"):
-            self._file_runtime.close()
         if self._repository_runtime and hasattr(self._repository_runtime, "close"):
             self._repository_runtime.close()
