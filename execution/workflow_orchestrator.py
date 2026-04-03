@@ -71,6 +71,8 @@ from datetime import datetime
 from functools import partial
 from typing import Any, Callable
 
+from FileRuntime import read_file as load_live_file
+from FileRuntime import search_text
 from MessageRuntime import (
     load_next_message_sequence_no,
     load_recent_messages,
@@ -123,17 +125,17 @@ class WorkflowOrchestrator:
 
         return get_ollama_default_model()
 
-    def _require_file_runtime(self, handle: BoundProjectRuntime):
-        """Return the bound file runtime or translate access failures.
+    def _require_repository_runtime(self, handle: BoundProjectRuntime):
+        """Return the bound repository runtime or translate access failures.
 
         Args:
             handle: Bound project runtime carrying the attached dependencies.
 
         Returns:
-            Any: Bound file runtime for selected-context and repository operations.
+            Any: Bound repository runtime for repository operations.
         """
         try:
-            return handle.require_file_runtime()
+            return handle.require_repository_runtime()
         except BoundProjectRuntimeError as e:
             raise WorkflowExecutionError(str(e)) from e
 
@@ -236,8 +238,10 @@ class WorkflowOrchestrator:
         Returns:
             list[dict]: Repository search matches returned by file runtime.
         """
-        file_runtime = self._require_file_runtime(handle)
-        return file_runtime.search_text(
+        repository_runtime = self._require_repository_runtime(handle)
+        return search_text(
+            repository_runtime,
+            branch=handle.branch,
             query=query,
             relative_repo_path=relative_repo_path,
             case_sensitive=case_sensitive,
@@ -258,8 +262,7 @@ class WorkflowOrchestrator:
         Returns:
             list[dict]: Repository tree entries returned by file runtime.
         """
-        file_runtime = self._require_file_runtime(handle)
-        return file_runtime.list_tree(relative_repo_path=relative_repo_path)
+        raise WorkflowExecutionError("Repository tree listing is not currently available")
 
     def _get_tool_executors(self, handle: BoundProjectRuntime) -> dict[str, Callable[..., Any]]:
         """Build the available tool-executor map for the current run.
@@ -475,7 +478,6 @@ class WorkflowOrchestrator:
         if not str(message).strip():
             raise WorkflowExecutionError("message is required")
 
-        file_runtime = self._require_file_runtime(handle)
         selected_file_names = selected_files or []
 
         history_rows = load_recent_messages(
@@ -484,7 +486,21 @@ class WorkflowOrchestrator:
         )
         history_messages = self._build_ollama_history_messages(history_rows)
 
-        selected_context_rows = file_runtime.load_selected_context(selected_file_names)
+        repository_runtime = self._require_repository_runtime(handle)
+        selected_context_rows = []
+        for selected_file_name in selected_file_names:
+            live_file = load_live_file(
+                repository_runtime,
+                branch=handle.branch,
+                relative_repo_path=selected_file_name,
+            )
+            selected_context_rows.append(
+                {
+                    "name": live_file["name"],
+                    "path": live_file["path"],
+                    "content": live_file["content"],
+                }
+            )
         user_turn_content = self._build_user_turn_content(message, selected_context_rows)
 
         tool_names = self._select_chat_tool_names(handle)
