@@ -26,18 +26,20 @@ class RouteProjectRuntime:
         """
         self.project_id = handle.project_id
         self.branch = handle.branch
-        self._file_runtime = handle.require_file_runtime()
 
-    def require_file_runtime(self):
-        """Return the bound file runtime for route-facing live file access.
+        self._repository_runtime = handle.require_repository_runtime()
+
+    def require_repository_runtime(self):
+        """Return the bound repository runtime for route-facing live file access.
 
         Args:
             None.
 
         Returns:
-            Any: Bound file runtime used for tree, file, and search reads.
+            Any: Bound repository runtime used by file-runtime functions.
         """
-        return self._file_runtime
+        return self._repository_runtime
+
 
 @contextmanager
 def bound_project_execution_runtime(project_id: int, *, branch_override: str | None = None):

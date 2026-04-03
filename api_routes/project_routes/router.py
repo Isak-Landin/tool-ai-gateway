@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 
 from ProjectResolver import ProjectNotFoundError, ProjectResolutionError
 from ProjectRuntimeBinder import ProjectRuntimeBindingError
+from FileRuntime import read_file, search_text
 from errors import FileRuntimeError, MessageRuntimeError, ProjectPersistenceError
 from execution import WorkflowExecutionError
 from MessageRuntime import load_messages
@@ -31,6 +32,8 @@ from api_routes.project_routes.schemas import (
     RepositorySearchResponse,
     RepositoryTreeResponse,
 )
+
+from repository_runtime.bootstrap import *
 
 projects_router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -124,6 +127,10 @@ def get_project(project_id: int) -> ProjectDetailResponse | JSONResponse:
 
     Returns:
         ProjectDetailResponse | JSONResponse: Project detail payload or an error response.
+    """
+
+    """
+    INSERT BOOTSTRAP VERIFICATION LOGIC
     """
     project_persistence = ProjectPersistence()
     try:
@@ -227,7 +234,7 @@ def get_repository_tree(
     route_label = f"GET /projects/{project_id}/repository/tree"
     try:
         with bound_project_route_runtime(project_id, branch_override=branch) as handle:
-            tree_entries = handle.require_file_runtime().list_tree(relative_repo_path=path)
+            raise FileRuntimeError("Repository tree listing is not currently available")
             return RepositoryTreeResponse(
                 ok=True,
                 project_id=project_id,
@@ -273,7 +280,9 @@ def get_repository_file(
 
     try:
         with bound_project_route_runtime(project_id, branch_override=branch) as handle:
-            file_row = handle.require_file_runtime().read_file(
+            file_row = read_file(
+                handle.require_repository_runtime(),
+                branch=handle.branch,
                 relative_repo_path=normalized_path,
                 start_line=start_line,
                 number_of_lines=number_of_lines,
@@ -318,7 +327,9 @@ def search_repository_text(
 
     try:
         with bound_project_route_runtime(project_id, branch_override=branch) as handle:
-            matches = handle.require_file_runtime().search_text(
+            matches = search_text(
+                handle.require_repository_runtime(),
+                branch=handle.branch,
                 query=normalized_query,
                 relative_repo_path=path,
                 case_sensitive=case_sensitive,
