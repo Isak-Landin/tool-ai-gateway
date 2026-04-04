@@ -36,8 +36,8 @@ from __future__ import annotations
 
 from pathlib import PurePosixPath
 
-from errors import FileRuntimeError, GitHubError, RepositoryFilePersistenceError
-from repository_runtime.git import run_git
+from errors import FileRuntimeError, RepositoryFilePersistenceError
+from repository_runtime.git import run_git_probe
 from repository_tools import (
     get_repository_ignore_patterns,
     is_ignored_repository_path,
@@ -87,16 +87,12 @@ def _assert_not_ignored(normalized_relative_path: str) -> None:
         raise FileRuntimeError(f"Path is excluded by configured ignore paths: {normalized_relative_path}")
 
 
-def _run_read_only_git(repository_runtime, args: list[str], *, allowed_return_codes: set[int]) -> str:
+def _run_read_only_git(repository_runtime, args: list[str]) -> tuple[int, str]:
     required_repository_runtime = _require_repository_runtime(repository_runtime)
-    try:
-        return run_git(
-            required_repository_runtime.shell,
-            args,
-            allowed_return_codes=allowed_return_codes,
-        )
-    except GitHubError as e:
-        raise FileRuntimeError(str(e)) from e
+    return run_git_probe(
+        required_repository_runtime.shell,
+        args,
+    )
 
 
 def read_file(
@@ -124,11 +120,12 @@ def read_file(
         raise FileRuntimeError("end_line must be >= start_line")
 
     git_relative_path = normalized_relative_path.lstrip("/")
-    file_content = _run_read_only_git(
+    file_code, file_content = _run_read_only_git(
         repository_runtime,
         ["show", f"{required_branch}:{git_relative_path}"],
-        allowed_return_codes={0},
     )
+    if file_code != 0:
+        raise FileRuntimeError(file_content or f"Failed to read file from branch {required_branch}")
 
     all_lines = file_content.splitlines()
     total_lines = len(all_lines)
@@ -179,11 +176,12 @@ def search_text(
     if git_relative_path:
         git_args.extend(["--", git_relative_path])
 
-    output = _run_read_only_git(
+    grep_code, output = _run_read_only_git(
         repository_runtime,
         git_args,
-        allowed_return_codes={0, 1},
     )
+    if grep_code != 0 and output:
+        raise FileRuntimeError(output)
 
     search_results: list[dict] = []
     for output_line in output.splitlines():
