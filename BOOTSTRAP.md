@@ -8,9 +8,9 @@ _This file is intentionally compact. It exists to show **when bootstrap runs**, 
 
 | Stage | Current Surface | Core Purpose |
 | --- | --- | --- |
-| **BS1** | `repository_runtime/bootstrap/ProjectBootstrap.py` | Create local bootstrap storage and key material for a new project |
-| **BS2** | `repository_runtime/bootstrap/ProjectBootstrap.py` | Turn a BS1-complete project into a real usable local repository with real branch state |
-| **Bootstrap Verification** | `repository_runtime/bootstrap/ProjectBootstrap.py` | Report which bootstrap checks failed so caller-owned repair or redirect logic can decide what to do next |
+| **BS1** | `repository_runtime/bootstrap/bs1/bs1.py` | Create local bootstrap storage and key material for a new project |
+| **BS2** | `repository_runtime/bootstrap/bs2/bs2.py` | Turn a BS1-complete project into a real usable local repository with real branch state |
+| **Bootstrap Verification** | `repository_runtime/bootstrap/__init__.py` | Report which bootstrap checks failed so caller-owned repair or redirect logic can decide what to do next |
 
 ## User-Facing Lifecycle
 
@@ -63,7 +63,7 @@ _This file is intentionally compact. It exists to show **when bootstrap runs**, 
 
 **May communicate with**
 
-- shell-backed bootstrap helpers inside `repository_runtime/bootstrap/ProjectBootstrap.py`
+- shell-backed bootstrap helpers inside `repository_runtime/bootstrap/common/common.py`
 
 **Must not own**
 
@@ -84,7 +84,7 @@ _This file is intentionally compact. It exists to show **when bootstrap runs**, 
 
 **May communicate with**
 
-- shell-backed bootstrap helpers inside `repository_runtime/bootstrap/ProjectBootstrap.py`
+- shell-backed bootstrap helpers inside `repository_runtime/bootstrap/common/common.py`
 
 **Must not own**
 
@@ -102,7 +102,7 @@ _This file is intentionally compact. It exists to show **when bootstrap runs**, 
 
 **May communicate with**
 
-- shell-backed bootstrap helpers inside `repository_runtime/bootstrap/ProjectBootstrap.py`
+- shell-backed bootstrap helpers inside `repository_runtime/bootstrap/common/common.py`
 
 **Must not own**
 
