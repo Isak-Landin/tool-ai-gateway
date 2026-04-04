@@ -37,12 +37,6 @@ import shlex
 import subprocess
 
 
-class ProjectShellError(Exception):
-    """Raised when the bound project shell cannot execute requested work."""
-
-    pass
-
-
 class ProjectShell:
     """Own one interactive shell process scoped to a project working directory."""
 
@@ -175,3 +169,11 @@ class ProjectShell:
         self.key_loaded = False
         self.loaded_key_path = None
         self.proc = None
+
+
+
+
+class ProjectShellError(Exception):
+    """Raised when the bound project shell cannot execute requested work."""
+
+    pass
