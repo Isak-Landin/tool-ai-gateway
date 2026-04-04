@@ -79,13 +79,13 @@ The project workspace remains the main working page.
 
 - `/projects`
 - `/projects/new`
-- `/projects/bootstrap-complete`
 
 ### Project MVP routes
 
 - `/projects/<project_id>`
 - `/projects/<project_id>/activity`
 - `/projects/<project_id>/settings`
+- project-bound bootstrap page/template when project entry must stay in bootstrap flow
 
 ### Support routes
 
@@ -117,6 +117,7 @@ Role:
 - handle project bootstrap as a dedicated setup step
 - stay visually separate from the day-to-day workspace
 - surface the generated deploy/public key and next-step guidance after create succeeds
+- hand off into the project-specific route rather than inventing a separate post-create destination
 
 ### Project Workspace
 
@@ -124,6 +125,15 @@ Role:
 
 - be the primary project interaction page
 - combine repository navigation, file reading, AI/chat history, and request submission
+- serve as the normal project-entry target after creation and on later re-entry
+
+### Project Bootstrap Page
+
+Role:
+
+- show `bootstrap.html` when project entry must stay in bootstrap flow
+- present bootstrap/setup guidance for a specific project
+- remain subordinate to the project-entry decision instead of acting like an unrelated standalone destination
 
 ### Project Activity
 
@@ -305,6 +315,7 @@ The MVP UI should already assume:
 - the workspace is the primary product surface
 - Flask page routes are thin UI shells and should not hardcode backend truth
 - live project data is loaded through browser-side calls to the backend API, not through mock Jinja route payloads
+- UI routes never perform backend logic; backend/API-owned project-entry checks decide whether project entry continues to workspace or redirects to the bootstrap page/template
 
 The MVP UI should not assume:
 

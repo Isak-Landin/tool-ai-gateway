@@ -11,7 +11,7 @@ Included:
 - landing page as MVP entry
 - project collection routes
 - project workspace routes
-- post-create bootstrap guidance route
+- project bootstrap guidance page reached through project-entry flow
 
 Excluded for now:
 
@@ -41,6 +41,7 @@ The current intended UI implementation is:
 - browser-side JavaScript loads live project data from the backend API
 - page templates must not hardcode sample project, tree, file, history, model, or branch data as if it were backend truth
 - loading, empty, and error states are valid UI states; fake domain data is not
+- UI routes never perform backend logic; they only follow backend/API outcomes
 
 ## Current Backend Data Available
 
@@ -219,13 +220,20 @@ The UI should surface:
 
 - the returned `public_key`
 - guidance that this key belongs to project bootstrap/setup
-- a path back into project routes after creation succeeds
+- then route the user to `/projects/<project_id>`
 
-One reasonable UI route for this is:
+Established target behavior:
 
-- `/projects/bootstrap-complete`
+- project creation should route to the project-specific page
+- project-page entry is where the bootstrap/workspace decision happens
+- if BS1 verification fails, the user should be redirected to the bootstrap UI page/template (`bootstrap.html`)
+- the same project-entry behavior should apply on later direct re-entry to `/projects/<project_id>`
 
-That route is a UI continuation route. It does not require a separate backend API route.
+Ownership note:
+
+- this does **not** mean the Flask UI route performs bootstrap checks
+- the UI route is only a shell/continuation point
+- the backend/API contract is the source of truth for whether project entry continues to workspace or redirects into bootstrap flow
 
 ## 4. Project Workspace
 
@@ -248,6 +256,14 @@ This route depends on composed backend data from:
 - `GET /projects/{project_id}/repository/file`
 - `POST /projects/{project_id}/run`
 - `GET /projects/{project_id}/repository/search` standalone route available for later JS-driven workspace search
+
+Project-entry expectation:
+
+- this is the normal entry route after create succeeds
+- this is also the normal route for later direct re-entry
+- backend-owned project-entry checks determine whether normal workspace loading may continue
+- if BS1 verification fails, project entry should redirect to the bootstrap page/template instead of continuing to workspace loading
+- those checks are not UI-route logic
 
 ### Required project shell data
 
@@ -404,7 +420,6 @@ Must MVP routes:
 
 - `/projects`
 - `/projects/new`
-- `/projects/bootstrap-complete`
 
 ### `ui/webapp/routes/project/`
 
@@ -416,6 +431,10 @@ Must MVP routes:
 Reasonable MVP route:
 
 - `/projects/<project_id>/activity`
+
+Additional project-bound UI surface:
+
+- bootstrap page/template for a specific project when project entry must remain in bootstrap flow
 
 ## Real Gaps vs Deprecated Assumptions
 
