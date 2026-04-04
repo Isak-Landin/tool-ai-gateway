@@ -28,7 +28,7 @@ For this file:
 
 These are the active mismatches that do **not** depend on user-account existence and therefore belong at the top of the current register.
 
-### 1. Project bootstrap follow-up data is only available at create time
+### 1. Project-entry bootstrap follow-up behavior is not implemented as a stable backend contract
 
 `POST /projects` returns the bootstrap-facing values the UI needs:
 
@@ -37,24 +37,35 @@ These are the active mismatches that do **not** depend on user-account existence
 - `remote_repo_url`
 - `public_key`
 
-But there is no follow-up backend route that lets the UI re-read bootstrap/setup state later.
+Established target behavior is:
+
+- after `POST /projects` succeeds, the UI should route to `/projects/{project_id}`
+- project entry should then determine whether normal project-page flow may continue or whether the bootstrap page/template must be shown
+- the same project-entry behavior should apply on later direct re-entry to `/projects/{project_id}`
+- UI routes should adhere to that backend decision and must not perform bootstrap logic themselves
+
+But the backend/persistence side does not yet implement a stable route-facing contract for that final behavior.
 
 Route issues:
 
-- `/projects/bootstrap-complete` only works if the browser still has the recent create response in transient state
-- a refresh, deep-link, or later revisit cannot re-load the generated `public_key` from the backend
-- there is no backend bootstrap-status route that tells the UI whether deploy-key setup is still pending, completed, or invalid
+- project entry does not yet expose a stable backend-owned decision surface for:
+  - continue to workspace
+  - remain in bootstrap flow
+  - show bootstrap/setup guidance again
+- a refresh, deep-link, or later revisit cannot rely on a settled backend contract for bootstrap follow-up
+- there is no implemented final API/persistence behavior that is close to this target yet
 
 Non-route issues:
 
-- bootstrap state is not yet modeled as a stable route-facing backend resource
-- the deploy/public key is operational setup data, but there is no explicit backend-owned reread surface for it
+- persistence is not yet modeling the final project-entry/bootstrap-follow-up behavior
+- the deploy/public key is operational setup data, but there is no settled backend-owned reread/decision surface around it
+- current persistence behavior should not be mistaken for the final project-entry contract
 
 Current MVP risk:
 
-- users can lose bootstrap guidance as soon as the initial create response is gone
-- future UI work can be tempted to persist bootstrap-only values in the browser because the backend cannot re-serve them
-- bootstrap/setup recovery flows remain undefined even though project creation itself succeeds
+- UI work can harden around the wrong assumption that create should land on a separate continuation page
+- users can lose consistent bootstrap follow-up behavior on refresh, deep-link, or later revisit
+- bootstrap/setup recovery flows remain undefined even though the intended project-entry behavior is already known
 
 ### 2. Branch-aware workspace behavior still lacks authoritative branch-source support
 
