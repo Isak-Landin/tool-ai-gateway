@@ -18,12 +18,10 @@ from repository_runtime.git.commands import (
     git_push_probe,
     git_switch_branch,
     git_switch_branch_probe,
-    run_git,
     run_git_probe,
 )
 
 __all__ = [
-    "run_git",
     "run_git_probe",
     "git_pull",
     "git_pull_probe",

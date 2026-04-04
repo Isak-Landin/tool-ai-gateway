@@ -7,7 +7,6 @@ from repository_runtime.git.commands.commands import (
     git_pull,
     git_push,
     git_switch_branch,
-    run_git,
 )
 from repository_runtime.git.commands.probe_commands import (
     clone_repo_probe,
@@ -20,7 +19,6 @@ from repository_runtime.git.commands.probe_commands import (
 )
 
 __all__ = [
-    "run_git",
     "git_pull",
     "git_switch_branch",
     "git_push",

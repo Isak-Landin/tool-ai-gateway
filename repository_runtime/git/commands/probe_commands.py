@@ -2,13 +2,15 @@
 Probe git command surface.
 
 Ownership:
-- Owns verification/probe-oriented git helpers intended for runtime checks where
-  normal git failure should remain available as `(code, output)` data.
+- Owns the low probe helper `run_git_probe(...)` plus verification/probe-oriented
+  git helpers intended for runtime checks.
+- Probe command helpers in this file return `bool` success/failure for expected
+  git command outcomes, while `run_git_probe(...)` keeps the lower `(code, output)`
+  contract for output-oriented probing.
 - Delegates raw git command execution to the shared git common helpers.
 """
 
-from errors import GitHubError
-from repository_runtime.git.common import _run_clone_repo, _run_git_command
+from repository_runtime.git.common import _run_git_command_probe
 
 
 def run_git_probe(
@@ -17,26 +19,25 @@ def run_git_probe(
     require_key: bool = False,
     key_path: str | None = None,
 ) -> tuple[int, str]:
-    try:
-        return _run_git_command(
-            shell_executor=shell_executor,
-            args=args,
-            require_key=require_key,
-            key_path=key_path,
-        )
-    except GitHubError:
-        raise
-    except Exception as e:
-        raise GitHubError(message=str(e))
+    return _run_git_command_probe(
+        shell_executor=shell_executor,
+        args=args,
+        require_key=require_key,
+        key_path=key_path,
+    )
 
 
-def git_pull_probe(shell_executor, branch_name: str, key_path: str | None = None) -> tuple[int, str]:
-    return run_git_probe(
+def git_pull_probe(shell_executor, branch_name: str, key_path: str | None = None) -> bool:
+    command_code, _command_output = run_git_probe(
         shell_executor=shell_executor,
         args=["pull", "origin", branch_name],
         require_key=True,
         key_path=key_path,
     )
+    if command_code != 0:
+        return False
+
+    return True
 
 
 def git_switch_branch_probe(
@@ -44,68 +45,76 @@ def git_switch_branch_probe(
     branch_name: str,
     key_path: str | None = None,
     pull_from_origin: bool = False,
-):
+) -> bool:
     normalized_branch_name = str(branch_name).strip()
     if not normalized_branch_name:
-        raise GitHubError(message="branch_name is required")
+        return False
 
-    switch_code, switch_output = run_git_probe(
+    switch_code, _switch_output = run_git_probe(
         shell_executor=shell_executor,
         args=["checkout", normalized_branch_name],
     )
     if switch_code != 0:
-        switch_code, switch_output = run_git_probe(
+        switch_code, _switch_output = run_git_probe(
             shell_executor=shell_executor,
             args=["checkout", "-b", normalized_branch_name, f"origin/{normalized_branch_name}"],
             require_key=True,
             key_path=key_path,
         )
-
-    result = {
-        "branch_name": normalized_branch_name,
-        "switch_code": switch_code,
-        "switch_output": switch_output,
-    }
+        if switch_code != 0:
+            return False
 
     if pull_from_origin:
-        pull_code, pull_output = git_pull_probe(
+        pull_ok = git_pull_probe(
             shell_executor=shell_executor,
             branch_name=normalized_branch_name,
             key_path=key_path,
         )
-        result["pull_code"] = pull_code
-        result["pull_output"] = pull_output
+        if not pull_ok:
+            return False
 
-    return result
+    return True
 
 
-def git_push_probe(shell_executor, branch_name: str, key_path: str | None = None) -> tuple[int, str]:
-    return run_git_probe(
+def git_push_probe(shell_executor, branch_name: str, key_path: str | None = None) -> bool:
+    command_code, _command_output = run_git_probe(
         shell_executor=shell_executor,
         args=["push", "origin", branch_name],
         require_key=True,
         key_path=key_path,
     )
+    if command_code != 0:
+        return False
+
+    return True
 
 
-def git_add_probe(shell_executor, files=".") -> tuple[int, str]:
+def git_add_probe(shell_executor, files=".") -> bool:
     normalized_files = files
     if isinstance(normalized_files, str):
         normalized_files = [normalized_files]
     elif not normalized_files:
         normalized_files = ["."]
 
-    return run_git_probe(
+    command_code, _command_output = run_git_probe(
         shell_executor=shell_executor,
         args=["add", *normalized_files],
     )
+    if command_code != 0:
+        return False
+
+    return True
 
 
-def git_commit_probe(shell_executor, message="+") -> tuple[int, str]:
-    return run_git_probe(
+def git_commit_probe(shell_executor, message="+") -> bool:
+    command_code, _command_output = run_git_probe(
         shell_executor=shell_executor,
         args=["commit", "-m", message],
     )
+    if command_code != 0:
+        return False
+
+    return True
 
 
 def clone_repo_probe(
@@ -113,15 +122,14 @@ def clone_repo_probe(
     remote_repo_url: str,
     target_path: str,
     key_path: str | None = None,
-) -> tuple[int, str]:
-    try:
-        return _run_clone_repo(
-            shell_executor=shell_executor,
-            remote_repo_url=remote_repo_url,
-            target_path=target_path,
-            key_path=key_path,
-        )
-    except GitHubError:
-        raise
-    except Exception as e:
-        raise GitHubError(message=str(e))
+) -> bool:
+    command_code, _command_output = run_git_probe(
+        shell_executor=shell_executor,
+        args=["clone", remote_repo_url, target_path],
+        require_key=True,
+        key_path=key_path,
+    )
+    if command_code != 0:
+        return False
+
+    return True
