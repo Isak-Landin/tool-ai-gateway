@@ -12,7 +12,7 @@ def _quote_args(command_args: list[str]) -> str:
     return " ".join(shlex.quote(str(command_arg)) for command_arg in command_args)
 
 
-def _require_shell(shell: ProjectShell | None) -> ProjectShell:
+def require_shell(shell: ProjectShell | None) -> ProjectShell:
     if shell is None:
         raise ProjectBootstrapError(
             "shell is required for shell-backed bootstrap work",
@@ -24,18 +24,18 @@ def _require_shell(shell: ProjectShell | None) -> ProjectShell:
     return shell
 
 
-def _run_command(
+def run_command(
     shell: ProjectShell | None,
     command_args: list[str],
 ) -> tuple[int, str]:
-    required_shell = _require_shell(shell)
+    required_shell = require_shell(shell)
     required_shell.ensure_working_directory()
     command_text = _quote_args(command_args)
     command_return_code, command_output = required_shell.run(command_text)
     return int(command_return_code), command_output.strip()
 
 
-def _run_command_return_output(
+def run_command_return_output(
     shell: ProjectShell | None,
     command_args: list[str],
     *,
@@ -43,7 +43,7 @@ def _run_command_return_output(
     field: str = "",
     error_type: str = "",
 ) -> str:
-    command_return_code, command_output = _run_command(
+    command_return_code, command_output = run_command(
         shell=shell,
         command_args=command_args,
     )

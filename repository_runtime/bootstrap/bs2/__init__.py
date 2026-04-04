@@ -1,6 +1,11 @@
-from repository_runtime.bootstrap.bs2.bs2 import _verify_bs2, bs2
+from repository_runtime.bootstrap.bs2.bs2 import (
+    Bs2VerificationFailureRepresentation,
+    _verify_bs2,
+    bs2,
+)
 
 __all__ = [
+    "Bs2VerificationFailureRepresentation",
     "_verify_bs2",
     "bs2",
 ]

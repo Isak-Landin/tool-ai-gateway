@@ -8,7 +8,7 @@ from enum import IntEnum
 from pathlib import Path
 
 from errors import ProjectBootstrapError
-from repository_runtime.bootstrap.common import _require_shell, _run_command, _run_command_return_output
+from repository_runtime.bootstrap.common import require_shell, run_command, run_command_return_output
 from repository_runtime.shell import ProjectShell
 
 
@@ -104,7 +104,7 @@ def _generate_project_keypair(
     public_key_path: Path,
 ) -> str:
     command_ssh_keygen_path_lookup_args = ["command", "-v", "ssh-keygen"]
-    ssh_keygen_command_path = _run_command_return_output(
+    ssh_keygen_command_path = run_command_return_output(
         shell,
         command_ssh_keygen_path_lookup_args,
         failure_message="ssh-keygen is required for project bootstrap",
@@ -124,7 +124,7 @@ def _generate_project_keypair(
         "-C",
         "Tool-AI-Gateway",
     ]
-    _run_command_return_output(
+    run_command_return_output(
         shell,
         command_generate_project_keypair_args,
         failure_message="Failed to generate project SSH keypair",
@@ -199,7 +199,7 @@ def _verify_bs1(
     project_paths: dict[str, Path],
     shell: ProjectShell | None,
 ) -> tuple[bool, Bs1VerificationFailure | None]:
-    required_shell = _require_shell(shell)
+    required_shell = require_shell(shell)
     required_shell.ensure_working_directory()
     projects_base_directory = project_paths["projects_base_directory"]
     project_directory = project_paths["project_directory"]
@@ -221,7 +221,7 @@ def _verify_bs1(
         else:
             command_verify_path_type_args = ["test", "-f", str(path)]
 
-        command_return_code, _command_output = _run_command(
+        command_return_code, _command_output = run_command(
             shell=required_shell,
             command_args=command_verify_path_type_args,
         )
@@ -232,7 +232,7 @@ def _verify_bs1(
         return False, Bs1VerificationFailure.PROJECTS_BASE_DIRECTORY_ACCESS
 
     command_ssh_keygen_path_lookup_args = ["command", "-v", "ssh-keygen"]
-    command_return_code, _command_output = _run_command(
+    command_return_code, _command_output = run_command(
         shell=required_shell,
         command_args=command_ssh_keygen_path_lookup_args,
     )
@@ -248,7 +248,7 @@ def _verify_bs1(
         "-f",
         str(private_key_path),
     ]
-    private_key_validation_return_code, _command_output = _run_command(
+    private_key_validation_return_code, _command_output = run_command(
         shell=required_shell,
         command_args=command_validate_private_key_args,
     )
@@ -263,7 +263,7 @@ def _verify_bs1(
         "-f",
         str(public_key_path),
     ]
-    public_key_validation_return_code, _command_output = _run_command(
+    public_key_validation_return_code, _command_output = run_command(
         shell=required_shell,
         command_args=command_validate_public_key_args,
     )
