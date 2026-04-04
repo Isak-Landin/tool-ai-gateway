@@ -31,6 +31,7 @@ class BoundProjectRuntime:
         self.repo_path = project_row.get("repo_path")
         self.remote_repo_url = project_row.get("remote_repo_url")
         self.branch = project_row.get("branch") or "main"
+        self.branches = list(project_row.get("branches") or [])
         self.key_path = project_row.get("key_path") or project_row.get("ssh_key")
 
         self._repository_runtime = None
