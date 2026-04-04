@@ -26,6 +26,7 @@ class RouteProjectRuntime:
         """
         self.project_id = handle.project_id
         self.branch = handle.branch
+        self.branches = list(getattr(handle, "branches", []) or [])
 
         self._repository_runtime = handle.require_repository_runtime()
 
