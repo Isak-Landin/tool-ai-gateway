@@ -195,7 +195,7 @@ Current file-side clarification:
 - `FilesRepository` is persistence-shaped DB storage/retrieval only
 - `FileRuntime` is the lower live owner for project-scoped file reads, tree reads, ignore-path enforcement, and branch-aware repository access
 - `RepositoryRuntime` remains shell/git transport only and is not a live file/tree owner
-- callers should not unwrap `FileRuntime` back into `RepositoryRuntime`; direct `FileRuntime.repository_runtime` access is deprecated
+- callers should not unwrap `FileRuntime` back into `RepositoryRuntime`; use `FileRuntime` as the live file/tree/search surface
 - older direct inspection or self-managed file-loading seams have been removed from the live dependency path and should not be reintroduced as alternative lower owners
 - `FilesRepository` and `RepositoryRuntime` now fail explicitly if called like live file/tree owners instead of persistence/transport surfaces
 - explicit storage-shaped names such as file-row access and persistence-repository builders should be preferred over generic names that blur live-serving ownership
@@ -212,8 +212,8 @@ Current message-side clarification:
 Current bound-runtime clarification:
 
 - `BoundProjectRuntime` is a holder, not a broad dependency bag for ad hoc caller behavior
-- direct `BoundProjectRuntime.repository_runtime` and `BoundProjectRuntime.file_runtime` access is deprecated
-- callers should use the explicit runtime accessors so code states which lower surface it actually intends to consume
+- callers should use explicit runtime accessors so code states which lower surface it actually intends to consume
+- `BoundProjectRuntime` should expose only the narrow bound surfaces its callers are meant to use
 - route-facing helpers should prefer a narrowed route runtime that exposes only the bound `FileRuntime` surface needed for live file reads; message history should be served through `MessageRuntime` functions with an explicit `MessagesRepository`
 
 ## Clarification 1: Layers are ownership boundaries, not always a single chain

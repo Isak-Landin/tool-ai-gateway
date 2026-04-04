@@ -164,7 +164,7 @@ Return flow is the reverse direction:
 - **Project Resolver stays narrow.** It resolves; it does not enrich into runtime behavior.
 - **Shell-backed tools run from one bound project shell.** Binder binds it, but direct file/tree/search ownership belongs to `FileRuntime`.
 - **A dedicated bound file surface sits on BoundProjectRuntime so execution does not become the general owner of live file reads.**
-- **Direct `BoundProjectRuntime.*_runtime` attribute access is deprecated.** Callers should use `require_file_runtime()` or `require_repository_runtime()` so the intended surface stays explicit and narrow.
+- **Callers should use explicit runtime accessors.** Use `require_file_runtime()` or `require_repository_runtime()` so the intended surface stays explicit and narrow.
 - **Route-facing backend code should prefer a narrowed route runtime helper only for file-serving concerns.** Message history should be handled through `MessageRuntime` functions with explicit repository dependencies, not through bound runtime attachment.
 - **`FilesRepository` and `RepositoryRuntime` are not live file owners.** File/tree/search requests should fail there and be served by `FileRuntime` instead.
 - **`MessagesRepository` is not a shared history owner.** Shared message/history requests should fail there and be served by `MessageRuntime` functions instead.
