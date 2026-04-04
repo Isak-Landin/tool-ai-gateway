@@ -21,7 +21,7 @@ Internal helper rules:
 - Shell-backed helpers must use this order:
   1. `_require_shell(...)`
   2. `shell.ensure_working_directory()`
-  3. `_quote_args(...)`
+  3. `_quote_args(...)`                         - ONLY REQUIRED if we are expecting internal new function to directly replace _run_command()
   4. `shell.run(...)`
   5. translate failures to `ProjectBootstrapError`
 - Filesystem helpers should create and verify only the stage-owned paths required
@@ -47,14 +47,16 @@ Encapsulated/public helper rules:
 import os
 import shlex
 import shutil
+from enum import IntEnum
 from pathlib import Path
 
 from errors import ProjectBootstrapError
 from repository_runtime.shell import ProjectShell
+from typing import Union
 
 
-def _quote_args(args: list[str]) -> str:
-    return " ".join(shlex.quote(str(arg)) for arg in args)
+def _quote_args(command_args: list[str]) -> str:
+    return " ".join(shlex.quote(str(command_arg)) for command_arg in command_args)
 
 
 def _require_shell(shell: ProjectShell | None) -> ProjectShell:
@@ -71,25 +73,71 @@ def _require_shell(shell: ProjectShell | None) -> ProjectShell:
 
 def _run_command(
     shell: ProjectShell | None,
-    args: list[str],
+    command_args: list[str],
     *,
-    failure_message: str,
-    field: str,
-    error_type: str,
+    failure_message: str = "",
+    field: str = "",
+    error_type: str = "",
 ) -> str:
+    """
+    :param shell:
+    :param command_args:
+    :param failure_message:
+    :param field:
+    :param error_type:
+    :return:
+    """
+
     required_shell = _require_shell(shell)
     required_shell.ensure_working_directory()
-    command = _quote_args(args)
-    code, output = required_shell.run(command)
-    if code != 0:
+    command_text = _quote_args(command_args)
+    command_return_code, command_output = required_shell.run(command_text)
+    if command_return_code != 0:
         raise ProjectBootstrapError(
-            output.strip() or failure_message,
+            command_output.strip() or failure_message,
             field=field,
             error_type=error_type,
             file_id=__file__,
         )
 
-    return output.strip()
+    return command_output.strip()
+
+
+def _run_command_return_code(
+    shell: ProjectShell | None,
+    command_args: list[str],
+) -> Union[str, int]:
+    """
+    :param shell:
+    :param command_args:
+    :param failure_message:
+    :param field:
+    :param error_type:
+    :return:
+    """
+    # Check for missing error fields when return_code is False
+    required_shell = _require_shell(shell)
+    required_shell.ensure_working_directory()
+    command_text = _quote_args(command_args)
+    command_return_code, _command_output = required_shell.run(command_text)
+    return int(command_return_code)
+
+
+class Bs1VerificationFailure(IntEnum):
+    PROJECTS_BASE_DIRECTORY_DIR = 1
+    PROJECT_DIRECTORY_DIR = 2
+    PROJECT_REPO_DIRECTORY_DIR = 3
+    PROJECT_SSH_DIRECTORY_DIR = 4
+    PRIVATE_KEY_FILE = 5
+    PUBLIC_KEY_FILE = 6
+    PROJECTS_BASE_DIRECTORY_ACCESS = 7
+    SSH_KEYGEN_AVAILABLE = 8
+    PRIVATE_KEY_VALID = 9
+    PUBLIC_KEY_VALID = 10
+    PRIVATE_KEY_READABLE = 11
+    PUBLIC_KEY_READABLE = 12
+    PUBLIC_KEY_NON_EMPTY = 13
+
 
 
 def _create_project_storage(project_paths: dict[str, Path]) -> None:
@@ -168,28 +216,32 @@ def _generate_project_keypair(
     public_key_path: Path,
     project_id: int,
 ) -> str:
-    ssh_keygen_path = _run_command(
+    command_ssh_keygen_path_lookup_args = ["command", "-v", "ssh-keygen"]
+    ssh_keygen_command_path = _run_command(
         shell,
-        ["command", "-v", "ssh-keygen"],
+        command_ssh_keygen_path_lookup_args,
         failure_message="ssh-keygen is required for project bootstrap",
         field="ssh_key",
         error_type="missing dependency",
     )
 
+    # Keep str() convertion around ssh_keygen_path, removing it causes warning in PyCharm
+    # for it being str or int when is expected, even when code_return=False is specified
+    command_generate_project_keypair_args = [
+        str(ssh_keygen_command_path),
+        "-q",
+        "-t",
+        "ed25519",
+        "-N",
+        "",
+        "-f",
+        str(private_key_path),
+        "-C",
+        f"tool-ai-gateway-project-{project_id}",
+    ]
     _run_command(
         shell,
-        [
-            ssh_keygen_path,
-            "-q",
-            "-t",
-            "ed25519",
-            "-N",
-            "",
-            "-f",
-            str(private_key_path),
-            "-C",
-            f"tool-ai-gateway-project-{project_id}",
-        ],
+        command_generate_project_keypair_args,
         failure_message="Failed to generate project SSH keypair",
         field="ssh_key",
         error_type="key generation failed",
@@ -212,7 +264,7 @@ def _generate_project_keypair(
         )
 
     try:
-        public_key = public_key_path.read_text(encoding="utf-8").strip()
+        public_key_text = public_key_path.read_text(encoding="utf-8").strip()
     except OSError as e:
         raise ProjectBootstrapError(
             f"Failed to read generated public key: {e}",
@@ -221,7 +273,7 @@ def _generate_project_keypair(
             file_id=__file__,
         ) from e
 
-    if not public_key:
+    if not public_key_text:
         raise ProjectBootstrapError(
             "Generated public key is empty",
             field="public_key_path",
@@ -229,7 +281,7 @@ def _generate_project_keypair(
             file_id=__file__,
         )
 
-    return public_key
+    return public_key_text
 
 
 def _cleanup_project_storage(project_directory: Path | None) -> None:
@@ -295,6 +347,14 @@ def bs2 (
         order_by="Message.sequence_no",
     )
     :return:
+
+    """
+
+    """
+    What we should do in bs2:
+    Connect repo access using existing pub key
+    Materialize the repo into project repo directory, no clone in it, unpack in it.
+    Materialize branch replication locally. fetch remote refs
     """
 
 def _verify_bs1(
@@ -302,7 +362,7 @@ def _verify_bs1(
         project_paths: dict[str, Path],
         project_id: int,
         shell: ProjectShell | None,
-) -> bool:
+) -> tuple[bool, Bs1VerificationFailure | None]:
     """
     EXPECTED in project_paths:
     projects_base_directory
@@ -325,7 +385,6 @@ def _verify_bs1(
     - Shell-backed helpers must use this order:
       1. `_require_shell(...)`
       2. `shell.ensure_working_directory()`
-      3. `_quote_args(...)`
       4. `shell.run(...)`
       5. translate failures to `ProjectBootstrapError`
     - Filesystem helpers should create and verify only the stage-owned paths required
@@ -336,29 +395,113 @@ def _verify_bs1(
       not derive caller-owned values such as resolved project paths or shell
       instances.
 
-      ssh-keygen -l -f ~/.ssh/id_ed25519 1> /dev/null
+      ssh_keygen -l -E SHA256 -f ./path/to/key
     :return:
     """
 
     required_shell = _require_shell(shell)
     required_shell.ensure_working_directory()
-    projects_base_directory = project_paths["base_directory"]
+    projects_base_directory = project_paths["projects_base_directory"]
     project_directory = project_paths["project_directory"]
-    project_repo_directory = project_paths["repo_directory"]
-    project_ssh_directory = project_paths["ssh_directory"]
+    project_repo_directory = project_paths["project_repo_directory"]
+    project_ssh_directory = project_paths["project_ssh_directory"]
     private_key_path = project_paths["private_key_path"]
     public_key_path = project_paths["public_key_path"]
+
+    # Run true path to ssh-keygen command, used in execution.
+    # DO NOT RUN _quote_args() before pass for _run_command* calls!
+
+    # --------- VERIFY ALL EXPECTED PATHS EXIST ---------- #
+    for path, expected_path_type, failure_enum in (
+            (projects_base_directory, "dir", Bs1VerificationFailure.PROJECTS_BASE_DIRECTORY_DIR),
+            (project_directory, "dir", Bs1VerificationFailure.PROJECT_DIRECTORY_DIR),
+            (project_repo_directory, "dir", Bs1VerificationFailure.PROJECT_REPO_DIRECTORY_DIR),
+            (project_ssh_directory, "dir", Bs1VerificationFailure.PROJECT_SSH_DIRECTORY_DIR),
+            (private_key_path, "file", Bs1VerificationFailure.PRIVATE_KEY_FILE),
+            (public_key_path, "file", Bs1VerificationFailure.PUBLIC_KEY_FILE),
+    ):
+        if expected_path_type == "dir":
+            command_verify_path_type_args = ["test", "-d", str(path)]
+        else:
+            command_verify_path_type_args = ["test", "-f", str(path)]
+
+        command_return_code = _run_command_return_code(
+            shell=required_shell,
+            command_args=command_verify_path_type_args,
+        )
+        if command_return_code != 0:
+            return False, failure_enum
+
+    if not os.access(projects_base_directory, os.W_OK | os.X_OK):
+        return False, Bs1VerificationFailure.PROJECTS_BASE_DIRECTORY_ACCESS
+
+    # ------------  VERIFY KEY FILES CONTAIN KEY OF TYPE! ----------- #
+    command_ssh_keygen_path_lookup_args = ["command", "-v", "ssh-keygen"]
+    command_return_code = _run_command_return_code(
+        shell=required_shell,
+        command_args=command_ssh_keygen_path_lookup_args,
+    )
+    if command_return_code != 0:
+        return False, Bs1VerificationFailure.SSH_KEYGEN_AVAILABLE
+
+    key_encryption_type = "SHA256"
+    command_validate_private_key_args = [
+        "ssh-keygen",
+        "-l",
+        "-E",
+        key_encryption_type,
+        "-f",
+        str(private_key_path),
+    ]
+    private_key_validation_return_code = _run_command_return_code(
+        shell=required_shell,
+        command_args=command_validate_private_key_args,
+    )
+    if private_key_validation_return_code != 0:
+        return False, Bs1VerificationFailure.PRIVATE_KEY_VALID
+
+    command_validate_public_key_args = [
+        "ssh-keygen",
+        "-l",
+        "-E",
+        key_encryption_type,
+        "-f",
+        str(public_key_path),
+    ]
+    public_key_validation_return_code = _run_command_return_code(
+        shell=required_shell,
+        command_args=command_validate_public_key_args,
+    )
+    if public_key_validation_return_code != 0:
+        return False, Bs1VerificationFailure.PUBLIC_KEY_VALID
+
+    try:
+        private_key_path.read_text(encoding="utf-8")
+    except OSError as e:
+        return False, Bs1VerificationFailure.PRIVATE_KEY_READABLE
+
+    try:
+        public_key_path.read_text(encoding="utf-8")
+    except OSError as e:
+        return False, Bs1VerificationFailure.PUBLIC_KEY_READABLE
+
+    public_key_text = public_key_path.read_text(encoding="utf-8").strip()
+    if not public_key_text:
+        return False, Bs1VerificationFailure.PUBLIC_KEY_NON_EMPTY
+
+    return True, None
 
 def _verify_bs2(
         *,
         project_paths: dict[str, Path],
         project_id: int,
         shell: ProjectShell | None,
-) -> bool:
+) -> tuple[bool, None]:
     """
 
     :return:
     """
+    return True, None
 
 def verify_bs_all(
         *,
@@ -371,19 +514,22 @@ def verify_bs_all(
     :return:
     """
     try:
-        verify_bs_1 = _verify_bs1(
+        verify_bs_1_ok, verify_bs_1_failure = _verify_bs1(
             project_paths=project_paths,
             project_id=project_id,
             shell=shell,
         )
+        if not verify_bs_1_ok:
+            return False, verify_bs_1_failure
 
-        verify_bs_2 = _verify_bs2(
+        verify_bs_2_ok, verify_bs_2_failure = _verify_bs2(
             project_paths=project_paths,
             project_id=project_id,
             shell=shell,
         )
+        if not verify_bs_2_ok:
+            return False, verify_bs_2_failure
 
-        return verify_bs_1 and verify_bs_2
+        return True, None
     except ProjectBootstrapError:
         raise
-
