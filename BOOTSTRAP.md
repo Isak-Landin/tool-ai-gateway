@@ -9,7 +9,7 @@ _This file is intentionally compact. It exists to show **when bootstrap runs**, 
 | Stage | Current Surface | Core Purpose |
 | --- | --- | --- |
 | **BS1** | `repository_runtime/bootstrap/bs1/bs1.py` | Create local bootstrap storage and key material for a new project |
-| **BS2** | `repository_runtime/bootstrap/bs2/bs2.py` | Turn a BS1-complete project into a real usable local repository with real branch state |
+| **BS2** | `repository_runtime/bootstrap/bs2/bs2.py` | Turn a BS1-complete project into a real usable local repository |
 | **Bootstrap Verification** | `repository_runtime/bootstrap/__init__.py` | Report which bootstrap checks failed so caller-owned repair or redirect logic can decide what to do next |
 
 ## User-Facing Lifecycle
@@ -17,11 +17,13 @@ _This file is intentionally compact. It exists to show **when bootstrap runs**, 
 1. User creates project.
 2. Persistence creates the project row and calls **BS1**.
 3. User receives the generated public key and adds it on the Git host.
-4. User returns to the project-specific page.
-5. Project-specific page logic determines whether:
+4. UI routes the user to the project-specific page.
+5. Backend-owned project-entry logic determines whether:
    - BS1 failed and bootstrap UI must be shown again
    - BS1 passed but BS2 is not complete, so BS2 should run
    - both stages are complete, so normal project page behavior may continue
+
+The UI must adhere to that decision. It must not perform bootstrap checks itself.
 
 ## Allowed Caller Matrix
 
@@ -46,7 +48,7 @@ _This file is intentionally compact. It exists to show **when bootstrap runs**, 
 | Surface | Allowed | Not Allowed |
 | --- | --- | --- |
 | **BS1** | Create local bootstrap directories, generate SSH keypair, return bootstrap success/failure | Persist DB values, choose route/UI behavior, own repair policy |
-| **BS2** | Use existing key access, materialize repo into `project_repo_directory`, fetch branch reality, derive resulting branch data | Commit DB values directly, own page redirect logic, act as a verification/reporting surface |
+| **BS2** | Use existing key access and materialize the repo into `project_repo_directory` | Commit DB values directly, own page redirect logic, act as a verification/reporting surface, derive/store persisted branch data |
 | **Bootstrap Verification** | Check resulting bootstrap state and return the first failure identifier for caller-owned follow-up | Drive route/UI output directly, mutate DB, replace bootstrap setup stages |
 
 ## Stage Details
@@ -71,7 +73,7 @@ _This file is intentionally compact. It exists to show **when bootstrap runs**, 
 - route/UI decisions
 - runtime binding
 - execution behavior
-- later repo materialization and branch discovery
+- later repo materialization beyond BS1 and later branch discovery
 
 ### **BS2**
 
@@ -79,8 +81,6 @@ _This file is intentionally compact. It exists to show **when bootstrap runs**, 
 
 - using the existing SSH key to establish repo access
 - materializing the repository into `project_repo_directory`
-- fetching remote refs and materializing branch reality locally
-- deriving resulting branch data from the real local repo state
 
 **May communicate with**
 
@@ -92,6 +92,7 @@ _This file is intentionally compact. It exists to show **when bootstrap runs**, 
 - route/UI redirect decisions
 - post-failure repair policy
 - generalized verification/reporting behavior
+- branch discovery/storage responsibilities
 
 ### **Bootstrap Verification**
 
@@ -99,6 +100,10 @@ _This file is intentionally compact. It exists to show **when bootstrap runs**, 
 
 - reporting which bootstrap check failed
 - returning bootstrap verification failure identifiers for caller-owned follow-up
+- for BS2 verification specifically, checking only:
+  - `git -C "<project_repo_directory>" rev-parse --is-inside-work-tree`
+  - `git -C "<project_repo_directory>" remote get-url origin` against expected `remote_repo_url`
+  - `GIT_SSH_COMMAND='ssh -i "<private_key_path>" -o IdentitiesOnly=yes' git -C "<project_repo_directory>" ls-remote --heads origin`
 
 **May communicate with**
 
@@ -139,13 +144,13 @@ Persistence remains the owner of DB mutation around bootstrap.
 - **Verification is a reporting surface, not a repair surface.**
 - **Routes and UI may decide whether bootstrap should be triggered, but they should not directly own bootstrap internals.**
 - **Persistence is the caller and DB owner around bootstrap.**
-- **BS2 returns resulting repo/branch reality; persistence decides what to store.**
+- **BS2 is setup-only; branch discovery/storage does not have to belong to BS2.**
 
 ## Practical Use
 
 | Need | Correct Surface |
 | --- | --- |
 | create local bootstrap storage and SSH keys for a new project | **BS1** |
-| turn a BS1-complete project into a real local repo with real branch state | **BS2** |
+| turn a BS1-complete project into a real local repo | **BS2** |
 | know which bootstrap check failed so caller-owned follow-up can run | **Bootstrap Verification** |
 | store resulting branch data on the project row | **Persistence** |
