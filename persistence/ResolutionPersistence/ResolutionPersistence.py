@@ -63,6 +63,7 @@ class ResolutionPersistence:
             return {
                 "project_id": project.project_id,
                 "name": project.name,
+                "branches": list(project.branches or []),
             }
         except SQLAlchemyError as e:
             raise ResolutionPersistenceError(
