@@ -172,6 +172,7 @@ class ProjectPersistence:
             "project_id": row.project_id,
             "name": row.name,
             "branch": row.branch,
+            "branches": list(row.branches or []),
             "remote_repo_url": row.remote_repo_url,
             "created_at": row.created_at,
             "updated_at": row.updated_at,
