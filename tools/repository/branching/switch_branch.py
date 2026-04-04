@@ -6,7 +6,7 @@ def execute_switch_repository_branch(
     branch_name: str,
     key_path: str | None = None,
     pull_from_origin: bool = False,
-) -> dict:
+) -> bool:
     return git_switch_branch(
         shell_executor=shell_executor,
         branch_name=branch_name,
