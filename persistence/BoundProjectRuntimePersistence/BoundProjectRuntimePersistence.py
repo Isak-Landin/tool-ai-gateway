@@ -67,6 +67,7 @@ class BoundProjectRuntimePersistence:
                 "repo_path": project.repo_path,
                 "remote_repo_url": project.remote_repo_url,
                 "branch": project.branch,
+                "branches": list(project.branches or []),
                 "ssh_key": project.ssh_key,
                 "public_key_path": project.public_key_path,
             }
