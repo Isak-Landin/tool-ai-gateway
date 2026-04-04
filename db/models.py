@@ -28,6 +28,7 @@ class Project(Base):
     repo_path: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     remote_repo_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     branch: Mapped[str] = mapped_column(String(255), nullable=False, server_default="main")
+    branches: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
     ssh_key: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     public_key_path: Mapped[str | None] = mapped_column(String(1024), nullable=True)
 
