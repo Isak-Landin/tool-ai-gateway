@@ -255,7 +255,6 @@ class ProjectPersistence:
             shell = ProjectShell()
             bs1(
                 project_paths=project_paths,
-                project_id=new_project.project_id,
                 shell=shell,
             )
 
