@@ -1,0 +1,7 @@
+{
+  "space_id": "019cd304-f920-7b06-9894-4bf1e100541b",
+  "space_name": "tool-ai-gateway",
+  "space_slug": "toolaigateway",
+  "replica_root": "./tool-ai-gateway-replica",
+  "notes": "Local working replica. New pages (Execution, MessageRuntime, FileRuntime, Plan/*) are local-only until synced. Deprecated API+Backend Layers pages are excluded — delete from remote on next sync."
+}

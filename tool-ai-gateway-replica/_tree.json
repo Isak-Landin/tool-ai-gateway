@@ -1,0 +1,20 @@
+{
+  "generated_from": "get_replica_structure + local additions",
+  "space_id": "019cd304-f920-7b06-9894-4bf1e100541b",
+  "local_additions": [
+    "Skeleton/Execution",
+    "Skeleton/MessageRuntime",
+    "Skeleton/FileRuntime",
+    "Plan",
+    "Plan/UI",
+    "Plan/API",
+    "Plan/MVP",
+    "Plan/Final-Intent"
+  ],
+  "remote_deletions_pending": [
+    "Skeleton/API/API-+-Backend-Layers-(Partially-deprecated)",
+    "Skeleton/API/API-+-Backend-Layers-(Partially-deprecated)/Workflow-CREATE-PROJECT-REQ",
+    "Skeleton/API/API-+-Backend-Layers-(Partially-deprecated)/Workflow-CHAT-REQ"
+  ],
+  "note": "remote_deletions_pending pages are NOT represented locally \u2014 they will be deleted from remote on next sync after user confirmation."
+}
