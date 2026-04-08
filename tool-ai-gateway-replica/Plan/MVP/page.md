@@ -58,3 +58,16 @@ Not via legacy persistence reads.
 - User, assistant, and tool message artifacts are persisted in sequence
 - Message history loads correctly in the UI
 - Selected files context is loaded from live branch state
+
+## Note on Tool Architecture
+
+The current MVP uses hardcoded in-process tool modules (`OllamaToolModule`) registered
+via `ollama/tool_registry.py`. This is an interim approach accepted for MVP scope.
+
+The post-MVP architecture shifts to MCP (Model Context Protocol) server-based tool
+delivery. Extended tools will be served by registered MCP servers, not hardcoded inside
+the gateway. Only local-system-tied tools (`return_to_user`, git probes) are candidates
+for remaining in-process.
+
+See `Plan/Final-Intent` (MCP Tool Integration) and `Skeleton/MCP-Server-Integration` for
+the intended architecture.

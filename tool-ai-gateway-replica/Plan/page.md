@@ -28,6 +28,7 @@ Completing the MVP execution loop with ordered persistence and completing the pr
 
 ## Next After MVP
 
+- **MCP Tool Integration** — replace hardcoded tool modules with MCP server-based tool delivery; implement MCP client manager, per-server registration persistence, and dynamic tool aggregation
 - Repository transport/sync route surface (fetch, pull, push, remote connectivity)
 - Activity feed (dedicated backend route beyond message history)
 - Auth/account route surface (user accounts, login, profile)

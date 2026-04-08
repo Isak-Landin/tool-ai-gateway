@@ -47,7 +47,10 @@ Source of truth: `execution/runtime_execution.md`
 - `MessageRuntime` — bounded history load, sequence load, artifact store
 - `FileRuntime.read_file`, `FileRuntime.search_text` — selected context reads
 - `ollama/` — envelope building, model call, output parsing
-- `tools/` — `execute_return_to_user`, `execute_web_search`, and others
+- `tools/` — `execute_return_to_user`, `execute_web_search`, and others (MVP-scope hardcoded)
+- MCP client manager (future) — aggregated tool definitions and call routing across MCP servers
+
+See `Skeleton/MCP-Server-Integration` for the intended long-term tool layer.
 
 ## MVP Scope
 
@@ -71,6 +74,19 @@ Longer-term execution is intended to be retrieval-aware and multi-iteration:
 - stop when result is sufficient
 
 This is not uncontrolled looping — it is project-scoped, context-aware, multi-iteration runtime that can redirect itself.
+
+## Tool Layer — MVP vs. Final Intent
+
+Current MVP uses a hardcoded `_get_tool_executors` map in `workflow_orchestrator.py`
+wired to in-process `OllamaToolModule` callables. This is an interim approach.
+
+Final intent: tool availability is driven by the MCP client manager. Execution receives
+aggregated tool schemas and prompt fragments from all connected MCP servers. The call
+routing map is built dynamically from the gateway's MCP tool registry, not hardcoded.
+
+Only local-system-tied tools (`return_to_user`, git probes) are candidates for remaining
+outside MCP. All extended tools (web search, knowledge retrieval, etc.) should be served
+by registered MCP servers.
 
 ## Current Issues / Architectural Drift
 
