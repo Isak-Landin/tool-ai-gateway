@@ -23,12 +23,6 @@ Source of truth: `BOOTSTRAP_TARGET_MAP.md`
 4. **Only BS-local cleanup should remain inside bootstrap**
    - No expansion into persistence, branch discovery, route decisions, or repair policy
 
-## Current Integration Gaps
-
-- `api_routes/project_routes/router.py` has a placeholder for project-entry bootstrap verification logic — this is a higher-layer integration gap, not a bootstrap-layer gap
-- `ProjectPersistence.create_project(...)` currently covers BS1 only — does not yet implement the final project-entry / BS2 / post-BS2 branch-discovery lifecycle
-- `db/models.Project.branch` defaults to `"main"` and `update_project(...)` allows direct branch mutation — these are not final branch-reality alignment behaviors
-
 ## Encapsulated Ownership Map
 
 ### Project-entry bootstrap decision surface (not yet implemented)

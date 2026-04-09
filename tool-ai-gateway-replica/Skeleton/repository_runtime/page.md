@@ -8,8 +8,8 @@ The `repository_runtime/` package owns the project-scoped repository transport l
 repository_runtime/
 ├── RepositoryRuntime.py    — main runtime class
 ├── bootstrap/
-│   ├── bs1/                — bootstrap step 1 (storage setup)
-│   └── bs2/                — bootstrap step 2 (repository verification)
+│   ├── bs1/                — bootstrap step 1 (local storage and SSH key setup)
+│   └── bs2/                — bootstrap step 2 (repository materialization)
 ├── git/                    — git probe helpers
 ├── inspection/             — repository inspection utilities
 └── shell/                  — PersistentShell
@@ -28,8 +28,8 @@ Wraps a `PersistentShell` scoped to one `repo_path`. Provides the transport surf
 
 Owns the two-step bootstrap process for new projects:
 
-- **BS1** — project storage setup (creates project row, SSH key material, deploys public key)
-- **BS2** — repository verification (clones/verifies the remote repository is accessible)
+- **BS1** — creates local bootstrap directories and SSH keypair for the project
+- **BS2** — materializes the repository into `project_repo_directory` using the generated SSH key
 
 Bootstrap is not part of the normal per-request lifecycle. See `Bootstrap Rules` for ownership and verification boundaries.
 
@@ -37,4 +37,4 @@ Bootstrap is not part of the normal per-request lifecycle. See `Bootstrap Rules`
 
 - Shell/git transport is lower-layer/runtime-owned
 - `FileRuntime` is the intended live file/tree/search surface — callers must use it, not unwrap to `RepositoryRuntime`
-- Branch discovery is not part of bootstrap; it remains a missing backend route surface
+- Branch discovery is not part of bootstrap; it is a post-BS2 concern owned by a separate surface
