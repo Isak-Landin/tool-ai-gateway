@@ -19,3 +19,5 @@ __all__ = [
     "quote_shell_args",
     "resolve_repository_target",
 ]
+
+# HOW DEPRECATED IS THE EXISTENCE OF REPOSITORY_TOOLS?
