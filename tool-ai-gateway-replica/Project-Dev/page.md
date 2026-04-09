@@ -26,3 +26,7 @@ Within each section, ideas are grouped by the other modules they touch.
 - repository_tools
 - ui
 - web_search
+
+## Rules
+
+Very important to understand is that the mapping and all other agile idea development does not make any declarations of ownership unless explicitly mentioned. It does not declare from which module a mapped behaviour is declared, imported or partially derived. The only truth in checks and all other Project Dev documentation that can be derived, always, is the effective intention, functionality and result from a end consumer perspective.
