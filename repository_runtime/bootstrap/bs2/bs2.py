@@ -63,7 +63,7 @@ def bs2(
     from repository_runtime.bootstrap.bs1 import _verify_bs1 as verify_bs1
     # Should likely ensure with verification of bs1, even though this creates duplicate behavior.
     # Even though it has "possibly" - almost certainly - occurred in the exact same called origin just before bs2 execution
-    is_bs1_verified = verify_bs1(project_paths=project_paths, shell=shell)
+    is_bs1_verified, _ = verify_bs1(project_paths=project_paths, shell=shell)
     if not is_bs1_verified:
         raise ProjectBootstrapError(
             message="During bs2 runtime, bs1 verification failed",
