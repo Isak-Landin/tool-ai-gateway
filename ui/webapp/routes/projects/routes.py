@@ -1,3 +1,28 @@
+"""
+UI route module for /projects — project list and project creation.
+
+## Route expectations
+
+### GET /projects/new — Create project page
+Renders the create project form. No backend call on load.
+
+### POST /projects (via JS in projects.js)
+Submits name and remote_repo_url to the backend. On success, the backend returns
+the generated public key alongside project_id. The UI surfaces the public key to
+the user and then routes to /projects/<project_id>.
+
+Create project never routes directly to a bootstrap page.
+All bootstrap state decisions happen at the project-specific page.
+The create route owns only: form rendering and forwarding the POST result to the
+project-specific route.
+
+### GET /projects/bootstrap-complete
+Intermediate display page reached after bootstrap.html continuation. Reads a
+session-stored bootstrap result for context display. Exists as a UI-side holding
+surface — it does not perform bootstrap checks itself and does not own any
+bootstrap decision logic.
+"""
+
 from flask import Blueprint, render_template, request, session
 
 from webapp.gateway_api import GatewayUnavailableError, gateway_message, perform_gateway_request

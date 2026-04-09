@@ -1,3 +1,34 @@
+"""
+UI route module for /projects/<project_id> — project-specific page.
+
+## Route expectations
+
+This is the single entry point for both post-creation visits and all subsequent
+direct visits to a project. The same route handles both cases — there is no
+separate post-creation route.
+
+### GET /projects/<project_id> — Workspace
+
+On every entry, the backend is the source of truth for whether the project is
+ready for workspace use. The effective decision flow is:
+
+1. Backend runs bootstrap verification (BS1 then BS2).
+2. If BS1 verification fails and this is a newly created project with an existing
+   project row, the backend automatically retries BS1 once.
+   - Retry succeeds → continue to BS2 check.
+   - Retry fails → return an error to the user. No further follow-up for MVP.
+3. If BS2 verification fails, the most likely cause is that the user has not yet
+   added the generated SSH key to their Git host. The backend surfaces the
+   bootstrap page (bootstrap.html) with the key and instructions.
+   - User adds the key, clicks continue.
+   - Continue routes back to this same route, which runs verification again.
+4. If both BS1 and BS2 verification pass, the workspace is shown.
+
+This route never performs bootstrap checks itself. It follows the backend decision.
+The backend-owned project-entry decision surface (not yet implemented) sits between
+this route and ProjectPersistence and owns the above decision logic.
+"""
+
 from __future__ import annotations
 
 from flask import Blueprint, render_template
