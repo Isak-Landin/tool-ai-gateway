@@ -211,6 +211,16 @@ class ProjectPersistence:
 
         Returns:
             dict: Created project payload including the generated public key.
+
+        IN PROGRESS — bootstrap entry is implemented for creation. BS1 verification responder
+        integration is not yet complete. This method is known to be part of the BS1 responder
+        flow — either as the direct callable when no DB or disk artifacts exist (Case A), or as
+        a step reached after the responder has performed its checks and determined creation is
+        required. It does not make any claim about which layer calls it or when — that is the
+        effective responsibility of the BS1 responder once mapped.
+
+        This docstring does not declare ownership of any layer, route, or caller. It describes
+        effective intent from the project creation perspective only.
         """
         session = self.db_connection or SessionLocal()
         shell: ProjectShell | None = None
@@ -399,3 +409,89 @@ class ProjectPersistence:
         finally:
             if self.db_connection is None and session:
                 session.close()
+
+    def bs1_responder(self, parameters_are, not_mapped_yet, PLACEHOLDERS_WILL_ONLY_BE_CONFUSING):
+        # IN PROGRESS — not yet implemented. Placeholder method for idea development only.
+        # Parameters, logic, and internal structure are all unmapped and subject to change.
+        # See Project Dev persistence documentation for current idea mapping.
+        #
+        # This method represents the persistence-layer BS1 verification responder.
+        # It does not intend to remain named bs1_responder, does not map a true established
+        # logic flow, and does not hold true or full representation.
+        #
+        # It acts as the development target for the documented BS1 responder concept.
+        # Once persistence-level BS is complete it will be refactored into correct submodules
+        # with proper module references replacing all placeholder logic.
+        #
+        # Local disk and DB heavy logic for initial checks. No remote repo verifications in BS1.
+        #
+        # The logic below omits dedicated representation of known verification errors by design —
+        # the initial checks are separate from the passed error and expected to run regardless of
+        # which specific verification failure was passed by the caller.
+        #
+        # All check and logic mapping is effective from the route perspective only and does not
+        # distinguish between error-specific checks and always-before checks.
+
+        # Performs all required checks for a given error passed by caller, from executed bs1 verification
+        logic_placeholder = False
+        logic_placeholder2 = False
+        logic_placeholder3 = False
+        if logic_placeholder:
+            # do this
+            # call this
+            # return or proceed
+            pass
+
+        # Will almost certainly include existing create_project from same module, above, if deemed creation necessary.
+        # Placement should not be multiple, aim to build parameter data and finalize all required actions before reaching creation.
+        self.create_project(name=not_mapped_yet, remote_repo_url=not_mapped_yet)
+
+    def bs2_responder(self, parameters_are, not_mapped_yet):
+        # IN PROGRESS — not yet implemented. Placeholder method for idea development only.
+        # Parameters, logic, and internal structure are all unmapped and subject to change.
+        # See Project Dev persistence documentation for current idea mapping.
+        #
+        # This method represents the persistence-layer BS2 verification responder.
+        # It does not intend to remain named bs2_responder, does not map a true established
+        # logic flow, and does not hold true or full representation.
+        #
+        # It acts as the development target for the documented BS2 responder concept.
+        # Once persistence-level BS is complete it will be refactored into correct submodules
+        # with proper module references replacing all placeholder logic.
+        #
+        # This method is equally disk and DB heavy as the BS1 responder, with the addition of
+        # remote repo to local disk representation — adding multiple levels of complexity since
+        # it is a multi-purpose verification and execution process.
+        #
+        # The logic below omits dedicated representation of known verification errors by design —
+        # the initial checks are separate from the passed error and expected to run regardless of
+        # which specific verification failure was passed by the caller.
+        #
+        # All check and logic mapping is effective from the route perspective only and does not
+        # distinguish between error-specific checks and always-before checks.
+
+        # No pre-existing bs2 codebase responsibilities exist yet — as part of persistence layer itself.
+        # Some known unique logical checks and responsibilities are mapped below.
+
+        # _is_db_row?
+            # Only bs1 db inclusions?: repo_path, ssh_key, public_key_path
+
+        # _is_repo_path?
+            # _is_directory
+            # _is_git_repo
+
+        # _is_key_path
+            # _is_key_files
+
+        # _is_key_valid
+            # Reuse existing partial and complete project modules to perform check.
+
+        # _is_remote_repo_url
+            # _is_remote_repo_exist
+            # _is_remote_reachable
+        pass
+
+
+
+
+
